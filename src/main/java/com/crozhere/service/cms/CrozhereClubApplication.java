@@ -1,4 +1,4 @@
-package com.crozhere.service.club;
+package com.crozhere.service.cms;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
