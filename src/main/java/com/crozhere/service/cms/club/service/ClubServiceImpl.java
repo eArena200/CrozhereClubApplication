@@ -1,9 +1,9 @@
 package com.crozhere.service.cms.club.service;
 
 
-import com.crozhere.service.cms.club.model.request.CreateClubRequest;
-import com.crozhere.service.cms.club.model.request.UpdateClubRequest;
-import com.crozhere.service.cms.club.repository.Club;
+import com.crozhere.service.cms.club.controller.model.request.CreateClubRequest;
+import com.crozhere.service.cms.club.controller.model.request.UpdateClubRequest;
+import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.ClubDAO;
 import com.crozhere.service.cms.club.repository.exception.ClubDAOException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;

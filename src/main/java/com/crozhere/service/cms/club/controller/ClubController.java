@@ -1,10 +1,10 @@
 package com.crozhere.service.cms.club.controller;
 
 
-import com.crozhere.service.cms.club.model.request.CreateClubRequest;
-import com.crozhere.service.cms.club.model.request.UpdateClubRequest;
-import com.crozhere.service.cms.club.model.response.ClubResponse;
-import com.crozhere.service.cms.club.repository.Club;
+import com.crozhere.service.cms.club.controller.model.request.CreateClubRequest;
+import com.crozhere.service.cms.club.controller.model.request.UpdateClubRequest;
+import com.crozhere.service.cms.club.controller.model.response.ClubResponse;
+import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import lombok.extern.slf4j.Slf4j;

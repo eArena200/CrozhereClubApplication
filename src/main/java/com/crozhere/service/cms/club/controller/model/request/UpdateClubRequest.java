@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.club.model.request;
+package com.crozhere.service.cms.club.controller.model.request;
 
 import lombok.Builder;
 import lombok.Data;

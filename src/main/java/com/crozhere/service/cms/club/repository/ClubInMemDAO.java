@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.club.repository;
 
+import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.exception.ClubDAOException;
 import org.springframework.stereotype.Component;
 

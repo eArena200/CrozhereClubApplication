@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.club.repository;
+package com.crozhere.service.cms.club.repository.entity;
 
 import lombok.Builder;
 import lombok.Data;
