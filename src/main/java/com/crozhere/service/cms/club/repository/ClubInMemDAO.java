@@ -2,6 +2,7 @@ package com.crozhere.service.cms.club.repository;
 
 import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.exception.ClubDAOException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -9,7 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Component("InMem")
+@Slf4j
+@Component("ClubInMemDAO")
 public class ClubInMemDAO implements ClubDAO {
 
     private final Map<String, Club> clubStore;
@@ -20,11 +22,11 @@ public class ClubInMemDAO implements ClubDAO {
 
     @Override
     public void save(Club club) throws ClubDAOException {
-        if(clubStore.containsKey(club.getId())){
+        if(clubStore.containsKey(club.getClubId())){
             throw new ClubDAOException("Duplicate clubId");
         }
 
-        clubStore.putIfAbsent(club.getId(), club);
+        clubStore.putIfAbsent(club.getClubId(), club);
     }
 
     @Override
@@ -51,6 +53,15 @@ public class ClubInMemDAO implements ClubDAO {
             clubStore.remove(clubId);
         } else {
             throw new ClubDAOException("ClubId doesn't exist");
+        }
+    }
+
+    @Override
+    public List<Club> getAll() throws ClubDAOException {
+        try {
+            return clubStore.values().stream().toList();
+        } catch (Exception e) {
+            throw new ClubDAOException("ClubDAOGetAllException");
         }
     }
 

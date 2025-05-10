@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class Club {
-    private String id;
+    private String clubId;
     private String clubAdminId;
     private String name;
 }

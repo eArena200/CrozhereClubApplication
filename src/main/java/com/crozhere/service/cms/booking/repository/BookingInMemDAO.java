@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 
 @Slf4j
-@Component("InMem")
+@Component("BookingInMemDAO")
 public class BookingInMemDAO implements BookingDAO{
 
     private final Map<String, Booking> bookingStore;

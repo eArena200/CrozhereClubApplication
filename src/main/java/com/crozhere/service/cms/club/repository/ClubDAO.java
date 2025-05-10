@@ -11,5 +11,6 @@ public interface ClubDAO {
     void update(String clubId, Club club) throws ClubDAOException;
     void delete(String clubId) throws ClubDAOException;
 
+    List<Club> getAll() throws ClubDAOException;
     List<Club> getByAdmin(String clubAdminId) throws ClubDAOException;
 }

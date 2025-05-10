@@ -19,7 +19,7 @@ public class BookingServiceImpl implements BookingService {
     private final BookingDAO bookingDAO;
 
     public BookingServiceImpl(
-            @Qualifier("InMem") BookingDAO bookingDAO){
+            @Qualifier("BookingInMemDAO") BookingDAO bookingDAO){
         this.bookingDAO = bookingDAO;
     }
 
