@@ -14,13 +14,13 @@ import com.crozhere.service.cms.club.repository.exception.StationDAOException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
 @Slf4j
-@Component
+@Service
 public class ClubServiceImpl implements ClubService {
     private final ClubDAO clubDAO;
     private final StationDAO stationDAO;

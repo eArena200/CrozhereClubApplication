@@ -8,12 +8,12 @@ import com.crozhere.service.cms.booking.repository.exception.BookingDAOException
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Slf4j
-@Component
+@Service
 public class BookingServiceImpl implements BookingService {
 
     private final BookingDAO bookingDAO;
