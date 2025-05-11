@@ -6,6 +6,7 @@ import com.crozhere.service.cms.auth.controller.model.response.InitAuthResponse;
 import com.crozhere.service.cms.auth.controller.model.response.VerifyAuthResponse;
 import com.crozhere.service.cms.auth.repository.UserDAO;
 import com.crozhere.service.cms.auth.repository.entity.User;
+import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import com.crozhere.service.cms.auth.repository.exception.UserDAOException;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
@@ -50,35 +51,20 @@ public class AuthServiceImpl implements AuthService {
             throws AuthServiceException {
 
         try {
-            if(!otpService.verifyOTP(verifyAuthRequest.getToken(),
-                    verifyAuthRequest.getOtp())){
+            boolean isOtpValid = otpService.verifyOTP(
+                    verifyAuthRequest.getToken(),
+                    verifyAuthRequest.getOtp());
+
+            if (!isOtpValid) {
                 return VerifyAuthResponse.builder()
                         .isAllowed(false)
                         .build();
             }
 
-            String identifier =
-                    otpService.getIdentifierForToken(verifyAuthRequest.getToken());
+            String identifier = otpService.getIdentifierForToken(verifyAuthRequest.getToken());
 
-            User user;
-            try {
-                user = userDAO.findUserByPhoneNumber(identifier);
-            } catch (UserDAOException userDAOException){
-                user = User.builder()
-                        .id(UUID.randomUUID().toString())
-                        .phoneNumber(identifier)
-                        .userRole(verifyAuthRequest.getUserRole())
-                        .build();
+            User user = resolveOrCreateUser(identifier, verifyAuthRequest.getUserRole());
 
-                try {
-                    userDAO.save(user);
-                } catch (UserDAOException e){
-                    log.error("Exception in saving the user: {}", user);
-                    throw new AuthServiceException("VerifyAuthException");
-                }
-            }
-
-            log.info("New User created: {}", user.toString());
             String jwtToken = jwtService.generateToken(user);
 
             return VerifyAuthResponse.builder()
@@ -86,9 +72,34 @@ public class AuthServiceImpl implements AuthService {
                     .jwt(jwtToken)
                     .userId(user.getId())
                     .build();
-        } catch (OTPServiceException otpServiceException) {
-            log.info("Exception in OTPService for token: {}", verifyAuthRequest.getToken());
-            throw new AuthServiceException("VerifyAuthException");
+
+        } catch (OTPServiceException e) {
+            log.error("OTP verification failed for token {}: {}", verifyAuthRequest.getToken(), e.getMessage());
+            throw new AuthServiceException("VerifyAuthException: OTP verification failed", e);
+        }
+    }
+
+
+    private User resolveOrCreateUser(String identifier, UserRole userRole) throws AuthServiceException {
+        try {
+            return userDAO.findUserByPhoneNumber(identifier);
+        } catch (UserDAOException e) {
+            // User not found → create new one
+            User newUser = User.builder()
+                    .id(UUID.randomUUID().toString())
+                    .phoneNumber(identifier)
+                    .userRole(userRole)
+                    .build();
+
+            try {
+                userDAO.save(newUser);
+                log.info("New user created: {}", newUser);
+                return newUser;
+            } catch (UserDAOException saveEx) {
+                log.error("Failed to save new user for identifier {}: {}", identifier, saveEx.getMessage());
+                throw new AuthServiceException("User creation failed", saveEx);
+            }
+
         }
     }
 }
