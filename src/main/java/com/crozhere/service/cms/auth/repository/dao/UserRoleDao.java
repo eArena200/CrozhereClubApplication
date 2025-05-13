@@ -9,14 +9,14 @@ public interface UserRoleDao {
 
     void save(UserRoleMapping roleMapping) throws UserRoleDAOException;
 
-    UserRoleMapping get(String roleId) throws UserRoleDAOException;
+    UserRoleMapping get(Long roleId) throws UserRoleDAOException;
 
-    void update(String roleId, UserRoleMapping updatedRole) throws UserRoleDAOException;
+    void update(Long roleId, UserRoleMapping updatedRole) throws UserRoleDAOException;
 
-    void delete(String roleId) throws UserRoleDAOException;
+    void delete(Long roleId) throws UserRoleDAOException;
 
-    List<UserRoleMapping> getRolesByUserId(String userId) throws UserRoleDAOException;
+    List<UserRoleMapping> getRolesByUserId(Long userId) throws UserRoleDAOException;
 
-    boolean hasRole(String userId, String roleName) throws UserRoleDAOException;
+    boolean hasRole(Long userId, String roleName) throws UserRoleDAOException;
 }
 

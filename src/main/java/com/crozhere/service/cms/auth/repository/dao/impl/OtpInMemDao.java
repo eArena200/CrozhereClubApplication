@@ -14,7 +14,7 @@ import java.util.Map;
 @Component("OtpInMemDao")
 public class OtpInMemDao implements OtpDao {
 
-    private final Map<String, OTP> storeById = new HashMap<>();
+    private final Map<Long, OTP> storeById = new HashMap<>();
     private final Map<String, OTP> storeByPhone = new HashMap<>();
 
     @Override
@@ -28,7 +28,7 @@ public class OtpInMemDao implements OtpDao {
     }
 
     @Override
-    public OTP getById(String id) throws DataNotFoundException, OtpDAOException {
+    public OTP getById(Long id) throws DataNotFoundException, OtpDAOException {
         if(storeById.containsKey(id)) {
             return storeById.get(id);
         } else {
@@ -46,7 +46,7 @@ public class OtpInMemDao implements OtpDao {
     }
 
     @Override
-    public void updateById(String id, OTP updatedOtp) throws DataNotFoundException, OtpDAOException {
+    public void updateById(Long id, OTP updatedOtp) throws DataNotFoundException, OtpDAOException {
         OTP existing = getById(id);
         storeById.put(id, updatedOtp);
         storeByPhone.put(updatedOtp.getPhone(), updatedOtp);
@@ -61,7 +61,7 @@ public class OtpInMemDao implements OtpDao {
     }
 
     @Override
-    public void deleteById(String id) throws DataNotFoundException, OtpDAOException {
+    public void deleteById(Long id) throws DataNotFoundException, OtpDAOException {
         if(storeById.containsKey(id)) {
             storeById.remove(id);
         } else {

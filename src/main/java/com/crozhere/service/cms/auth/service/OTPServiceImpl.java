@@ -89,7 +89,6 @@ public class OTPServiceImpl implements OTPService {
         } catch (DataNotFoundException e) {
             log.info("No OTP found for phone {}, creating new", phone);
             OTP newOtp = OTP.builder()
-                    .id(UUID.randomUUID().toString())
                     .phone(phone)
                     .used(false)
                     .expiresAt(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES))

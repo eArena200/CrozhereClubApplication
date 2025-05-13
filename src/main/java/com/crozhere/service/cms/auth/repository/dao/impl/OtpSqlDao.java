@@ -33,7 +33,7 @@ public class OtpSqlDao implements OtpDao {
     }
 
     @Override
-    public OTP getById(String id) throws DataNotFoundException, OtpDAOException {
+    public OTP getById(Long id) throws DataNotFoundException, OtpDAOException {
         try {
             return otpRepository.findById(id)
                     .orElseThrow(DataNotFoundException::new);
@@ -59,7 +59,7 @@ public class OtpSqlDao implements OtpDao {
     }
 
     @Override
-    public void updateById(String id, OTP otp) throws OtpDAOException {
+    public void updateById(Long id, OTP otp) throws OtpDAOException {
         try {
             OTP existing = getById(id);
             updateFields(existing, otp);
@@ -83,7 +83,7 @@ public class OtpSqlDao implements OtpDao {
     }
 
     @Override
-    public void deleteById(String id) throws OtpDAOException {
+    public void deleteById(Long id) throws OtpDAOException {
         try {
             otpRepository.deleteById(id);
         } catch (Exception e) {

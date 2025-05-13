@@ -32,7 +32,7 @@ public class UserSqlDao implements UserDao {
     }
 
     @Override
-    public User get(String userId) throws UserDAOException {
+    public User get(Long userId) throws UserDAOException {
         try {
             return userRepository.findById(userId)
                     .orElseThrow(() -> new UserDAOException("User not found with id: " + userId));
@@ -43,7 +43,7 @@ public class UserSqlDao implements UserDao {
     }
 
     @Override
-    public void update(String userId, User updatedUser) throws UserDAOException {
+    public void update(Long userId, User updatedUser) throws UserDAOException {
         try {
             User existingUser = get(userId);
             existingUser.setPhone(updatedUser.getPhone());
@@ -56,7 +56,7 @@ public class UserSqlDao implements UserDao {
     }
 
     @Override
-    public void delete(String userId) throws UserDAOException {
+    public void delete(Long userId) throws UserDAOException {
         try {
             Optional<User> user = userRepository.findById(userId);
             user.ifPresent(userRepository::delete);

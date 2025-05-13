@@ -10,6 +10,6 @@ import java.util.List;
 @Builder
 public class VerifyAuthResponse {
     private String jwt;
-    private String userId;
+    private Long userId;
     private List<UserRole> roles;
 }

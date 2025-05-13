@@ -15,9 +15,9 @@ public class JwtService {
 
     private static final String SECRET_KEY = "a61981291d124d2b82ad68a738c1d36323df5sf8df98bdf9d5a7g9";
 
-    public String generateToken(String userId, List<String> roles) {
+    public String generateToken(Long userId, List<String> roles) {
         return Jwts.builder()
-                .setSubject(userId)
+                .setSubject(userId.toString())
                 .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))

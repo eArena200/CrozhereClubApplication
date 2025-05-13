@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @Component("UserRoleInMemDao")
 public class UserRoleInMemDao implements UserRoleDao {
 
-    private final Map<String, UserRoleMapping> roleStore;
+    private final Map<Long, UserRoleMapping> roleStore;
 
     public UserRoleInMemDao() {
         this.roleStore = new HashMap<>();
@@ -29,7 +29,7 @@ public class UserRoleInMemDao implements UserRoleDao {
     }
 
     @Override
-    public UserRoleMapping get(String roleId) throws UserRoleDAOException {
+    public UserRoleMapping get(Long roleId) throws UserRoleDAOException {
         if (roleStore.containsKey(roleId)) {
             return roleStore.get(roleId);
         } else {
@@ -39,7 +39,7 @@ public class UserRoleInMemDao implements UserRoleDao {
     }
 
     @Override
-    public void update(String roleId, UserRoleMapping updatedRole) throws UserRoleDAOException {
+    public void update(Long roleId, UserRoleMapping updatedRole) throws UserRoleDAOException {
         if (roleStore.containsKey(roleId)) {
             roleStore.put(roleId, updatedRole);
         } else {
@@ -49,7 +49,7 @@ public class UserRoleInMemDao implements UserRoleDao {
     }
 
     @Override
-    public void delete(String roleId) throws UserRoleDAOException {
+    public void delete(Long roleId) throws UserRoleDAOException {
         if (roleStore.containsKey(roleId)) {
             roleStore.remove(roleId);
         } else {
@@ -59,7 +59,7 @@ public class UserRoleInMemDao implements UserRoleDao {
     }
 
     @Override
-    public List<UserRoleMapping> getRolesByUserId(String userId) throws UserRoleDAOException {
+    public List<UserRoleMapping> getRolesByUserId(Long userId) throws UserRoleDAOException {
         List<UserRoleMapping> roles = roleStore.values().stream()
                 .filter(role -> role.getUser() != null && role.getUser().getId().equals(userId))
                 .collect(Collectors.toList());
@@ -72,7 +72,7 @@ public class UserRoleInMemDao implements UserRoleDao {
     }
 
     @Override
-    public boolean hasRole(String userId, String roleName) throws UserRoleDAOException {
+    public boolean hasRole(Long userId, String roleName) throws UserRoleDAOException {
         return roleStore.values().stream()
                 .anyMatch(role ->
                         role.getUser() != null &&

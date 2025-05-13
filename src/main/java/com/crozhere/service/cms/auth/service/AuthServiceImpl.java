@@ -18,7 +18,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -50,7 +49,6 @@ public class AuthServiceImpl implements AuthService {
                 user = userDao.findUserByPhoneNumber(request.getPhone());
             } catch (UserDAOException e) {
                 user = User.builder()
-                        .id(UUID.randomUUID().toString())
                         .phone(request.getPhone())
                         .isActive(true)
                         .build();
@@ -60,7 +58,6 @@ public class AuthServiceImpl implements AuthService {
 
             if (!userRoleDao.hasRole(user.getId(), request.getRole().name())) {
                 UserRoleMapping roleMapping = UserRoleMapping.builder()
-                        .id(UUID.randomUUID().toString())
                         .user(user)
                         .role(request.getRole())
                         .build();

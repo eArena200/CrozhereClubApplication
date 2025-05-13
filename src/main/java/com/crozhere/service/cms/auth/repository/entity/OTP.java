@@ -19,7 +19,8 @@ public class OTP {
 
     @Id
     @Column(name = "id", nullable = false, unique = true)
-    private String id = UUID.randomUUID().toString();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(name = "phone", nullable = false, unique = true)
     private String phone;

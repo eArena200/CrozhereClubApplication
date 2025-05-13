@@ -14,7 +14,7 @@ import java.util.Map;
 @Component("UserInMemDAO")
 public class UserInMemDao implements UserDao {
 
-    private final Map<String, User> userStore;
+    private final Map<Long, User> userStore;
 
     public UserInMemDao() {
         this.userStore = new HashMap<>();
@@ -31,7 +31,7 @@ public class UserInMemDao implements UserDao {
     }
 
     @Override
-    public User get(String userId) throws UserDAOException {
+    public User get(Long userId) throws UserDAOException {
         if (userStore.containsKey(userId)) {
             return userStore.get(userId);
         } else {
@@ -41,7 +41,7 @@ public class UserInMemDao implements UserDao {
     }
 
     @Override
-    public void update(String userId, User user) throws UserDAOException {
+    public void update(Long userId, User user) throws UserDAOException {
         if (userStore.containsKey(userId)) {
             userStore.put(userId, user);
         } else {
@@ -51,7 +51,7 @@ public class UserInMemDao implements UserDao {
     }
 
     @Override
-    public void delete(String userId) throws UserDAOException {
+    public void delete(Long userId) throws UserDAOException {
         if (userStore.containsKey(userId)) {
             userStore.remove(userId);
         } else {

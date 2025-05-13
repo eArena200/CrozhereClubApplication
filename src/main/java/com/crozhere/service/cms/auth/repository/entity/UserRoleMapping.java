@@ -18,7 +18,8 @@ public class UserRoleMapping {
 
     @Id
     @Column(name = "id", nullable = false, unique = true)
-    private String id = UUID.randomUUID().toString();
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

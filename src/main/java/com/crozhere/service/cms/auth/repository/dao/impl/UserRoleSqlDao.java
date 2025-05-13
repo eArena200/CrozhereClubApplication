@@ -36,7 +36,7 @@ public class UserRoleSqlDao implements UserRoleDao {
     }
 
     @Override
-    public UserRoleMapping get(String roleId) throws UserRoleDAOException {
+    public UserRoleMapping get(Long roleId) throws UserRoleDAOException {
         try {
             return roleRepository.findById(roleId)
                     .orElseThrow(() -> new UserRoleDAOException("Role mapping not found: " + roleId));
@@ -47,7 +47,7 @@ public class UserRoleSqlDao implements UserRoleDao {
     }
 
     @Override
-    public void update(String roleId, UserRoleMapping updatedRole) throws UserRoleDAOException {
+    public void update(Long roleId, UserRoleMapping updatedRole) throws UserRoleDAOException {
         try {
             UserRoleMapping existing = get(roleId);
             existing.setRole(updatedRole.getRole());
@@ -60,7 +60,7 @@ public class UserRoleSqlDao implements UserRoleDao {
     }
 
     @Override
-    public void delete(String roleId) throws UserRoleDAOException {
+    public void delete(Long roleId) throws UserRoleDAOException {
         try {
             roleRepository.deleteById(roleId);
         } catch (Exception e) {
@@ -70,7 +70,7 @@ public class UserRoleSqlDao implements UserRoleDao {
     }
 
     @Override
-    public List<UserRoleMapping> getRolesByUserId(String userId) throws UserRoleDAOException {
+    public List<UserRoleMapping> getRolesByUserId(Long userId) throws UserRoleDAOException {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserRoleDAOException("User not found: " + userId));
@@ -82,7 +82,7 @@ public class UserRoleSqlDao implements UserRoleDao {
     }
 
     @Override
-    public boolean hasRole(String userId, String roleName) throws UserRoleDAOException {
+    public boolean hasRole(Long userId, String roleName) throws UserRoleDAOException {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserRoleDAOException("User not found: " + userId));
