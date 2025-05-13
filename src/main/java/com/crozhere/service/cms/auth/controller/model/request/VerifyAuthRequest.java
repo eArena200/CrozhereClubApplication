@@ -1,6 +1,5 @@
 package com.crozhere.service.cms.auth.controller.model.request;
 
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import lombok.Builder;
 import lombok.Data;
 
