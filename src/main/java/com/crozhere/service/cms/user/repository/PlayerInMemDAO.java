@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -56,5 +57,19 @@ public class PlayerInMemDAO implements PlayerDAO {
             log.info("PlayerId {} doesn't exist for delete", playerId);
             throw new PlayerDAOException("DeleteException");
         }
+    }
+
+    @Override
+    public Player getPlayerByPhone(String phone) throws PlayerDAOException {
+        List<Player> players = playerStore.values().stream()
+                .filter(player -> player.getPhone().equals(phone))
+                .toList();
+
+        if(players.isEmpty()){
+            log.info("Player with phone {} doesn't exist", phone);
+            throw new PlayerDAOException("GetPlayerByPhoneException");
+        }
+
+        return players.get(0);
     }
 }

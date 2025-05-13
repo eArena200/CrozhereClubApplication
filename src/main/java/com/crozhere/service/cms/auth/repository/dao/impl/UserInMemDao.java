@@ -1,7 +1,8 @@
-package com.crozhere.service.cms.auth.repository;
+package com.crozhere.service.cms.auth.repository.dao.impl;
 
+import com.crozhere.service.cms.auth.repository.dao.UserDao;
 import com.crozhere.service.cms.auth.repository.entity.User;
-import com.crozhere.service.cms.auth.repository.exception.UserDAOException;
+import com.crozhere.service.cms.auth.repository.dao.exception.UserDAOException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -11,11 +12,11 @@ import java.util.Map;
 
 @Slf4j
 @Component("UserInMemDAO")
-public class UserInMemDAO implements UserDAO {
+public class UserInMemDao implements UserDao {
 
     private final Map<String, User> userStore;
 
-    public UserInMemDAO() {
+    public UserInMemDao() {
         this.userStore = new HashMap<>();
     }
 
@@ -60,14 +61,14 @@ public class UserInMemDAO implements UserDAO {
     }
 
     @Override
-    public User findUserByPhoneNumber(String phoneNumber) throws UserDAOException {
+    public User findUserByPhoneNumber(String phone) throws UserDAOException {
         List<User> users = userStore.values()
                 .stream()
-                .filter(user -> user.getPhoneNumber().equals(phoneNumber))
+                .filter(user -> user.getPhone().equals(phone))
                 .toList();
 
         if(users.isEmpty()){
-            log.info("User with phoneNumber {} doesn't exist", phoneNumber);
+            log.info("User with phone {} doesn't exist", phone);
             throw new UserDAOException("ReadException");
         }
 

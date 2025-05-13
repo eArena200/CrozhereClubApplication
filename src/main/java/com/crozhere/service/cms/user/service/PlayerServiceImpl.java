@@ -88,4 +88,16 @@ public class PlayerServiceImpl implements PlayerService {
         }
     }
 
+    @Override
+    public Player getOrCreatePlayerByPhone(String phone) throws PlayerServiceException {
+        try {
+            return playerDao.getPlayerByPhone(phone);
+        } catch (PlayerDAOException e){
+            log.info("Player not found with phone number {}", phone);
+            return createPlayer(
+                    CreatePlayerRequest.builder()
+                    .phone(phone)
+                    .build());
+        }
+    }
 }

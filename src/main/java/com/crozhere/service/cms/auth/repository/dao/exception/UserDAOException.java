@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.auth.repository.exception;
+package com.crozhere.service.cms.auth.repository.dao.exception;
 
 public class UserDAOException extends Exception {
     public UserDAOException() {

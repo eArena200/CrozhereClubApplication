@@ -12,4 +12,6 @@ public interface PlayerService {
     Player updatePlayer(String playerId, UpdatePlayerRequest updatePlayerRequest)
             throws PlayerServiceException;
     void deletePlayer(String playerId) throws PlayerServiceException;
+
+    Player getOrCreatePlayerByPhone(String phone) throws PlayerServiceException;
 }

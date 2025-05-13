@@ -1,9 +1,9 @@
-package com.crozhere.service.cms.auth.repository;
+package com.crozhere.service.cms.auth.repository.dao;
 
 import com.crozhere.service.cms.auth.repository.entity.User;
-import com.crozhere.service.cms.auth.repository.exception.UserDAOException;
+import com.crozhere.service.cms.auth.repository.dao.exception.UserDAOException;
 
-public interface UserDAO {
+public interface UserDao {
     void save(User user) throws UserDAOException;
     User get(String userId) throws UserDAOException;
     void update(String userId, User user) throws UserDAOException;

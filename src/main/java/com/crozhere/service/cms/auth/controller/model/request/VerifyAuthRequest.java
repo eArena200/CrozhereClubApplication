@@ -7,7 +7,6 @@ import lombok.Data;
 @Data
 @Builder
 public class VerifyAuthRequest {
-    private String token;
+    private String phone;
     private String otp;
-    private UserRole userRole;
 }

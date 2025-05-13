@@ -8,4 +8,6 @@ public interface PlayerDAO {
     Player get(String playerId) throws PlayerDAOException;
     void update(String playerId, Player player) throws PlayerDAOException;
     void delete(String playerId) throws PlayerDAOException;
+
+    Player getPlayerByPhone(String phone) throws PlayerDAOException;
 }

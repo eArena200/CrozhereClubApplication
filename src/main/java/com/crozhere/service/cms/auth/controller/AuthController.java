@@ -2,7 +2,6 @@ package com.crozhere.service.cms.auth.controller;
 
 import com.crozhere.service.cms.auth.controller.model.request.InitAuthRequest;
 import com.crozhere.service.cms.auth.controller.model.request.VerifyAuthRequest;
-import com.crozhere.service.cms.auth.controller.model.response.InitAuthResponse;
 import com.crozhere.service.cms.auth.controller.model.response.VerifyAuthResponse;
 import com.crozhere.service.cms.auth.service.AuthService;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
@@ -26,14 +25,14 @@ public class AuthController {
     }
 
     @PostMapping("/init")
-    public ResponseEntity<InitAuthResponse> initAuth(
+    public ResponseEntity<Void> initAuth(
             @RequestBody InitAuthRequest initAuthRequest) {
         try {
-            InitAuthResponse initAuthResponse = authService.initAuth(initAuthRequest);
+            authService.initAuth(initAuthRequest);
 
             return ResponseEntity
                     .status(HttpStatus.OK)
-                    .body(initAuthResponse);
+                    .build();
 
         } catch (AuthServiceException authServiceException) {
             log.error("Exception in InitAuth for request: {}", initAuthRequest.toString());
@@ -48,22 +47,13 @@ public class AuthController {
             @RequestBody VerifyAuthRequest verifyAuthRequest) {
 
         try {
-           VerifyAuthResponse verifyAuthResponse = authService.verifyAuth(verifyAuthRequest);
+            VerifyAuthResponse response = authService.verifyAuth(verifyAuthRequest);
+            return ResponseEntity.ok(response);
 
-           if(verifyAuthResponse.getIsAllowed()){
-               return ResponseEntity
-                       .status(HttpStatus.OK)
-                       .body(verifyAuthResponse);
-           } else {
-               return ResponseEntity
-                       .status(HttpStatus.UNAUTHORIZED)
-                       .build();
-           }
-        } catch (AuthServiceException authServiceException) {
-            log.error("Exception in VerifyAuth for request: {}", verifyAuthRequest.toString());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
+        } catch (AuthServiceException e) {
+            log.error("Exception in VerifyAuth for request: {}", verifyAuthRequest, e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
+
 }

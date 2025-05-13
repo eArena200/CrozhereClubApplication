@@ -6,7 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -14,22 +13,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "otp")
-public class OTP {
+@Table(name = "user_role")
+public class UserRoleMapping {
 
     @Id
     @Column(name = "id", nullable = false, unique = true)
     private String id = UUID.randomUUID().toString();
 
-    @Column(name = "phone", nullable = false, unique = true)
-    private String phone;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "otp", nullable = false)
-    private String otp;
-
-    @Column(name = "expires_at", nullable = false)
-    private LocalDateTime expiresAt;
-
-    @Column(name = "used", nullable = false)
-    private boolean used = false;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;
 }
+
