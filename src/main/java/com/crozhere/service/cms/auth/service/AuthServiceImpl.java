@@ -12,7 +12,6 @@ import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import com.crozhere.service.cms.auth.repository.entity.UserRoleMapping;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
