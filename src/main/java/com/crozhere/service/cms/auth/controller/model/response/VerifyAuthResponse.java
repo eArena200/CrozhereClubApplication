@@ -11,5 +11,6 @@ import java.util.List;
 public class VerifyAuthResponse {
     private String jwt;
     private Long userId;
+    private Long playerId;
     private List<UserRole> roles;
 }

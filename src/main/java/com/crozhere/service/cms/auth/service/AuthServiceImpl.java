@@ -12,6 +12,8 @@ import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import com.crozhere.service.cms.auth.repository.entity.UserRoleMapping;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
+import com.crozhere.service.cms.player.repository.entity.Player;
+import com.crozhere.service.cms.player.service.PlayerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,16 +32,20 @@ public class AuthServiceImpl implements AuthService {
     private final OTPService otpService;
     private final JwtService jwtService;
 
+    private final PlayerService playerService;
+
     @Autowired
     public AuthServiceImpl(
             @Qualifier("UserSqlDao") UserDao userDao,
             @Qualifier("UserRoleSqlDao") UserRoleDao userRoleDao,
             OTPService otpService,
-            JwtService jwtService){
+            JwtService jwtService,
+            PlayerService playerService){
         this.userDao = userDao;
         this.userRoleDao = userRoleDao;
         this.otpService = otpService;
         this.jwtService = jwtService;
+        this.playerService = playerService;
     }
 
     @Override
@@ -69,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = RuntimeException.class)
     protected VerifyAuthResponse createUserAndToken(VerifyAuthRequest request)
             throws UserDAOException, UserRoleDAOException {
+
         User user;
         try {
             user = userDao.findUserByPhoneNumber(request.getPhone());
@@ -77,17 +84,26 @@ public class AuthServiceImpl implements AuthService {
                     .phone(request.getPhone())
                     .isActive(true)
                     .build();
-
             userDao.save(user);
         }
 
+        boolean isNewRole = false;
         if (!userRoleDao.hasRole(user.getId(), request.getRole().name())) {
             UserRoleMapping roleMapping = UserRoleMapping.builder()
                     .user(user)
                     .role(request.getRole())
                     .build();
-
             userRoleDao.save(roleMapping);
+            isNewRole = true;
+        }
+
+        if (request.getRole() == UserRole.PLAYER && isNewRole) {
+            try {
+                playerService.createPlayerForUser(user);
+            } catch (Exception e) {
+                log.error("Failed to create player for user ID: {}", user.getId(), e);
+                throw new RuntimeException("Failed to create player profile", e);
+            }
         }
 
         List<UserRoleMapping> roleMappings = userRoleDao.getRolesByUserId(user.getId());
@@ -95,15 +111,28 @@ public class AuthServiceImpl implements AuthService {
                 .map(UserRoleMapping::getRole)
                 .collect(Collectors.toList());
 
-        String token =
-                jwtService.generateToken(user.getId(),
-                        roles.stream().map(Enum::name).toList());
+        String token = jwtService.generateToken(
+                user.getId(),
+                roles.stream().map(Enum::name).toList()
+        );
+
+        Long playerId = null;
+        if (roles.contains(UserRole.PLAYER)) {
+            try {
+                Player player = playerService.getPlayerByUserId(user.getId());
+                playerId = player.getId();
+            } catch (Exception e) {
+                log.warn("User has PLAYER role but player record not found for user ID: {}", user.getId());
+            }
+        }
 
         return VerifyAuthResponse.builder()
                 .jwt(token)
                 .userId(user.getId())
                 .roles(roles)
+                .playerId(playerId)
                 .build();
     }
+
 
 }
