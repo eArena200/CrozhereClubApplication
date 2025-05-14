@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.auth.service.exception;
 
-public class AuthServiceException extends Exception {
+public class AuthServiceException extends RuntimeException {
 
     public AuthServiceException() {
         super();

@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.auth.service.exception;
 
-public class OTPServiceException extends Exception {
+public class OTPServiceException extends RuntimeException {
     public OTPServiceException() {
         super();
     }

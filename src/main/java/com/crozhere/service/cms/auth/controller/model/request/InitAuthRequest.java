@@ -1,12 +1,18 @@
 package com.crozhere.service.cms.auth.controller.model.request;
 
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Builder;
 import lombok.Data;
+import jakarta.validation.constraints.Pattern;
 
 @Data
 @Builder
 public class InitAuthRequest {
+
+    @NotBlank(message = "Phone number is required")
+    @Pattern(
+            regexp = "^[1-9]\\d{9}$",
+            message = "Phone number should be valid"
+    )
     private String phone;
-    private UserRole role;
 }

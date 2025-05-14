@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.auth.repository.dao.exception;
 
-public class UserRoleDAOException extends Exception {
+public class UserRoleDAOException extends RuntimeException {
 
     public UserRoleDAOException() {
         super();

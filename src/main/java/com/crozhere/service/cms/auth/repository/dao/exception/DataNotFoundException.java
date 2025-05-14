@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.auth.repository.dao.exception;
 
-public class DataNotFoundException extends Exception {
+public class DataNotFoundException extends RuntimeException {
 
     public DataNotFoundException() {
         super();

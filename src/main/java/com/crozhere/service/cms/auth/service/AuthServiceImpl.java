@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,30 +45,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void initAuth(InitAuthRequest request) throws AuthServiceException {
         try {
-            User user;
-            try {
-                user = userDao.findUserByPhoneNumber(request.getPhone());
-            } catch (UserDAOException e) {
-                user = User.builder()
-                        .phone(request.getPhone())
-                        .isActive(true)
-                        .build();
-
-                userDao.save(user);
-            }
-
-            if (!userRoleDao.hasRole(user.getId(), request.getRole().name())) {
-                UserRoleMapping roleMapping = UserRoleMapping.builder()
-                        .user(user)
-                        .role(request.getRole())
-                        .build();
-
-                userRoleDao.save(roleMapping);
-            }
-
             otpService.sendOTP(request.getPhone());
-
-        } catch (UserDAOException | UserRoleDAOException | OTPServiceException e) {
+        } catch (OTPServiceException e) {
             log.error("Failed to initialize auth for phone: {}", request.getPhone(), e);
             throw new AuthServiceException("InitAuthException", e);
         }
@@ -77,29 +56,54 @@ public class AuthServiceImpl implements AuthService {
     public VerifyAuthResponse verifyAuth(VerifyAuthRequest request) throws AuthServiceException {
         try {
             boolean valid = otpService.verifyOTP(request.getPhone(), request.getOtp());
-            if (!valid) {
-                throw new AuthServiceException("Invalid OTP");
-            }
+            if (!valid) throw new AuthServiceException("Invalid OTP");
 
-            User user = userDao.findUserByPhoneNumber(request.getPhone());
-            List<UserRoleMapping> roleMappings = userRoleDao.getRolesByUserId(user.getId());
-            List<UserRole> roles = roleMappings.stream()
-                    .map(UserRoleMapping::getRole)
-                    .collect(Collectors.toList());
+            return createUserAndToken(request);
 
-            String token =
-                    jwtService.generateToken(user.getId(),
-                            roles.stream().map(Enum::name).toList());
-
-            return VerifyAuthResponse.builder()
-                    .jwt(token)
-                    .userId(user.getId())
-                    .roles(roles)
-                    .build();
-
-        } catch (OTPServiceException | UserDAOException | UserRoleDAOException e) {
-            log.error("Failed to verify auth for phone: {}", request.getPhone(), e);
+        } catch (Exception e) {
+            log.error("Verify auth failed: {}", request.getPhone(), e);
             throw new AuthServiceException("VerifyAuthException", e);
         }
     }
+
+    @Transactional(rollbackFor = RuntimeException.class)
+    protected VerifyAuthResponse createUserAndToken(VerifyAuthRequest request)
+            throws UserDAOException, UserRoleDAOException {
+        User user;
+        try {
+            user = userDao.findUserByPhoneNumber(request.getPhone());
+        } catch (UserDAOException e) {
+            user = User.builder()
+                    .phone(request.getPhone())
+                    .isActive(true)
+                    .build();
+
+            userDao.save(user);
+        }
+
+        if (!userRoleDao.hasRole(user.getId(), request.getRole().name())) {
+            UserRoleMapping roleMapping = UserRoleMapping.builder()
+                    .user(user)
+                    .role(request.getRole())
+                    .build();
+
+            userRoleDao.save(roleMapping);
+        }
+
+        List<UserRoleMapping> roleMappings = userRoleDao.getRolesByUserId(user.getId());
+        List<UserRole> roles = roleMappings.stream()
+                .map(UserRoleMapping::getRole)
+                .collect(Collectors.toList());
+
+        String token =
+                jwtService.generateToken(user.getId(),
+                        roles.stream().map(Enum::name).toList());
+
+        return VerifyAuthResponse.builder()
+                .jwt(token)
+                .userId(user.getId())
+                .roles(roles)
+                .build();
+    }
+
 }

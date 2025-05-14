@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.auth.repository.dao.exception;
 
-public class OtpDAOException extends Exception {
+public class OtpDAOException extends RuntimeException {
     public OtpDAOException() {
         super();
     }
