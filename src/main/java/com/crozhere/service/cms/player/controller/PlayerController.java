@@ -1,11 +1,10 @@
-package com.crozhere.service.cms.user.controller;
+package com.crozhere.service.cms.player.controller;
 
-import com.crozhere.service.cms.user.controller.model.request.CreatePlayerRequest;
-import com.crozhere.service.cms.user.controller.model.request.UpdatePlayerRequest;
-import com.crozhere.service.cms.user.controller.model.response.PlayerResponse;
-import com.crozhere.service.cms.user.repository.model.Player;
-import com.crozhere.service.cms.user.service.PlayerService;
-import com.crozhere.service.cms.user.service.exception.PlayerServiceException;
+import com.crozhere.service.cms.player.controller.model.request.UpdatePlayerRequest;
+import com.crozhere.service.cms.player.controller.model.response.PlayerResponse;
+import com.crozhere.service.cms.player.repository.entity.Player;
+import com.crozhere.service.cms.player.service.PlayerService;
+import com.crozhere.service.cms.player.service.exception.PlayerServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,28 +23,11 @@ public class PlayerController {
         this.playerService = playerService;
     }
 
-    @PostMapping
-    public ResponseEntity<PlayerResponse> createPlayer(
-            @RequestBody CreatePlayerRequest createPlayerRequest) {
-        try {
-            Player player = playerService.createPlayer(createPlayerRequest);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(getPlayerResponse(player));
-
-        } catch (PlayerServiceException e) {
-            log.error("Exception in CreatePlayer for request: {}", createPlayerRequest.toString());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
-    }
-
     @GetMapping("/{playerId}")
     public ResponseEntity<PlayerResponse> getPlayerById(
-            @PathVariable("playerId") String playerId) {
+            @PathVariable("playerId") Long playerId) {
         try {
-            Player player = playerService.getPlayer(playerId);
+            Player player = playerService.getPlayerById(playerId);
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body(getPlayerResponse(player));
@@ -61,10 +43,10 @@ public class PlayerController {
 
     @PutMapping("/{playerId}")
     public ResponseEntity<PlayerResponse> updatePlayer(
-            @PathVariable("playerId") String playerId,
+            @PathVariable("playerId") Long playerId,
             @RequestBody UpdatePlayerRequest updatePlayerRequest) {
         try {
-            Player player = playerService.updatePlayer(playerId, updatePlayerRequest);
+            Player player = playerService.updatePlayerDetails(playerId, updatePlayerRequest);
             return ResponseEntity.
                     status(HttpStatus.OK)
                     .body(getPlayerResponse(player));
@@ -80,7 +62,7 @@ public class PlayerController {
 
     @DeleteMapping("/{playerId}")
     public ResponseEntity<Void> deletePlayer(
-            @PathVariable("playerId") String playerId) {
+            @PathVariable("playerId") Long playerId) {
         try {
             playerService.deletePlayer(playerId);
             return ResponseEntity

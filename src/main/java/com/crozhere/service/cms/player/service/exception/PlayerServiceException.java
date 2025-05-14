@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.user.service.exception;
+package com.crozhere.service.cms.player.service.exception;
 
 public class PlayerServiceException extends Exception {
 

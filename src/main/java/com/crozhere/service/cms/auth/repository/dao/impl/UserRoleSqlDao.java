@@ -76,8 +76,8 @@ public class UserRoleSqlDao implements UserRoleDao {
                     .orElseThrow(() -> new UserRoleDAOException("User not found: " + userId));
             return roleRepository.findByUser(user);
         } catch (Exception e) {
-            log.error("Failed to get roles for user: {}", userId, e);
-            throw new UserRoleDAOException("Error getting roles by user ID", e);
+            log.error("Failed to get roles for player: {}", userId, e);
+            throw new UserRoleDAOException("Error getting roles by player ID", e);
         }
     }
 
@@ -89,8 +89,8 @@ public class UserRoleSqlDao implements UserRoleDao {
             return roleRepository.findByUser(user).stream()
                     .anyMatch(role -> role.getRole().name().equalsIgnoreCase(roleName));
         } catch (Exception e) {
-            log.error("Failed to check role '{}' for user: {}", roleName, userId, e);
-            throw new UserRoleDAOException("Error checking role for user", e);
+            log.error("Failed to check role '{}' for player: {}", roleName, userId, e);
+            throw new UserRoleDAOException("Error checking role for player", e);
         }
     }
 }

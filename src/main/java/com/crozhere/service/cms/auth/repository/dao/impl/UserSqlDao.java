@@ -26,8 +26,8 @@ public class UserSqlDao implements UserDao {
         try {
             userRepository.save(user);
         } catch (Exception e) {
-            log.error("Failed to save user: {}", user.getPhone(), e);
-            throw new UserDAOException("Error saving user", e);
+            log.error("Failed to save player: {}", user.getPhone(), e);
+            throw new UserDAOException("Error saving player", e);
         }
     }
 
@@ -37,8 +37,8 @@ public class UserSqlDao implements UserDao {
             return userRepository.findById(userId)
                     .orElseThrow(() -> new UserDAOException("User not found with id: " + userId));
         } catch (Exception e) {
-            log.error("Failed to get user by ID: {}", userId, e);
-            throw new UserDAOException("Error getting user", e);
+            log.error("Failed to get player by ID: {}", userId, e);
+            throw new UserDAOException("Error getting player", e);
         }
     }
 
@@ -50,8 +50,8 @@ public class UserSqlDao implements UserDao {
             existingUser.setActive(updatedUser.isActive());
             userRepository.save(existingUser);
         } catch (Exception e) {
-            log.error("Failed to update user: {}", userId, e);
-            throw new UserDAOException("Error updating user", e);
+            log.error("Failed to update player: {}", userId, e);
+            throw new UserDAOException("Error updating player", e);
         }
     }
 
@@ -61,8 +61,8 @@ public class UserSqlDao implements UserDao {
             Optional<User> user = userRepository.findById(userId);
             user.ifPresent(userRepository::delete);
         } catch (Exception e) {
-            log.error("Failed to delete user with ID: {}", userId, e);
-            throw new UserDAOException("Error deleting user", e);
+            log.error("Failed to delete player with ID: {}", userId, e);
+            throw new UserDAOException("Error deleting player", e);
         }
     }
 
@@ -72,8 +72,8 @@ public class UserSqlDao implements UserDao {
             return userRepository.findByPhone(phoneNumber)
                     .orElseThrow(() -> new UserDAOException("User not found with phone number: " + phoneNumber));
         } catch (Exception e) {
-            log.error("Failed to find user by phone number: {}", phoneNumber, e);
-            throw new UserDAOException("Error finding user by phone number", e);
+            log.error("Failed to find player by phone number: {}", phoneNumber, e);
+            throw new UserDAOException("Error finding player by phone number", e);
         }
     }
 }

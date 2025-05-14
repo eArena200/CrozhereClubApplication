@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.user.repository.exception;
+package com.crozhere.service.cms.player.repository.dao.exception;
 
 public class PlayerDAOException extends Exception {
     public PlayerDAOException() {
