@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 public class AddStationRequest {
-    private String clubId;
+    private Long clubId;
     private String stationName;
     private StationType stationType;
 }
