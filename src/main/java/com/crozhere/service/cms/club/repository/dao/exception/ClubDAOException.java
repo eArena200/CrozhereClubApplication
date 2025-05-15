@@ -1,6 +1,6 @@
-package com.crozhere.service.cms.club.repository.exception;
+package com.crozhere.service.cms.club.repository.dao.exception;
 
-public class ClubDAOException extends Exception {
+public class ClubDAOException extends RuntimeException {
 
     public ClubDAOException() {
         super();

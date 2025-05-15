@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class CreateClubRequest {
+public class UpdateClubAdminRequest {
     private String name;
-    private Long clubAdminId;
+    private String email;
 }

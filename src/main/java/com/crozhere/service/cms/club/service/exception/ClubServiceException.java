@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.club.service.exception;
 
-public class ClubServiceException extends Exception {
+public class ClubServiceException extends RuntimeException {
 
     public ClubServiceException() {
         super();

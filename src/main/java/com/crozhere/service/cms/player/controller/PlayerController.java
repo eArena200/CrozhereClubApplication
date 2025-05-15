@@ -42,7 +42,7 @@ public class PlayerController {
 
 
     @PutMapping("/{playerId}")
-    public ResponseEntity<PlayerResponse> updatePlayer(
+    public ResponseEntity<PlayerResponse> updatePlayerDetails(
             @PathVariable("playerId") Long playerId,
             @RequestBody UpdatePlayerRequest updatePlayerRequest) {
         try {
@@ -52,7 +52,7 @@ public class PlayerController {
                     .body(getPlayerResponse(player));
 
         } catch (PlayerServiceException e) {
-            log.error("Exception in UpdatePlayer request for playerId: {}", playerId);
+            log.error("Exception in UpdatePlayerDetails request for playerId: {}", playerId);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .build();

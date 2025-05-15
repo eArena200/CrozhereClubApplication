@@ -13,20 +13,21 @@ import java.util.List;
 public interface ClubService {
     Club createClub(CreateClubRequest createClubRequest)
             throws ClubServiceException;
-    Club getClubById(String clubId) throws ClubServiceException;
-    Club updateClub(String clubId, UpdateClubRequest updateClubRequest)
+    Club getClubById(Long clubId) throws ClubServiceException;
+    Club updateClub(Long clubId, UpdateClubRequest updateClubRequest)
             throws ClubServiceException;
-    void deleteClub(String clubId) throws ClubServiceException;
+    void deleteClub(Long clubId) throws ClubServiceException;
 
     List<Club> getAllClubs() throws ClubServiceException;
-    List<Club> getClubsByAdmin(String clubAdminId) throws ClubServiceException;
+
+    List<Club> getClubsByAdmin(Long clubAdminId) throws ClubServiceException;
 
     Station addStation(AddStationRequest addStationRequest)
             throws ClubServiceException;
-    Station updateStation(String stationId, UpdateStationRequest updateStationRequest)
+    Station updateStation(Long stationId, UpdateStationRequest updateStationRequest)
             throws ClubServiceException;
-    Station getStation(String stationId) throws ClubServiceException;
-    void deleteStation(String stationId) throws ClubServiceException;
+    Station getStation(Long stationId) throws ClubServiceException;
+    void deleteStation(Long stationId) throws ClubServiceException;
 
-    List<Station> getStationsByClubId(String clubId) throws ClubServiceException;
+    List<Station> getStationsByClubId(Long clubId) throws ClubServiceException;
 }

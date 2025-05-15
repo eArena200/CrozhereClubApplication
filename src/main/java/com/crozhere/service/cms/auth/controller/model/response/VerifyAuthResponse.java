@@ -12,5 +12,6 @@ public class VerifyAuthResponse {
     private String jwt;
     private Long userId;
     private Long playerId;
+    private Long clubAdminId;
     private List<UserRole> roles;
 }

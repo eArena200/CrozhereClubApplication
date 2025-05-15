@@ -5,8 +5,9 @@ import lombok.Data;
 
 @Data
 @Builder
-public class ClubResponse {
-    private Long clubId;
-    private Long clubAdminId;
+public class ClubAdminResponse {
+    private Long id;
     private String name;
+    private String email;
+    private String phone;
 }

@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.club.repository.entity;
 
+import com.crozhere.service.cms.auth.repository.entity.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,26 +14,26 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "station")
-public class Station {
+@Table(name = "club_admin")
+public class ClubAdmin {
+
     @Id
     @Column(name = "id", nullable = false, unique = true)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "club_id", nullable = false)
-    private Club club;
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
-    @Column(name = "station_name", nullable = false)
-    private String stationName;
+    @Column(name = "name")
+    private String name;
 
-    @Column(name = "station_type", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private StationType stationType;
+    @Column(name = "phone")
+    private String phone;
 
-    @Column(name = "is_available", nullable = false)
-    private Boolean isActive;
+    @Column(name = "email")
+    private String email;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

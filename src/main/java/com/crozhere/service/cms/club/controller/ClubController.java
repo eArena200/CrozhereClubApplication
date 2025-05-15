@@ -50,7 +50,7 @@ public class ClubController {
 
     @GetMapping
     public ResponseEntity<List<ClubResponse>> getClubs(
-            @RequestParam(value = "clubAdminId", required = false) String clubAdminId){
+            @RequestParam(value = "clubAdminId", required = false) Long clubAdminId){
         try {
             List<Club> clubs;
             if (clubAdminId != null) {
@@ -76,7 +76,7 @@ public class ClubController {
 
     @GetMapping("/{clubId}")
     public ResponseEntity<ClubResponse> getClubById(
-            @PathVariable("clubId") String clubId) {
+            @PathVariable("clubId") Long clubId) {
         try {
             Club club = clubService.getClubById(clubId);
             return ResponseEntity
@@ -94,7 +94,7 @@ public class ClubController {
 
     @PutMapping("/{clubId}")
     public ResponseEntity<ClubResponse> updateClub(
-            @PathVariable("clubId") String clubId,
+            @PathVariable("clubId") Long clubId,
             @RequestBody UpdateClubRequest updateClubRequest) {
         try {
             Club club = clubService.updateClub(clubId, updateClubRequest);
@@ -113,7 +113,7 @@ public class ClubController {
 
     @DeleteMapping("/{clubId}")
     public ResponseEntity<Void> deleteClub(
-            @PathVariable("clubId") String clubId) {
+            @PathVariable("clubId") Long clubId) {
         try {
             clubService.deleteClub(clubId);
             return ResponseEntity
@@ -147,7 +147,7 @@ public class ClubController {
 
     @GetMapping("/stations/{stationId}")
     public ResponseEntity<StationResponse> getStation(
-            @PathVariable("stationId") String stationId){
+            @PathVariable("stationId") Long stationId){
         try {
             Station station = clubService.getStation(stationId);
             return ResponseEntity
@@ -164,7 +164,7 @@ public class ClubController {
 
     @PutMapping("/stations/{stationId}")
     public ResponseEntity<StationResponse> updateStation(
-            @PathVariable("stationId") String stationId,
+            @PathVariable("stationId") Long stationId,
             @RequestBody UpdateStationRequest updateStationRequest){
         try {
             Station station =
@@ -184,7 +184,7 @@ public class ClubController {
 
     @DeleteMapping("/stations/{stationId}")
     public ResponseEntity<Void> deleteStation(
-            @PathVariable String stationId){
+            @PathVariable Long stationId){
         try {
             clubService.deleteStation(stationId);
             return ResponseEntity
@@ -201,7 +201,7 @@ public class ClubController {
 
     @GetMapping("/stations")
     public ResponseEntity<List<StationResponse>> getStationsByClubId(
-            @RequestParam(value = "clubId") String clubId){
+            @RequestParam(value = "clubId") Long clubId){
         try {
             List<StationResponse> stationsResponse =
                     clubService.getStationsByClubId(clubId)
@@ -223,19 +223,19 @@ public class ClubController {
 
     private ClubResponse getClubResponse(Club club) {
         return ClubResponse.builder()
-                .clubId(club.getClubId())
+                .clubId(club.getId())
                 .name(club.getName())
-                .clubAdminId(club.getClubAdminId())
+                .clubAdminId(club.getClubAdmin().getId())
                 .build();
     }
 
     private StationResponse getStationResponse(Station station) {
         return StationResponse.builder()
-                .stationId(station.getStationId())
-                .clubId(station.getClubId())
+                .stationId(station.getId())
+                .clubId(station.getClub().getId())
                 .stationName(station.getStationName())
                 .stationType(station.getStationType())
-                .isAvailable(station.getIsAvailable())
+                .isActive(station.getIsActive())
                 .build();
     }
 

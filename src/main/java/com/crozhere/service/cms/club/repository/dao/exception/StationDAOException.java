@@ -1,6 +1,6 @@
-package com.crozhere.service.cms.club.repository.exception;
+package com.crozhere.service.cms.club.repository.dao.exception;
 
-public class StationDAOException extends Exception {
+public class StationDAOException extends RuntimeException {
     public StationDAOException() {
         super();
     }

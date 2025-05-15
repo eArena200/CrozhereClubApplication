@@ -12,6 +12,8 @@ import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import com.crozhere.service.cms.auth.repository.entity.UserRoleMapping;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
+import com.crozhere.service.cms.club.repository.entity.ClubAdmin;
+import com.crozhere.service.cms.club.service.ClubAdminService;
 import com.crozhere.service.cms.player.repository.entity.Player;
 import com.crozhere.service.cms.player.service.PlayerService;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
 
     private final PlayerService playerService;
+    private final ClubAdminService clubAdminService;
 
     @Autowired
     public AuthServiceImpl(
@@ -40,12 +43,14 @@ public class AuthServiceImpl implements AuthService {
             @Qualifier("UserRoleSqlDao") UserRoleDao userRoleDao,
             OTPService otpService,
             JwtService jwtService,
-            PlayerService playerService){
+            PlayerService playerService,
+            ClubAdminService clubAdminService){
         this.userDao = userDao;
         this.userRoleDao = userRoleDao;
         this.otpService = otpService;
         this.jwtService = jwtService;
         this.playerService = playerService;
+        this.clubAdminService = clubAdminService;
     }
 
     @Override
@@ -97,9 +102,13 @@ public class AuthServiceImpl implements AuthService {
             isNewRole = true;
         }
 
-        if (request.getRole() == UserRole.PLAYER && isNewRole) {
+        if (isNewRole) {
             try {
-                playerService.createPlayerForUser(user);
+                if(request.getRole() == UserRole.PLAYER){
+                    playerService.createPlayerForUser(user);
+                } else if(request.getRole() == UserRole.CLUB_ADMIN) {
+                    clubAdminService.createClubAdminForUser(user);
+                }
             } catch (Exception e) {
                 log.error("Failed to create player for user ID: {}", user.getId(), e);
                 throw new RuntimeException("Failed to create player profile", e);
@@ -116,13 +125,34 @@ public class AuthServiceImpl implements AuthService {
                 roles.stream().map(Enum::name).toList()
         );
 
-        Long playerId = null;
-        if (roles.contains(UserRole.PLAYER)) {
+        if (request.getRole().equals(UserRole.PLAYER)) {
             try {
                 Player player = playerService.getPlayerByUserId(user.getId());
-                playerId = player.getId();
+
+                return VerifyAuthResponse.builder()
+                        .jwt(token)
+                        .userId(user.getId())
+                        .roles(roles)
+                        .playerId(player.getId())
+                        .build();
             } catch (Exception e) {
                 log.warn("User has PLAYER role but player record not found for user ID: {}", user.getId());
+            }
+        }
+
+        if (request.getRole().equals(UserRole.CLUB_ADMIN)) {
+            try {
+                ClubAdmin clubAdmin =
+                        clubAdminService.getClubAdminByUserId(user.getId());
+
+                return VerifyAuthResponse.builder()
+                        .jwt(token)
+                        .userId(user.getId())
+                        .roles(roles)
+                        .clubAdminId(clubAdmin.getId())
+                        .build();
+            } catch (Exception e) {
+                log.warn("User has CLUB_ADMIN role but clubAdmin record not found for user ID: {}", user.getId());
             }
         }
 
@@ -130,9 +160,7 @@ public class AuthServiceImpl implements AuthService {
                 .jwt(token)
                 .userId(user.getId())
                 .roles(roles)
-                .playerId(playerId)
                 .build();
     }
-
 
 }

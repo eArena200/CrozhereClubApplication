@@ -40,7 +40,7 @@ public class PlayerServiceImpl implements PlayerService {
             playerDao.save(player);
             return player;
         } catch (PlayerDAOException e){
-            log.error("Exception while saving newly created for userid: {}", user.getId());
+            log.error("Exception while saving newly created for userId: {}", user.getId());
             throw new PlayerServiceException("CreatePlayerForUserException");
         }
     }
@@ -48,9 +48,9 @@ public class PlayerServiceImpl implements PlayerService {
     @Override
     public Player getPlayerByUserId(Long userId) throws PlayerServiceException {
         try {
-            return playerDao.getByUserId(userId);
+            return playerDao.findByUserId(userId).orElseThrow(PlayerDAOException::new);
         } catch (PlayerDAOException e){
-            log.error("Exception while getting player for userid: {}", userId);
+            log.error("Exception while getting player for userId: {}", userId);
             throw new PlayerServiceException("GetPlayerByUserIdException");
         }
     }
