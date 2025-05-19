@@ -4,17 +4,11 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
 
 @Data
 @Builder
-public class BookingResponse {
-    private Long bookingId;
-    private Long playerId;
+public class TimeSlot {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-
-    private Integer players;
-    private List<Long> stationIds;
 }
+

@@ -1,11 +1,17 @@
 package com.crozhere.service.cms.booking.controller;
 
 
+import com.crozhere.service.cms.booking.controller.model.request.BookingAvailabilityByStationRequest;
+import com.crozhere.service.cms.booking.controller.model.request.BookingAvailabilityByTimeRequest;
 import com.crozhere.service.cms.booking.controller.model.request.CreateBookingRequest;
+import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
+import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
 import com.crozhere.service.cms.booking.controller.model.response.BookingResponse;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.service.BookingService;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
+import com.crozhere.service.cms.club.repository.entity.Station;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,8 +26,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @Autowired
-    public BookingController(
-            BookingService bookingService){
+    public BookingController(BookingService bookingService){
         this.bookingService = bookingService;
     }
 
@@ -63,16 +68,50 @@ public class BookingController {
         }
     }
 
+    @PostMapping("/availability/by-time")
+    public ResponseEntity<BookingAvailabilityByTimeResponse> checkAvailabilityByTime(
+            @Valid @RequestBody BookingAvailabilityByTimeRequest request){
+        try {
+            BookingAvailabilityByTimeResponse response =
+                    bookingService.checkAvailabilityByTime(request);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(response);
+        } catch (BookingServiceException e){
+            log.error("Failed to check availability by time for request: {}", request.toString());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+        }
+    }
+
+    @PostMapping("/availability/by-station")
+    public ResponseEntity<BookingAvailabilityByStationResponse> checkAvailabilityByStation(
+            @Valid @RequestBody BookingAvailabilityByStationRequest request){
+        try {
+            BookingAvailabilityByStationResponse response =
+                    bookingService.checkAvailabilityByStations(request);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(response);
+        } catch (BookingServiceException e){
+            log.error("Failed to check availability by stations for request: {}", request.toString());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+        }
+    }
+
 
 
     private BookingResponse getBookingResponse(Booking booking){
         return BookingResponse.builder()
-                .bookingId(booking.getBookingId())
-                .stationId(booking.getStationId())
-                .playerId(booking.getPlayerId())
+                .bookingId(booking.getId())
+                .playerId(booking.getPlayer().getId())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
                 .players(booking.getPlayersCount())
+                .stationIds(booking.getStations().stream().map(Station::getId).toList())
                 .build();
     }
 }

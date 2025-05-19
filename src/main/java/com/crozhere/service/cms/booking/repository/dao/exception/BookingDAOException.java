@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.booking.repository.exception;
+package com.crozhere.service.cms.booking.repository.dao.exception;
 
 public class BookingDAOException extends Exception {
     public BookingDAOException() {

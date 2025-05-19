@@ -31,7 +31,7 @@ public class Station {
     @Enumerated(EnumType.STRING)
     private StationType stationType;
 
-    @Column(name = "is_available", nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
     @Column(name = "created_at", updatable = false)
