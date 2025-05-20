@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.booking.controller.model.response;
+package com.crozhere.service.cms.booking.util;
 
 import lombok.Builder;
 import lombok.Data;

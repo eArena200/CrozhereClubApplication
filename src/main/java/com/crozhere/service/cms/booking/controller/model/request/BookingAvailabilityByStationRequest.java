@@ -17,10 +17,16 @@ public class BookingAvailabilityByStationRequest {
     @NotNull
     private Long clubId;
 
-    @NotBlank
+    @NotNull
     private StationType stationType;
 
     @NotEmpty
     private List<Long> stationIds;
+
+    @NotNull
+    private Integer durationHrs;
+
+    @NotNull
+    private SearchWindow searchWindow;
 }
 

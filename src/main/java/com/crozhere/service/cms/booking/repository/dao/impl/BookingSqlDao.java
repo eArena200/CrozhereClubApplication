@@ -5,10 +5,12 @@ import com.crozhere.service.cms.booking.repository.dao.BookingDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
+import com.crozhere.service.cms.club.repository.entity.Station;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,8 +89,7 @@ public class BookingSqlDao implements BookingDao {
     @Override
     public List<Booking> getBookingByPlayerId(Long playerId) throws BookingDAOException {
         try {
-            // TODO: Implement logic
-            return List.of();
+            return bookingRepository.findByPlayer_Id(playerId);
         } catch (Exception e) {
             log.error("Exception while fetching bookings for playerId: {}", playerId, e);
             throw new BookingDAOException("GetBookingByPlayerIdException", e);
@@ -96,13 +97,32 @@ public class BookingSqlDao implements BookingDao {
     }
 
     @Override
-    public List<Booking> getBookingByClubAdminId(Long clubAdminId) throws BookingDAOException {
+    public List<Booking> getBookingByClubId(Long clubId) throws BookingDAOException {
         try {
-            // TODO: Implement logic
-            return List.of();
+            return bookingRepository.findByClubId(clubId);
         } catch (Exception e) {
-            log.error("Exception while fetching bookings for clubAdminId: {}", clubAdminId, e);
+            log.error("Exception while fetching bookings for clubAdminId: {}", clubId, e);
             throw new BookingDAOException("GetBookingByClubAdminIdException", e);
         }
     }
+
+
+    @Override
+    public List<Booking> getOverlappingBookings(
+            List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
+            throws BookingDAOException {
+        try {
+            return bookingRepository.findOverlappingBookings(stations, startTime, endTime);
+        } catch (Exception e) {
+            log.error("Failed to fetch overlapping bookings", e);
+            throw new BookingDAOException("GetOverlappingBookingsException", e);
+        }
+    }
+
+    @Override
+    public List<Booking> getBookingsForStations(List<Station> stations)
+            throws BookingDAOException {
+        return List.of();
+    }
+
 }

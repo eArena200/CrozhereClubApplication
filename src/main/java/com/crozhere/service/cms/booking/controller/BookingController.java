@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/booking")
@@ -44,7 +46,7 @@ public class BookingController {
 
     @GetMapping("/{bookingId}")
     public ResponseEntity<BookingResponse> getBookingById(
-            @PathVariable("bookingId") String bookingId) {
+            @PathVariable("bookingId") Long bookingId) {
         try {
             Booking booking = bookingService.getBookingById(bookingId);
             return ResponseEntity.status(HttpStatus.OK)
@@ -57,7 +59,7 @@ public class BookingController {
 
     @PutMapping("/{bookingId}/cancel")
     public ResponseEntity<BookingResponse> cancelBooking(
-            @PathVariable("bookingId") String bookingId) {
+            @PathVariable("bookingId") Long bookingId) {
         try {
             Booking booking = bookingService.cancelBooking(bookingId);
             return ResponseEntity.status(HttpStatus.OK)
@@ -67,6 +69,37 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    @GetMapping("/player/{playerId}")
+    public ResponseEntity<List<BookingResponse>> listBookingsByPlayer(
+            @PathVariable("playerId") Long playerId) {
+        try {
+            List<Booking> bookings = bookingService.listBookingByPlayerId(playerId);
+            List<BookingResponse> responses = bookings.stream()
+                    .map(this::getBookingResponse)
+                    .toList();
+            return ResponseEntity.ok(responses);
+        } catch (BookingServiceException e) {
+            log.error("Failed to list bookings for player ID {}: {}", playerId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/club/{clubId}")
+    public ResponseEntity<List<BookingResponse>> listBookingsByClub(
+            @PathVariable("clubId") Long clubId) {
+        try {
+            List<Booking> bookings = bookingService.listBookingByClubId(clubId);
+            List<BookingResponse> responses = bookings.stream()
+                    .map(this::getBookingResponse)
+                    .toList();
+            return ResponseEntity.ok(responses);
+        } catch (BookingServiceException e) {
+            log.error("Failed to list bookings for club admin ID {}: {}", clubId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
     @PostMapping("/availability/by-time")
     public ResponseEntity<BookingAvailabilityByTimeResponse> checkAvailabilityByTime(

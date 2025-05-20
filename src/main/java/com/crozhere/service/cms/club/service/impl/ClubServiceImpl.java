@@ -12,6 +12,7 @@ import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.dao.ClubDao;
 import com.crozhere.service.cms.club.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.ClubAdminService;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubAdminServiceException;
@@ -184,6 +185,20 @@ public class ClubServiceImpl implements ClubService {
         } catch (StationDAOException e){
             log.error("Exception while getting stations for clubId: {}", clubId);
             throw new ClubServiceException("GetStationByClubIdException");
+        }
+    }
+
+    @Override
+    public List<Station> getStationsByClubIdAndType(Long clubId, StationType stationType)
+            throws ClubServiceException {
+        try {
+            return getStationsByClubId(clubId).stream()
+                    .filter(station ->
+                            station.getStationType().equals(stationType))
+                    .toList();
+        } catch (Exception e){
+            log.error("Exception while getting stations for clubId {} and type {}", clubId, stationType);
+            throw new ClubServiceException("GetStationsByClubIdAndType");
         }
     }
 

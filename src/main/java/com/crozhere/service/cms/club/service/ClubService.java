@@ -6,6 +6,7 @@ import com.crozhere.service.cms.club.controller.model.request.UpdateClubRequest;
 import com.crozhere.service.cms.club.controller.model.request.UpdateStationRequest;
 import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 
 import java.util.List;
@@ -30,4 +31,6 @@ public interface ClubService {
     void deleteStation(Long stationId) throws ClubServiceException;
 
     List<Station> getStationsByClubId(Long clubId) throws ClubServiceException;
+    List<Station> getStationsByClubIdAndType(Long clubId, StationType stationType)
+            throws ClubServiceException;
 }

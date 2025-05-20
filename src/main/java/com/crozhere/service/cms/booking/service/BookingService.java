@@ -7,17 +7,19 @@ import com.crozhere.service.cms.booking.controller.model.response.BookingAvailab
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
+import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
 
 import java.util.List;
 
 public interface BookingService {
 
-    Booking createBooking(CreateBookingRequest createBookingRequest) throws BookingServiceException;
-    Booking getBookingById(String bookingId) throws BookingServiceException;
-    Booking cancelBooking(String bookingId) throws BookingServiceException;
+    Booking createBooking(CreateBookingRequest createBookingRequest)
+            throws InvalidRequestException, BookingServiceException;
+    Booking getBookingById(Long bookingId) throws BookingServiceException;
+    Booking cancelBooking(Long bookingId) throws BookingServiceException;
 
-    List<Booking> listBookingByPlayerId(String playerId) throws BookingServiceException;
-    List<Booking> listBookingByClubAdminId(String clubAdminId) throws BookingServiceException;
+    List<Booking> listBookingByPlayerId(Long playerId) throws BookingServiceException;
+    List<Booking> listBookingByClubId(Long clubId) throws BookingServiceException;
 
     BookingAvailabilityByTimeResponse checkAvailabilityByTime(
             BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest) throws BookingServiceException;
