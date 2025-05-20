@@ -110,7 +110,7 @@ public class BookingInMemDao implements BookingDao {
     }
 
     @Override
-    public List<Booking> getOverlappingBookings(
+    public List<Booking> getBookingsForStationsForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingDAOException {
         try {
@@ -130,12 +130,6 @@ public class BookingInMemDao implements BookingDao {
             log.error("Failed to get overlapping bookings", e);
             throw new BookingDAOException("GetOverlappingBookingsException", e);
         }
-    }
-
-    @Override
-    public List<Booking> getBookingsForStations(List<Station> stations)
-            throws BookingDAOException {
-        return List.of();
     }
 
 }

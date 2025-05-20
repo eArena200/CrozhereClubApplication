@@ -12,12 +12,14 @@ public class TimeSlotUtil {
     public static List<TimeSlot> mergeIntervals(List<TimeSlot> slots) {
         if (slots.isEmpty()) return List.of();
 
-        slots.sort(Comparator.comparing(TimeSlot::getStartTime));
-        List<TimeSlot> merged = new ArrayList<>();
-        TimeSlot current = slots.get(0);
+        List<TimeSlot> sortable = new ArrayList<>(slots);
+        sortable.sort(Comparator.comparing(TimeSlot::getStartTime));
 
-        for (int i = 1; i < slots.size(); i++) {
-            TimeSlot next = slots.get(i);
+        List<TimeSlot> merged = new ArrayList<>();
+        TimeSlot current = sortable.get(0);
+
+        for (int i = 1; i < sortable.size(); i++) {
+            TimeSlot next = sortable.get(i);
             if (!current.getEndTime().isBefore(next.getStartTime())) {
                 current = TimeSlot.builder()
                         .startTime(current.getStartTime())
@@ -28,9 +30,11 @@ public class TimeSlotUtil {
                 current = next;
             }
         }
+
         merged.add(current);
         return merged;
     }
+
 
     public static List<TimeSlot> invert(List<TimeSlot> busy,
                                         LocalDateTime windowStart, LocalDateTime windowEnd) {
@@ -79,7 +83,10 @@ public class TimeSlotUtil {
             while (!slotStart.isAfter(latestStart)) {
                 LocalDateTime slotEnd = slotStart.plusMinutes(minDuration);
                 if (!slotEnd.isAfter(interval.getEndTime())) {
-                    finalSlots.add(TimeSlot.builder().startTime(slotStart).endTime(slotEnd).build());
+                    finalSlots.add(TimeSlot.builder()
+                            .startTime(slotStart)
+                            .endTime(slotEnd)
+                            .build());
                 }
                 slotStart = slotStart.plusMinutes(step);
             }

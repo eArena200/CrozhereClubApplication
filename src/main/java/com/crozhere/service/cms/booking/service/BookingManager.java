@@ -1,16 +1,12 @@
 package com.crozhere.service.cms.booking.service;
 
-import com.crozhere.service.cms.booking.controller.model.request.CreateBookingRequest;
 import com.crozhere.service.cms.booking.controller.model.request.SearchWindow;
 import com.crozhere.service.cms.booking.controller.model.response.StationAvailability;
-import com.crozhere.service.cms.booking.service.exception.BookingManagerException;
-import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
 import com.crozhere.service.cms.booking.util.TimeSlot;
 import com.crozhere.service.cms.booking.repository.dao.BookingDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.util.TimeSlotUtil;
-import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.ClubService;
@@ -36,7 +32,7 @@ public class BookingManager {
 
     @Autowired
     public BookingManager(
-            @Qualifier("BookingInMemDao") BookingDao bookingDao,
+            @Qualifier("BookingSqlDao") BookingDao bookingDao,
             ClubService clubService){
         this.bookingDao = bookingDao;
         this.clubService = clubService;
@@ -46,14 +42,19 @@ public class BookingManager {
             Long clubId, StationType stationType,
             LocalDateTime startTime, LocalDateTime endTime) throws Exception {
         try {
-            List<Station> stations = clubService.getStationsByClubIdAndType(clubId, stationType);
+            List<Station> stations =
+                    clubService.getStationsByClubIdAndType(clubId, stationType);
+            log.info("FOUND STATIONS: {}" , stations);
+
             List<Booking> overlappingBookings =
-                    bookingDao.getOverlappingBookings(stations, startTime, endTime);
+                    bookingDao.getBookingsForStationsForSearchWindow(stations, startTime, endTime);
+            log.info("FOUND OVERLAPPING BOOKINGS: {}", overlappingBookings);
 
             Set<Long> bookedStationIds = overlappingBookings.stream()
                     .flatMap(b -> b.getStations().stream())
                     .map(Station::getId)
                     .collect(Collectors.toSet());
+            log.info("FOUND BOOKED STATION_IDs: {}", bookedStationIds);
 
             return stations.stream()
                     .map(station -> StationAvailability.builder()
@@ -85,8 +86,16 @@ public class BookingManager {
                             .stream()
                             .filter(station -> stationIds.contains(station.getId()))
                             .toList();
+            log.info("FOUND STATIONS: {}" , stations);
 
-            List<Booking> bookings = bookingDao.getBookingsForStations(stations);
+
+            LocalDateTime startTime = searchWindow.getDateTime();
+            LocalDateTime endTime = startTime.plusHours(searchWindow.getWindowHrs() + durationInHrs);
+
+            List<Booking> bookings = bookingDao.getBookingsForStationsForSearchWindow(
+                    stations, startTime, endTime);
+            log.info("FOUND BOOKINGS FOR STATIONS: {}", bookings);
+
             Map<Long, List<TimeSlot>> busySlots = new HashMap<>();
             for (Station station : stations) {
                 busySlots.put(station.getId(),
@@ -98,9 +107,13 @@ public class BookingManager {
                                         .build())
                                 .toList());
             }
+            log.info("FOUND BUSY SLOTS: {}", busySlots);
 
-            return findCommonAvailableSlots(
-                            busySlots, durationInHrs, searchWindow);
+            List<TimeSlot> freeSlots = findCommonAvailableSlots(
+                    busySlots, durationInHrs, searchWindow);
+            log.info("FOUND FREE SLOTS: {}", freeSlots);
+
+            return freeSlots;
 
         } catch (ClubServiceException e) {
             log.error("Exception in getting time-slots for availability");

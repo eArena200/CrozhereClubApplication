@@ -22,10 +22,9 @@ public interface BookingDao {
     List<Booking> getBookingByPlayerId(Long playerId) throws BookingDAOException;
     List<Booking> getBookingByClubId(Long clubId) throws BookingDAOException;
 
-    List<Booking> getOverlappingBookings(
+    List<Booking> getBookingsForStationsForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingDAOException;
 
-    List<Booking> getBookingsForStations(List<Station> stations) throws BookingDAOException;
 
 }

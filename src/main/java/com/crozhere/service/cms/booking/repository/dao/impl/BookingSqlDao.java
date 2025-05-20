@@ -46,10 +46,12 @@ public class BookingSqlDao implements BookingDao {
     }
 
     @Override
-    public Booking getById(Long bookingId) throws DataNotFoundException, BookingDAOException {
+    public Booking getById(Long bookingId)
+            throws DataNotFoundException, BookingDAOException {
         try {
             return bookingRepository.findById(bookingId)
-                    .orElseThrow(() -> new DataNotFoundException("Booking not found with ID: " + bookingId));
+                    .orElseThrow(() -> new DataNotFoundException("Booking not found with ID: "
+                            + bookingId));
         } catch (DataNotFoundException e) {
             log.error("Booking not found with ID: {}", bookingId);
             throw e;
@@ -60,7 +62,8 @@ public class BookingSqlDao implements BookingDao {
     }
 
     @Override
-    public void update(Long bookingId, Booking booking) throws DataNotFoundException, BookingDAOException {
+    public void update(Long bookingId, Booking booking)
+            throws DataNotFoundException, BookingDAOException {
         try {
             if (!bookingRepository.existsById(bookingId)) {
                 log.error("Booking not found for update with ID: {}", bookingId);
@@ -87,7 +90,8 @@ public class BookingSqlDao implements BookingDao {
     }
 
     @Override
-    public List<Booking> getBookingByPlayerId(Long playerId) throws BookingDAOException {
+    public List<Booking> getBookingByPlayerId(Long playerId)
+            throws BookingDAOException {
         try {
             return bookingRepository.findByPlayer_Id(playerId);
         } catch (Exception e) {
@@ -97,7 +101,8 @@ public class BookingSqlDao implements BookingDao {
     }
 
     @Override
-    public List<Booking> getBookingByClubId(Long clubId) throws BookingDAOException {
+    public List<Booking> getBookingByClubId(Long clubId)
+            throws BookingDAOException {
         try {
             return bookingRepository.findByClubId(clubId);
         } catch (Exception e) {
@@ -108,21 +113,15 @@ public class BookingSqlDao implements BookingDao {
 
 
     @Override
-    public List<Booking> getOverlappingBookings(
+    public List<Booking> getBookingsForStationsForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingDAOException {
         try {
-            return bookingRepository.findOverlappingBookings(stations, startTime, endTime);
+            return bookingRepository.findBookingsForStationForSearchWindow(stations, startTime, endTime);
         } catch (Exception e) {
             log.error("Failed to fetch overlapping bookings", e);
             throw new BookingDAOException("GetOverlappingBookingsException", e);
         }
-    }
-
-    @Override
-    public List<Booking> getBookingsForStations(List<Station> stations)
-            throws BookingDAOException {
-        return List.of();
     }
 
 }

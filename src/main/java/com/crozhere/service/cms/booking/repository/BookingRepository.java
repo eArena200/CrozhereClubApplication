@@ -20,14 +20,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     """)
     List<Booking> findByClubId(@Param("clubId") Long clubId);
 
-    @Query("""
-        SELECT DISTINCT b FROM Booking b
-        JOIN b.stations s
-        WHERE s.club.clubAdmin.id = :clubAdminId
-    """)
-    List<Booking> findByClubAdminId(@Param("clubAdminId") Long clubAdminId);
-
-
     @Query(
     """
         SELECT b FROM Booking b
@@ -38,21 +30,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         AND b.startTime < :endTime
         AND b.endTime > :startTime
     """)
-    List<Booking> findOverlappingBookings(
+    List<Booking> findBookingsForStationForSearchWindow(
             @Param("stations") List<Station> stations,
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime);
-
-
-
-    @Query(
-    """
-        SELECT DISTINCT b FROM Booking b
-        JOIN b.stations s
-        WHERE s IN :stations
-    """)
-    List<Booking> findBookingsForStations(
-            @Param("stations") List<Station> stations);
 
 
 }
