@@ -1,10 +1,10 @@
-package com.crozhere.service.cms.club.repository.layout.entity;
+package com.crozhere.service.cms.layout.repository.entity;
 
-import org.springframework.data.annotation.Id;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public class ZoneLayout {
     @Id
     private String id;
 
+    private String clubLayoutId;
     private String name;
-    private List<StationGroupLayout> stationGroupLayouts;
-    private List<StationLayout> standaloneStationLayouts;
+    private List<String> stationGroupLayoutIds;
 }

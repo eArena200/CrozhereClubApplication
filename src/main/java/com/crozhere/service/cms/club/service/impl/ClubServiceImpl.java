@@ -17,12 +17,18 @@ import com.crozhere.service.cms.club.service.ClubAdminService;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubAdminServiceException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
+import com.crozhere.service.cms.layout.controller.model.request.AddStationLayoutRequest;
+import com.crozhere.service.cms.layout.controller.model.request.CreateClubLayoutRequest;
+import com.crozhere.service.cms.layout.controller.model.response.RawClubLayoutResponse;
+import com.crozhere.service.cms.layout.controller.model.response.RawStationLayoutResponse;
+import com.crozhere.service.cms.layout.service.ClubLayoutService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -32,27 +38,42 @@ public class ClubServiceImpl implements ClubService {
     private final StationDao stationDAO;
 
     private final ClubAdminService clubAdminService;
+    private final ClubLayoutService clubLayoutService;
 
     public ClubServiceImpl(
             @Qualifier("ClubSqlDao") ClubDao clubDAO,
             @Qualifier("StationSqlDao") StationDao stationDAO,
-            ClubAdminService clubAdminService){
+            ClubAdminService clubAdminService,
+            ClubLayoutService clubLayoutService){
         this.clubDAO = clubDAO;
         this.stationDAO = stationDAO;
         this.clubAdminService = clubAdminService;
+        this.clubLayoutService = clubLayoutService;
     }
 
     @Override
     public Club createClub(CreateClubRequest createClubRequest)
             throws ClubServiceException {
+        // TODO: Handle cornor case if one of the database write fails.
         try {
             ClubAdmin clubAdmin =
                     clubAdminService.getClubAdminById(createClubRequest.getClubAdminId());
+
             Club club = Club.builder()
                     .clubAdmin(clubAdmin)
                     .name(createClubRequest.getName())
                     .build();
+
             clubDAO.save(club);
+
+            RawClubLayoutResponse response = clubLayoutService.createClubLayout(
+                    CreateClubLayoutRequest.builder()
+                            .clubId(club.getId())
+                            .build());
+
+            club.setClubLayoutId(response.getId());
+            clubDAO.update(club.getId(), club);
+
             return club;
         } catch (ClubAdminServiceException e){
             log.error("Exception while getting clubAdmin for clubAdminId: {}",
@@ -123,13 +144,34 @@ public class ClubServiceImpl implements ClubService {
     public Station addStation(AddStationRequest addStationRequest) throws ClubServiceException {
         try {
             Club club = getClubById(addStationRequest.getClubId());
+
+            // TODO: Find groupId from clubLayout and then verify the passed groupId and type.
             Station station = Station.builder()
                     .club(club)
                     .stationName(addStationRequest.getStationName())
                     .stationType(addStationRequest.getStationType())
+                    .stationGroupLayoutId(addStationRequest.getStationGroupLayoutId())
                     .isActive(true)
                     .build();
             stationDAO.save(station);
+
+
+            // TODO: add validation on stationType of station before adding to group
+            RawStationLayoutResponse rawStationLayoutResponse =
+                    clubLayoutService.addStationLayout(
+                            AddStationLayoutRequest.builder()
+                                    .stationGroupLayoutId(
+                                            addStationRequest.getStationGroupLayoutId())
+                                    .offsetX(1)
+                                    .offsetY(1)
+                                    .height(10)
+                                    .width(10)
+                                    .stationType(addStationRequest.getStationType())
+                                    .build());
+
+            station.setStationLayoutId(rawStationLayoutResponse.getId());
+            stationDAO.update(station.getId(), station);
+
             return station;
         } catch (StationDAOException e) {
             log.error("Exception while saving station for clubId: {}",

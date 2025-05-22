@@ -11,5 +11,7 @@ public class StationResponse {
     private Long clubId;
     private String stationName;
     private StationType stationType;
+    private String stationGroupLayoutId;
+    private String stationLayoutId;
     private Boolean isActive;
 }

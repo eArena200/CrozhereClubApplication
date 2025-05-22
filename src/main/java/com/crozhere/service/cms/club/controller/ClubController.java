@@ -224,6 +224,7 @@ public class ClubController {
     private ClubResponse getClubResponse(Club club) {
         return ClubResponse.builder()
                 .clubId(club.getId())
+                .clubLayoutId(club.getClubLayoutId())
                 .name(club.getName())
                 .clubAdminId(club.getClubAdmin().getId())
                 .build();
@@ -235,6 +236,8 @@ public class ClubController {
                 .clubId(station.getClub().getId())
                 .stationName(station.getStationName())
                 .stationType(station.getStationType())
+                .stationLayoutId(station.getStationLayoutId())
+                .stationGroupLayoutId(station.getStationGroupLayoutId())
                 .isActive(station.getIsActive())
                 .build();
     }

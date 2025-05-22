@@ -31,6 +31,12 @@ public class Station {
     @Enumerated(EnumType.STRING)
     private StationType stationType;
 
+    @Column(name = "station_group_id")
+    private String stationGroupLayoutId;
+
+    @Column(name = "station_layout_id")
+    private String stationLayoutId;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 

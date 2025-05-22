@@ -27,6 +27,9 @@ public class Club {
     @Column(name = "club_name")
     private String name;
 
+    @Column(name = "club_layout_id", updatable = false)
+    private String clubLayoutId;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

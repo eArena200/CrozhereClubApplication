@@ -1,6 +1,7 @@
-package com.crozhere.service.cms.club.repository.layout.entity;
+package com.crozhere.service.cms.layout.repository.entity;
 
 import com.crozhere.service.cms.club.repository.entity.StationType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,9 +20,11 @@ public class StationGroupLayout {
 
     @Id
     private String id;
+    private String zoneLayoutId;
 
     private String name;
     private StationType stationType;
     private StationGroupLayoutType layoutType;
-    private List<StationLayout> stationLayouts;
+    private List<String> stationLayoutIds;
 }
+

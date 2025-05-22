@@ -10,4 +10,5 @@ public class AddStationRequest {
     private Long clubId;
     private String stationName;
     private StationType stationType;
+    private String stationGroupLayoutId;
 }
