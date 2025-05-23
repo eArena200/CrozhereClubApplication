@@ -91,6 +91,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                                                 stationLayouts.stream().map(station ->
                                                         EnrichedStationLayoutResponse.builder()
                                                                 .id(station.getId())
+                                                                .stationGroupLayoutId(station.getStationGroupLayoutId())
                                                                 .stationType(station.getStationType())
                                                                 .offsetX(station.getOffsetX())
                                                                 .offsetY(station.getOffsetY())
@@ -101,6 +102,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
                                         return EnrichedStationGroupLayoutResponse.builder()
                                                 .id(group.getId())
+                                                .zoneLayoutId(group.getZoneLayoutId())
                                                 .name(group.getName())
                                                 .stationType(group.getStationType())
                                                 .layoutType(group.getLayoutType())
@@ -110,6 +112,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
                             return EnrichedZoneLayoutResponse.builder()
                                     .id(zone.getId())
+                                    .clubLayoutId(zone.getClubLayoutId())
                                     .name(zone.getName())
                                     .stationGroups(enrichedGroups)
                                     .build();
@@ -117,12 +120,14 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
         return EnrichedClubLayoutResponse.builder()
                 .id(layout.getId())
+                .clubId(layout.getClubId())
                 .zones(enrichedZones)
                 .build();
     }
 
     @Override
     public void deleteClubLayout(String clubLayoutId) {
+        log.info("DeleteClubLayout for clubLayoutId: {}", clubLayoutId);
         ClubLayout clubLayout = clubLayoutRepository.findById(clubLayoutId)
                 .orElseThrow(() -> new IllegalArgumentException("ClubLayout not found"));
 
@@ -200,6 +205,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             List<EnrichedStationLayoutResponse> enrichedStations = stationLayouts.stream().map(station ->
                     EnrichedStationLayoutResponse.builder()
                             .id(station.getId())
+                            .stationGroupLayoutId(station.getStationGroupLayoutId())
                             .stationType(station.getStationType())
                             .offsetX(station.getOffsetX())
                             .offsetY(station.getOffsetY())
@@ -210,6 +216,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
             return EnrichedStationGroupLayoutResponse.builder()
                     .id(group.getId())
+                    .zoneLayoutId(group.getZoneLayoutId())
                     .name(group.getName())
                     .stationType(group.getStationType())
                     .layoutType(group.getLayoutType())
@@ -219,11 +226,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
         return EnrichedZoneLayoutResponse.builder()
                 .id(zone.getId())
+                .clubLayoutId(zone.getClubLayoutId())
                 .name(zone.getName())
                 .stationGroups(enrichedGroups)
                 .build();
     }
 
+    // TODO: Add specific update request and response
     @Override
     public RawZoneLayoutResponse updateZoneLayoutName(String zoneLayoutId, String newName) {
         return null;
@@ -315,6 +324,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                         .map(station ->
                                 EnrichedStationLayoutResponse.builder()
                                         .id(station.getId())
+                                        .stationGroupLayoutId(station.getStationGroupLayoutId())
                                         .stationType(station.getStationType())
                                         .offsetX(station.getOffsetX())
                                         .offsetY(station.getOffsetY())
@@ -325,6 +335,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
         return EnrichedStationGroupLayoutResponse.builder()
                 .id(group.getId())
+                .zoneLayoutId(group.getZoneLayoutId())
                 .name(group.getName())
                 .stationType(group.getStationType())
                 .layoutType(group.getLayoutType())
@@ -332,6 +343,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                 .build();
     }
 
+    // TODO: Add specific update request and response
     @Override
     public RawStationGroupLayoutResponse updateStationGroupLayoutName(String stationGroupLayoutId, String newName) {
         return null;
@@ -430,7 +442,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                 .build();
     }
 
-
+    // TODO: Add specific update request and response
     @Override
     public RawStationLayoutResponse updateStationLayout(
             String stationLayoutId, UpdateStationLayoutRequest request) {

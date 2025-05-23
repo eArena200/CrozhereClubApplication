@@ -81,6 +81,16 @@ public class StationSqlDao implements StationDao {
     }
 
     @Override
+    public void deleteAllById(List<Long> stationIds) throws StationDAOException {
+        try {
+            stationRepository.deleteAllById(stationIds);
+        } catch (Exception e){
+            log.error("Failed to delete station with IDs: {}", stationIds, e);
+            throw new StationDAOException("Error deleting station", e);
+        }
+    }
+
+    @Override
     public List<Station> getStationsByClubId(Long clubId) throws StationDAOException {
         try {
             return stationRepository.findByClub_Id(clubId);

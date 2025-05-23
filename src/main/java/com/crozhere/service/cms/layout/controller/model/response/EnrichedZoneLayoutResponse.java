@@ -14,6 +14,7 @@ import java.util.List;
 public class EnrichedZoneLayoutResponse {
     private String id;
     private String name;
+    private String clubLayoutId;
     private List<EnrichedStationGroupLayoutResponse> stationGroups;
 }
 

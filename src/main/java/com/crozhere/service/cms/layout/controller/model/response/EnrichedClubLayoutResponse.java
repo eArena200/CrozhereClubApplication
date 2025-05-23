@@ -13,7 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 public class EnrichedClubLayoutResponse {
     private String id;
-    private String clubId;
+    private Long clubId;
     private List<EnrichedZoneLayoutResponse> zones;
 }
 

@@ -16,6 +16,7 @@ public interface StationDao {
     void update(Long stationId, Station station) throws StationDAOException;
 
     void delete(Long stationId) throws StationDAOException;
+    void deleteAllById(List<Long> stationIds) throws StationDAOException;
 
     List<Station> getStationsByClubId(Long clubId) throws StationDAOException;
 }

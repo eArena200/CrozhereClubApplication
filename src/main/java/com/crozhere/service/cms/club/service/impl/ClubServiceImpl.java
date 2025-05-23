@@ -28,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -70,7 +69,7 @@ public class ClubServiceImpl implements ClubService {
                     CreateClubLayoutRequest.builder()
                             .clubId(club.getId())
                             .build());
-
+            log.info("Got club-layout response: {}", response);
             club.setClubLayoutId(response.getId());
             clubDAO.update(club.getId(), club);
 
@@ -118,7 +117,18 @@ public class ClubServiceImpl implements ClubService {
     @Override
     public void deleteClub(Long clubId) throws ClubServiceException {
         try {
+            Club club = getClubById(clubId);
+            log.info("Found club: {}", club.toString());
+
+            List<Long> stationsIds =
+                    stationDAO.getStationsByClubId(clubId)
+                            .stream()
+                            .map(Station::getId)
+                            .toList();
+            stationDAO.deleteAllById(stationsIds);
             clubDAO.delete(clubId);
+
+            clubLayoutService.deleteClubLayout(club.getClubLayoutId());
         } catch (ClubDAOException e){
             log.error("Exception while deleting club for clubId: {}", clubId);
             throw new ClubServiceException("DeleteClubException", e);
@@ -213,6 +223,8 @@ public class ClubServiceImpl implements ClubService {
     @Override
     public void deleteStation(Long stationId) throws ClubServiceException {
         try {
+            Station station = stationDAO.getById(stationId);
+            clubLayoutService.deleteStationLayout(station.getStationLayoutId());
             stationDAO.delete(stationId);
         } catch (StationDAOException e){
             log.error("Exception while deleting station for stationId: {}", stationId);

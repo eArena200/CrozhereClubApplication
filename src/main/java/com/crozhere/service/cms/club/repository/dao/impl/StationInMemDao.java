@@ -60,6 +60,13 @@ public class StationInMemDao implements StationDao {
     }
 
     @Override
+    public void deleteAllById(List<Long> stationIds) throws StationDAOException {
+        for(Long stationId: stationIds){
+            delete(stationId);
+        }
+    }
+
+    @Override
     public List<Station> getStationsByClubId(Long clubId) throws StationDAOException {
         return stationStore.values().stream()
                 .filter(station -> station.getClub() != null && Objects.equals(station.getClub().getId(), clubId))

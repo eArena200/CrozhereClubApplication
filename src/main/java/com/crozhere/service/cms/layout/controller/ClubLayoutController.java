@@ -17,12 +17,6 @@ public class ClubLayoutController {
 
     // === CLUB ===
 
-    @PostMapping("/clubs")
-    public ResponseEntity<RawClubLayoutResponse> createClubLayout(
-            @RequestBody CreateClubLayoutRequest request) {
-        return ResponseEntity.ok(layoutService.createClubLayout(request));
-    }
-
     @GetMapping("/clubs/{clubLayoutId}")
     public ResponseEntity<RawClubLayoutResponse> getRawClubLayout(
             @PathVariable String clubLayoutId) {
@@ -33,13 +27,6 @@ public class ClubLayoutController {
     public ResponseEntity<EnrichedClubLayoutResponse> getEnrichedClubLayout(
             @PathVariable String clubLayoutId) {
         return ResponseEntity.ok(layoutService.getEnrichedClubLayout(clubLayoutId));
-    }
-
-    @DeleteMapping("/clubs/{clubLayoutId}")
-    public ResponseEntity<Void> deleteClubLayout(
-            @PathVariable String clubLayoutId) {
-        layoutService.deleteClubLayout(clubLayoutId);
-        return ResponseEntity.noContent().build();
     }
 
     // === ZONE  ===
@@ -112,13 +99,6 @@ public class ClubLayoutController {
     }
 
     // === STATION ===
-
-    @PostMapping("/stations")
-    public ResponseEntity<RawStationLayoutResponse> addStationLayout(
-            @RequestBody AddStationLayoutRequest request) {
-        return ResponseEntity.ok(layoutService.addStationLayout(request));
-    }
-
     @GetMapping("/stations/{stationLayoutId}")
     public ResponseEntity<RawStationLayoutResponse> getRawStationLayout(
             @PathVariable String stationLayoutId) {
@@ -137,12 +117,5 @@ public class ClubLayoutController {
             @RequestBody UpdateStationLayoutRequest request) {
         return ResponseEntity.ok(layoutService.updateStationLayout(
                 stationLayoutId, request));
-    }
-
-    @DeleteMapping("/stations/{stationLayoutId}")
-    public ResponseEntity<Void> deleteStationLayout(
-            @PathVariable String stationLayoutId) {
-        layoutService.deleteStationLayout(stationLayoutId);
-        return ResponseEntity.noContent().build();
     }
 }

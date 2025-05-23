@@ -27,7 +27,7 @@ public class Club {
     @Column(name = "club_name")
     private String name;
 
-    @Column(name = "club_layout_id", updatable = false)
+    @Column(name = "club_layout_id")
     private String clubLayoutId;
 
     @Column(name = "created_at", updatable = false)
