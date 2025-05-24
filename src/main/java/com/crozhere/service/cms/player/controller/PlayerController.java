@@ -4,10 +4,8 @@ import com.crozhere.service.cms.player.controller.model.request.UpdatePlayerRequ
 import com.crozhere.service.cms.player.controller.model.response.PlayerResponse;
 import com.crozhere.service.cms.player.repository.entity.Player;
 import com.crozhere.service.cms.player.service.PlayerService;
-import com.crozhere.service.cms.player.service.exception.PlayerServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,18 +24,8 @@ public class PlayerController {
     @GetMapping("/{playerId}")
     public ResponseEntity<PlayerResponse> getPlayerById(
             @PathVariable("playerId") Long playerId) {
-        try {
-            Player player = playerService.getPlayerById(playerId);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(getPlayerResponse(player));
-
-        } catch (PlayerServiceException e) {
-            log.error("Exception in GetPlayerById request for playerId: {}", playerId);
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .build();
-        }
+        Player player = playerService.getPlayerById(playerId);
+        return ResponseEntity.ok(getPlayerResponse(player));
     }
 
 
@@ -45,36 +33,16 @@ public class PlayerController {
     public ResponseEntity<PlayerResponse> updatePlayerDetails(
             @PathVariable("playerId") Long playerId,
             @RequestBody UpdatePlayerRequest updatePlayerRequest) {
-        try {
-            Player player = playerService.updatePlayerDetails(playerId, updatePlayerRequest);
-            return ResponseEntity.
-                    status(HttpStatus.OK)
-                    .body(getPlayerResponse(player));
-
-        } catch (PlayerServiceException e) {
-            log.error("Exception in UpdatePlayerDetails request for playerId: {}", playerId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        Player player = playerService.updatePlayerDetails(playerId, updatePlayerRequest);
+        return ResponseEntity.ok(getPlayerResponse(player));
     }
 
 
     @DeleteMapping("/{playerId}")
     public ResponseEntity<Void> deletePlayer(
             @PathVariable("playerId") Long playerId) {
-        try {
             playerService.deletePlayer(playerId);
-            return ResponseEntity
-                    .status(HttpStatus.NO_CONTENT)
-                    .build();
-
-        } catch (PlayerServiceException e) {
-            log.error("Exception in DeletePlayer request for playerId: {}", playerId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+            return ResponseEntity.noContent().build();
     }
 
     private PlayerResponse getPlayerResponse(Player player){

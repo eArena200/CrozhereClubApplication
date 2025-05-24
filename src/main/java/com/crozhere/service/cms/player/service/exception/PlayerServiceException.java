@@ -1,20 +1,19 @@
 package com.crozhere.service.cms.player.service.exception;
 
-public class PlayerServiceException extends Exception {
+import lombok.Getter;
 
-    public PlayerServiceException() {
-        super();
+@Getter
+public class PlayerServiceException extends RuntimeException {
+    private final PlayerServiceExceptionType type;
+
+    public PlayerServiceException(PlayerServiceExceptionType type) {
+        super(type.name());
+        this.type = type;
     }
 
-    public PlayerServiceException(String message) {
-        super(message);
+    public PlayerServiceException(PlayerServiceExceptionType type, Throwable cause) {
+        super(type.name(), cause);
+        this.type = type;
     }
 
-    public PlayerServiceException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public PlayerServiceException(Throwable cause) {
-        super(cause);
-    }
 }

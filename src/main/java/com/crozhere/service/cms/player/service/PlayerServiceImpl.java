@@ -3,17 +3,16 @@ package com.crozhere.service.cms.player.service;
 import com.crozhere.service.cms.auth.repository.entity.User;
 import com.crozhere.service.cms.player.controller.model.request.UpdatePlayerRequest;
 import com.crozhere.service.cms.player.repository.dao.PlayerDao;
+import com.crozhere.service.cms.player.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.player.repository.dao.exception.PlayerDAOException;
 import com.crozhere.service.cms.player.repository.entity.Player;
 import com.crozhere.service.cms.player.service.exception.PlayerServiceException;
+import com.crozhere.service.cms.player.service.exception.PlayerServiceExceptionType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-
-import javax.swing.text.html.Option;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -41,17 +40,21 @@ public class PlayerServiceImpl implements PlayerService {
             return player;
         } catch (PlayerDAOException e){
             log.error("Exception while saving newly created for userId: {}", user.getId());
-            throw new PlayerServiceException("CreatePlayerForUserException");
+            throw new PlayerServiceException(
+                    PlayerServiceExceptionType.CREATE_PLAYER_FAILED);
         }
     }
 
     @Override
     public Player getPlayerByUserId(Long userId) throws PlayerServiceException {
         try {
-            return playerDao.findByUserId(userId).orElseThrow(PlayerDAOException::new);
+            return playerDao.findByUserId(userId).orElseThrow(DataNotFoundException::new);
+        } catch (DataNotFoundException e){
+            log.error("No player found for userId: {}", userId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
         } catch (PlayerDAOException e){
             log.error("Exception while getting player for userId: {}", userId);
-            throw new PlayerServiceException("GetPlayerByUserIdException");
+            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
         }
     }
 
@@ -59,9 +62,12 @@ public class PlayerServiceImpl implements PlayerService {
     public Player getPlayerById(Long playerId) throws PlayerServiceException {
         try {
             return playerDao.getById(playerId);
+        } catch (DataNotFoundException e){
+            log.error("No player found for playerId: {}", playerId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
         } catch (PlayerDAOException e){
             log.error("Exception while getting Player with playerId: {}", playerId);
-            throw new PlayerServiceException("GetPlayerByIdException");
+            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
         }
     }
 
@@ -86,9 +92,12 @@ public class PlayerServiceImpl implements PlayerService {
             playerDao.update(playerId, player);
             return player;
 
+        } catch (DataNotFoundException e){
+            log.error("No player found with playerId {} for update", playerId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
         } catch (PlayerDAOException e){
             log.error("Exception while updating player details with playerId: {}", playerId);
-            throw new PlayerServiceException("UpdatePlayerDetailsException");
+            throw new PlayerServiceException(PlayerServiceExceptionType.UPDATE_PLAYER_FAILED);
         }
     }
 
@@ -98,7 +107,7 @@ public class PlayerServiceImpl implements PlayerService {
             playerDao.deleteById(playerId);
         } catch (PlayerDAOException e) {
             log.error("Exception while deleting player with playerId: {}", playerId);
-            throw new PlayerServiceException("DeletePlayerException");
+            throw new PlayerServiceException(PlayerServiceExceptionType.DELETE_PLAYER_FAILED);
         }
     }
 
