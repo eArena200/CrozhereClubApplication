@@ -1,0 +1,24 @@
+package com.crozhere.service.cms.booking.service.exception;
+
+import lombok.Getter;
+
+@Getter
+public enum BookingServiceExceptionType {
+
+    INVALID_AVAILABILITY("Invalid availability request."),
+    CREATE_BOOKING_FAILED("Failed to create booking."),
+    BOOKING_NOT_FOUND("Booking not found."),
+    GET_BOOKING_FAILED("Failed to retrieve booking."),
+    CANCEL_BOOKING_FAILED("Failed to cancel booking."),
+    LIST_BOOKINGS_BY_PLAYER_FAILED("Failed to list bookings by player."),
+    LIST_BOOKINGS_BY_CLUB_FAILED("Failed to list bookings by club."),
+    CHECK_AVAILABILITY_BY_TIME_FAILED("Failed to check availability by time."),
+    CHECK_AVAILABILITY_BY_STATIONS_FAILED("Failed to check availability by stations.");
+
+    private final String message;
+
+    BookingServiceExceptionType(String message) {
+        this.message = message;
+    }
+
+}

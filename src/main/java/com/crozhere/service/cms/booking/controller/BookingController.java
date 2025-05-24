@@ -9,7 +9,6 @@ import com.crozhere.service.cms.booking.controller.model.response.BookingAvailab
 import com.crozhere.service.cms.booking.controller.model.response.BookingResponse;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.service.BookingService;
-import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.club.repository.entity.Station;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -35,104 +34,60 @@ public class BookingController {
     @PostMapping
     public ResponseEntity<BookingResponse> createBooking(
             @RequestBody CreateBookingRequest createBookingRequest){
-        try {
-            Booking booking = bookingService.createBooking(createBookingRequest);
-            return ResponseEntity.status(HttpStatus.CREATED).body(getBookingResponse(booking));
-        } catch (BookingServiceException bookingServiceException){
-            log.error("Failed to create booking: {}", bookingServiceException.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        Booking booking = bookingService.createBooking(createBookingRequest);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(getBookingResponse(booking));
     }
 
     @GetMapping("/{bookingId}")
     public ResponseEntity<BookingResponse> getBookingById(
             @PathVariable("bookingId") Long bookingId) {
-        try {
-            Booking booking = bookingService.getBookingById(bookingId);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(getBookingResponse(booking));
-        } catch (BookingServiceException e) {
-            log.error("Failed to retrieve booking {}: {}", bookingId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        Booking booking = bookingService.getBookingById(bookingId);
+        return ResponseEntity.ok(getBookingResponse(booking));
     }
 
     @PutMapping("/{bookingId}/cancel")
     public ResponseEntity<BookingResponse> cancelBooking(
             @PathVariable("bookingId") Long bookingId) {
-        try {
-            Booking booking = bookingService.cancelBooking(bookingId);
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(getBookingResponse(booking));
-        } catch (BookingServiceException e) {
-            log.error("Failed to cancel booking {}: {}", bookingId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        Booking booking = bookingService.cancelBooking(bookingId);
+        return ResponseEntity.ok(getBookingResponse(booking));
     }
 
     @GetMapping("/player/{playerId}")
     public ResponseEntity<List<BookingResponse>> listBookingsByPlayer(
             @PathVariable("playerId") Long playerId) {
-        try {
-            List<Booking> bookings = bookingService.listBookingByPlayerId(playerId);
-            List<BookingResponse> responses = bookings.stream()
-                    .map(this::getBookingResponse)
-                    .toList();
-            return ResponseEntity.ok(responses);
-        } catch (BookingServiceException e) {
-            log.error("Failed to list bookings for player ID {}: {}", playerId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        List<Booking> bookings = bookingService.listBookingByPlayerId(playerId);
+        List<BookingResponse> responses = bookings.stream()
+                .map(this::getBookingResponse)
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/club/{clubId}")
     public ResponseEntity<List<BookingResponse>> listBookingsByClub(
             @PathVariable("clubId") Long clubId) {
-        try {
-            List<Booking> bookings = bookingService.listBookingByClubId(clubId);
-            List<BookingResponse> responses = bookings.stream()
-                    .map(this::getBookingResponse)
-                    .toList();
-            return ResponseEntity.ok(responses);
-        } catch (BookingServiceException e) {
-            log.error("Failed to list bookings for club admin ID {}: {}", clubId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        List<Booking> bookings = bookingService.listBookingByClubId(clubId);
+        List<BookingResponse> responses = bookings.stream()
+                .map(this::getBookingResponse)
+                .toList();
+        return ResponseEntity.ok(responses);
     }
 
 
     @PostMapping("/availability/by-time")
     public ResponseEntity<BookingAvailabilityByTimeResponse> checkAvailabilityByTime(
             @Valid @RequestBody BookingAvailabilityByTimeRequest request){
-        try {
-            BookingAvailabilityByTimeResponse response =
-                    bookingService.checkAvailabilityByTime(request);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(response);
-        } catch (BookingServiceException e){
-            log.error("Failed to check availability by time for request: {}", request.toString());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        BookingAvailabilityByTimeResponse response =
+                bookingService.checkAvailabilityByTime(request);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/availability/by-station")
     public ResponseEntity<BookingAvailabilityByStationResponse> checkAvailabilityByStation(
             @Valid @RequestBody BookingAvailabilityByStationRequest request){
-        try {
-            BookingAvailabilityByStationResponse response =
-                    bookingService.checkAvailabilityByStations(request);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(response);
-        } catch (BookingServiceException e){
-            log.error("Failed to check availability by stations for request: {}", request.toString());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        BookingAvailabilityByStationResponse response =
+                bookingService.checkAvailabilityByStations(request);
+        return ResponseEntity.ok(response);
     }
 
 

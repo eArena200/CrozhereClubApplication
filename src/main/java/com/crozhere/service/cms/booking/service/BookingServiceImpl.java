@@ -7,7 +7,11 @@ import com.crozhere.service.cms.booking.controller.model.response.BookingAvailab
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
 import com.crozhere.service.cms.booking.controller.model.response.StationAvailability;
 import com.crozhere.service.cms.booking.repository.dao.PaymentDao;
+import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
+import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.entity.*;
+import com.crozhere.service.cms.booking.service.exception.BookingManagerException;
+import com.crozhere.service.cms.booking.service.exception.BookingServiceExceptionType;
 import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
 import com.crozhere.service.cms.booking.util.TimeSlot;
 import com.crozhere.service.cms.booking.repository.dao.BookingDao;
@@ -88,10 +92,11 @@ public class BookingServiceImpl implements BookingService {
                     .build();
             bookingDAO.save(booking);
             return booking;
-        } catch (InvalidRequestException e) {
+        } catch (InvalidRequestException | BookingServiceException e) {
             throw e;
         } catch (Exception e) {
-            throw new BookingServiceException("CreateBookingException", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CREATE_BOOKING_FAILED);
         }
     }
 
@@ -99,9 +104,14 @@ public class BookingServiceImpl implements BookingService {
     public Booking getBookingById(Long bookingId) throws BookingServiceException {
         try {
             return bookingDAO.getById(bookingId);
-        } catch (Exception e) {
+        } catch (DataNotFoundException e) {
+            log.error("Booking not found with ID: {}", bookingId);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingDAOException e) {
             log.error("Failed to fetch booking with ID: {}", bookingId, e);
-            throw new BookingServiceException("GetBookingByIdException", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
         }
     }
 
@@ -112,9 +122,14 @@ public class BookingServiceImpl implements BookingService {
             booking.setStatus(BookingStatus.CANCELLED);
             bookingDAO.update(bookingId, booking);
             return booking;
-        } catch (Exception e) {
+        } catch (DataNotFoundException e) {
+            log.error("Booking not found with ID {} for cancel", bookingId);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingDAOException e) {
             log.error("Failed to cancel booking with ID: {}", bookingId, e);
-            throw new BookingServiceException("CancelBookingException", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CANCEL_BOOKING_FAILED);
         }
     }
 
@@ -123,9 +138,10 @@ public class BookingServiceImpl implements BookingService {
             throws BookingServiceException {
         try {
             return bookingDAO.getBookingByPlayerId(playerId);
-        } catch (Exception e) {
+        } catch (BookingDAOException e) {
             log.error("Failed to list bookings for playerId: {}", playerId, e);
-            throw new BookingServiceException("ListBookingByPlayerIdException", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.LIST_BOOKINGS_BY_PLAYER_FAILED);
         }
     }
 
@@ -134,9 +150,10 @@ public class BookingServiceImpl implements BookingService {
             throws BookingServiceException {
         try {
             return bookingDAO.getBookingByClubId(clubId);
-        } catch (Exception e) {
+        } catch (BookingDAOException e) {
             log.error("Failed to list bookings for clubAdminId: {}", clubId, e);
-            throw new BookingServiceException("ListBookingByClubAdminException", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.LIST_BOOKINGS_BY_CLUB_FAILED);
         }
     }
 
@@ -157,9 +174,14 @@ public class BookingServiceImpl implements BookingService {
                     .stationType(request.getStationType())
                     .stationsAvailability(availableStations)
                     .build();
-        } catch (Exception e) {
+        } catch (BookingManagerException e) {
             log.error("Exception in BookingManager in checkAvailabilityByTime", e);
-            throw new BookingServiceException("CheckAvailabilityByTimeException");
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CHECK_AVAILABILITY_BY_TIME_FAILED);
+        } catch (Exception e) {
+            log.error("Unknown exception in checkAvailabilityByTime", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CHECK_AVAILABILITY_BY_TIME_FAILED);
         }
     }
 
@@ -186,9 +208,14 @@ public class BookingServiceImpl implements BookingService {
                     .stationIds(request.getStationIds())
                     .availableTimes(availableTimes)
                     .build();
-        } catch (Exception e) {
+        } catch (BookingManagerException e) {
             log.error("Exception in BookingManager in checkAvailabilityByStations", e);
-            throw new BookingServiceException("CheckAvailabilityByStationsException");
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CHECK_AVAILABILITY_BY_STATIONS_FAILED);
+        } catch (Exception e) {
+            log.error("Unknown exception in checkAvailabilityByStations", e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CHECK_AVAILABILITY_BY_STATIONS_FAILED);
         }
     }
 
@@ -232,7 +259,8 @@ public class BookingServiceImpl implements BookingService {
             for (Long id : request.getStationIds()) {
                 if (!availableIds.contains(id)) {
                     log.error("StationId {} not available", id);
-                    throw new BookingServiceException("AvailabilityValidationException");
+                    throw new BookingServiceException(
+                            BookingServiceExceptionType.INVALID_AVAILABILITY);
                 }
             }
         } catch (Exception e) {

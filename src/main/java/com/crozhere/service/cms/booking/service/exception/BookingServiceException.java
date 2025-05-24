@@ -1,19 +1,20 @@
 package com.crozhere.service.cms.booking.service.exception;
 
-public class BookingServiceException extends Exception{
-    public BookingServiceException() {
-        super();
+import lombok.Getter;
+
+@Getter
+public class BookingServiceException extends RuntimeException {
+
+    private final BookingServiceExceptionType type;
+
+    public BookingServiceException(BookingServiceExceptionType type) {
+        super(type.name());
+        this.type = type;
     }
 
-    public BookingServiceException(String message) {
-        super(message);
+    public BookingServiceException(BookingServiceExceptionType type, Throwable cause) {
+        super(type.name(), cause);
+        this.type = type;
     }
 
-    public BookingServiceException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public BookingServiceException(Throwable cause) {
-        super(cause);
-    }
 }
