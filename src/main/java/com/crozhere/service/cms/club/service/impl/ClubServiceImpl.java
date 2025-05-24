@@ -64,7 +64,7 @@ public class ClubServiceImpl implements ClubService {
                     .build();
             clubDAO.save(club);
 
-            RawClubLayoutResponse clubLayoutResponse = null;
+            RawClubLayoutResponse clubLayoutResponse;
             try {
                 clubLayoutResponse = clubLayoutService.createClubLayout(
                         CreateClubLayoutRequest.builder()
@@ -89,7 +89,7 @@ public class ClubServiceImpl implements ClubService {
                     createClubRequest.getClubAdminId());
             throw new ClubServiceException("CreateClubException", e);
         } catch (ClubLayoutServiceException e){
-            log.error("Exception in creating clug-layout for request: {}", createClubRequest);
+            log.error("Exception in creating club-layout for request: {}", createClubRequest);
             throw new ClubServiceException("CreateClubException", e);
         }
     }
@@ -182,11 +182,12 @@ public class ClubServiceImpl implements ClubService {
                         AddStationLayoutRequest.builder()
                                 .stationGroupLayoutId(
                                         addStationRequest.getStationGroupLayoutId())
+                                .stationType(addStationRequest.getStationType())
+                                .stationId(station.getId())
                                 .offsetX(1)
                                 .offsetY(1)
                                 .height(10)
                                 .width(10)
-                                .stationType(addStationRequest.getStationType())
                                 .build());
             } catch (ClubLayoutServiceException e) {
                 log.error("Exception in adding station-layout for request: {}", addStationRequest);

@@ -1,6 +1,5 @@
 package com.crozhere.service.cms.layout.service;
 
-import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.layout.controller.model.request.*;
 import com.crozhere.service.cms.layout.controller.model.response.*;
 import com.crozhere.service.cms.layout.repository.StationGroupLayoutRepository;
@@ -15,6 +14,7 @@ import com.crozhere.service.cms.layout.service.exception.ClubLayoutServiceExcept
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +36,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
     @Override
     public RawClubLayoutResponse createClubLayout(CreateClubLayoutRequest request)
             throws ClubLayoutServiceException {
-        // TODO: Validate any existing id against the provided clubId before creating new.
         try {
+            if (clubLayoutRepository.existsByClubId(request.getClubId())) {
+                log.error("ClubLayout already exists for clubId: {}", request.getClubId());
+                throw new ClubLayoutServiceException("ClubLayoutAlreadyExists");
+            }
+
             ClubLayout layout = ClubLayout.builder()
                     .id(UUID.randomUUID().toString())
                     .clubId(request.getClubId())
@@ -109,6 +113,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                                                                     .id(station.getId())
                                                                     .stationGroupLayoutId(station.getStationGroupLayoutId())
                                                                     .stationType(station.getStationType())
+                                                                    .stationId(station.getStationId())
                                                                     .offsetX(station.getOffsetX())
                                                                     .offsetY(station.getOffsetY())
                                                                     .width(station.getWidth())
@@ -198,6 +203,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(zoneId)
                     .clubLayoutId(zone.getClubLayoutId())
                     .name(zone.getName())
+                    .stationGroupLayoutIds(zone.getStationGroupLayoutIds())
                     .build();
         } catch (Exception e){
             log.error("Exception in adding zone layout for clubLayoutId: {}",
@@ -244,6 +250,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                                 .id(station.getId())
                                 .stationGroupLayoutId(station.getStationGroupLayoutId())
                                 .stationType(station.getStationType())
+                                .stationId(station.getStationId())
                                 .offsetX(station.getOffsetX())
                                 .offsetY(station.getOffsetY())
                                 .width(station.getWidth())
@@ -273,12 +280,26 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         }
     }
 
-    // TODO: Add specific update request and response
     @Override
-    public RawZoneLayoutResponse updateZoneLayoutName(String zoneLayoutId, String newName)
+    public RawZoneLayoutResponse updateZoneLayout(String zoneLayoutId, UpdateZoneLayoutRequest request)
             throws ClubLayoutServiceException {
         try {
-            return null;
+            ZoneLayout zoneLayout = zoneLayoutRepository.findById(zoneLayoutId)
+                    .orElseThrow(() -> new IllegalArgumentException("ZoneLayout not found"));
+
+            if(StringUtils.hasText(request.getName())){
+                zoneLayout.setName(request.getName());
+            }
+
+            zoneLayoutRepository.save(zoneLayout);
+
+            return RawZoneLayoutResponse.builder()
+                    .id(zoneLayout.getId())
+                    .clubLayoutId(zoneLayout.getClubLayoutId())
+                    .name(zoneLayout.getName())
+                    .stationGroupLayoutIds(zoneLayout.getStationGroupLayoutIds())
+                    .build();
+
         } catch (Exception e) {
             log.error("Exception in updating zone-layout for zoneLayoutId: {}", zoneLayoutId);
             throw new ClubLayoutServiceException("UpdateZoneLayoutException", e);
@@ -343,6 +364,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .name(group.getName())
                     .stationType(group.getStationType())
                     .layoutType(group.getLayoutType())
+                    .stationLayoutIds(group.getStationLayoutIds())
                     .build();
         } catch (Exception e){
             log.error("Exception in adding station-group-layout for zoneLayoutId: {}",
@@ -357,9 +379,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             StationGroupLayout stationGroupLayout =
                     stationGroupLayoutRepository.findById(stationGroupLayoutId)
-                            .orElseThrow(
-                                    () -> new IllegalArgumentException("StationGroupLayout not found")
-                            );
+                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
 
             return RawStationGroupLayoutResponse.builder()
                     .id(stationGroupLayout.getId())
@@ -395,6 +415,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                                             .stationGroupLayoutId(station
                                                     .getStationGroupLayoutId())
                                             .stationType(station.getStationType())
+                                            .stationId(station.getStationId())
                                             .offsetX(station.getOffsetX())
                                             .offsetY(station.getOffsetY())
                                             .width(station.getWidth())
@@ -417,12 +438,30 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         }
     }
 
-    // TODO: Add specific update request and response
     @Override
-    public RawStationGroupLayoutResponse updateStationGroupLayoutName(
-            String stationGroupLayoutId, String newName) throws ClubLayoutServiceException {
+    public RawStationGroupLayoutResponse updateStationGroupLayout(
+            String stationGroupLayoutId, UpdateStationGroupLayoutRequest request)
+            throws ClubLayoutServiceException {
         try {
-            return null;
+            StationGroupLayout stationGroupLayout =
+                    stationGroupLayoutRepository.findById(stationGroupLayoutId)
+                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+
+
+            if(StringUtils.hasText(request.getName())){
+                stationGroupLayout.setName(request.getName());
+            }
+
+            stationGroupLayoutRepository.save(stationGroupLayout);
+
+            return RawStationGroupLayoutResponse.builder()
+                    .id(stationGroupLayout.getId())
+                    .zoneLayoutId(stationGroupLayout.getZoneLayoutId())
+                    .name(stationGroupLayout.getName())
+                    .layoutType(stationGroupLayout.getLayoutType())
+                    .stationType(stationGroupLayout.getStationType())
+                    .stationLayoutIds(stationGroupLayout.getStationLayoutIds())
+                    .build();
         } catch (Exception e){
             log.error("Exception in updating group-layout for zoneLayoutId: {}", stationGroupLayoutId);
             throw new ClubLayoutServiceException("UpdateStationGroupLayoutException", e);
@@ -460,8 +499,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
     @Override
     public RawStationLayoutResponse addStationLayout(AddStationLayoutRequest request)
             throws ClubLayoutServiceException {
-
         try {
+            if(stationLayoutRepository.existsByStationId(request.getStationId())){
+                log.error("StationLayout already exists for stationId: {}", request.getStationId());
+                throw new ClubLayoutServiceException("StationLayoutAlreadyExists");
+            }
+
             StationGroupLayout group = stationGroupLayoutRepository
                     .findById(request.getStationGroupLayoutId())
                     .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
@@ -472,6 +515,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(stationLayoutId)
                     .stationGroupLayoutId(group.getId())
                     .stationType(request.getStationType())
+                    .stationId(request.getStationId())
                     .offsetX(request.getOffsetX())
                     .offsetY(request.getOffsetY())
                     .width(request.getWidth())
@@ -487,6 +531,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(station.getId())
                     .stationGroupLayoutId(station.getStationGroupLayoutId())
                     .stationType(station.getStationType())
+                    .stationId(station.getStationId())
                     .offsetX(station.getOffsetX())
                     .offsetY(station.getOffsetY())
                     .width(station.getWidth())
@@ -510,6 +555,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(stationLayout.getId())
                     .stationGroupLayoutId(stationLayout.getStationGroupLayoutId())
                     .stationType(stationLayout.getStationType())
+                    .stationId(stationLayout.getStationId())
                     .offsetX(stationLayout.getOffsetX())
                     .offsetY(stationLayout.getOffsetY())
                     .width(stationLayout.getWidth())
@@ -533,6 +579,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(stationLayout.getId())
                     .stationGroupLayoutId(stationLayout.getStationGroupLayoutId())
                     .stationType(stationLayout.getStationType())
+                    .stationId(stationLayout.getStationId())
                     .offsetX(stationLayout.getOffsetX())
                     .offsetY(stationLayout.getOffsetY())
                     .height(stationLayout.getHeight())
@@ -545,7 +592,6 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         }
     }
 
-    // TODO: Add specific update request and response
     @Override
     public RawStationLayoutResponse updateStationLayout(
             String stationLayoutId, UpdateStationLayoutRequest request)
@@ -555,11 +601,21 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             StationLayout station = stationLayoutRepository.findById(stationLayoutId)
                     .orElseThrow(() -> new IllegalArgumentException("StationLayout not found"));
 
-            // TODO: MISSING GROUP UPDATE AS OF NOW
-            station.setOffsetX(request.getOffsetX());
-            station.setOffsetY(request.getOffsetY());
-            station.setWidth(request.getWidth());
-            station.setHeight(request.getHeight());
+            if(hasValue(request.getOffsetX())){
+                station.setOffsetX(request.getOffsetX());
+            }
+
+            if(hasValue(request.getOffsetY())){
+                station.setOffsetY(request.getOffsetY());
+            }
+
+            if(hasValue(request.getHeight())){
+                station.setHeight(request.getHeight());
+            }
+
+            if(hasValue(request.getWidth())){
+                station.setWidth(request.getWidth());
+            }
 
             stationLayoutRepository.save(station);
 
@@ -605,4 +661,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         }
     }
 
+
+    private boolean hasValue(Integer integer){
+        return integer != null;
+    }
 }

@@ -24,7 +24,7 @@ public interface ClubLayoutService {
     EnrichedZoneLayoutResponse getEnrichedZoneLayout(String zoneLayoutId)
             throws ClubLayoutServiceException;
     void deleteZoneLayout(String zoneLayoutId) throws ClubLayoutServiceException;
-    RawZoneLayoutResponse updateZoneLayoutName(String zoneLayoutId, String newName)
+    RawZoneLayoutResponse updateZoneLayout(String zoneLayoutId, UpdateZoneLayoutRequest request)
             throws ClubLayoutServiceException;
 
     // === Station Group Layout ===
@@ -34,7 +34,8 @@ public interface ClubLayoutService {
             throws ClubLayoutServiceException;
     EnrichedStationGroupLayoutResponse getEnrichedStationGroupLayout(String stationGroupLayoutId)
             throws ClubLayoutServiceException;
-    RawStationGroupLayoutResponse updateStationGroupLayoutName(String stationGroupLayoutId, String newName)
+    RawStationGroupLayoutResponse updateStationGroupLayout(
+            String stationGroupLayoutId, UpdateStationGroupLayoutRequest request)
             throws ClubLayoutServiceException;
     void deleteStationGroupLayout(String stationGroupLayoutId) throws ClubLayoutServiceException;
 

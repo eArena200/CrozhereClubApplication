@@ -14,6 +14,7 @@ public class EnrichedStationLayoutResponse {
     private String id;
     private String stationGroupLayoutId;
     private StationType stationType;
+    private Long stationId;
     private Integer offsetX;
     private Integer offsetY;
     private Integer width;

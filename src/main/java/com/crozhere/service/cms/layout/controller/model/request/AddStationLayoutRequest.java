@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class AddStationLayoutRequest {
     private String stationGroupLayoutId;
     private StationType stationType;
-
+    private Long stationId;
     private Integer offsetX;
     private Integer offsetY;
     private Integer width;

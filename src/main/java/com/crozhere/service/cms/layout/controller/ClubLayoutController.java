@@ -18,15 +18,15 @@ public class ClubLayoutController {
     // === CLUB ===
 
     @GetMapping("/clubs/{clubLayoutId}")
-    public ResponseEntity<RawClubLayoutResponse> getRawClubLayout(
-            @PathVariable String clubLayoutId) {
-        return ResponseEntity.ok(layoutService.getRawClubLayout(clubLayoutId));
-    }
+    public ResponseEntity<?> getClubLayout(
+            @PathVariable String clubLayoutId,
+            @RequestParam(name = "enriched", defaultValue = "false") boolean enriched) {
 
-    @GetMapping("/clubs/{clubLayoutId}/enriched")
-    public ResponseEntity<EnrichedClubLayoutResponse> getEnrichedClubLayout(
-            @PathVariable String clubLayoutId) {
-        return ResponseEntity.ok(layoutService.getEnrichedClubLayout(clubLayoutId));
+        if (enriched) {
+            return ResponseEntity.ok(layoutService.getEnrichedClubLayout(clubLayoutId));
+        } else {
+            return ResponseEntity.ok(layoutService.getRawClubLayout(clubLayoutId));
+        }
     }
 
     // === ZONE  ===
@@ -38,15 +38,22 @@ public class ClubLayoutController {
     }
 
     @GetMapping("/zones/{zoneLayoutId}")
-    public ResponseEntity<RawZoneLayoutResponse> getRawZoneLayout(
-            @PathVariable String zoneLayoutId) {
-        return ResponseEntity.ok(layoutService.getRawZoneLayout(zoneLayoutId));
+    public ResponseEntity<?> getZoneLayout(
+            @PathVariable String zoneLayoutId,
+            @RequestParam(name = "enriched", defaultValue = "false") boolean enriched) {
+
+        if (enriched) {
+            return ResponseEntity.ok(layoutService.getEnrichedZoneLayout(zoneLayoutId));
+        } else {
+            return ResponseEntity.ok(layoutService.getRawZoneLayout(zoneLayoutId));
+        }
     }
 
-    @GetMapping("/zones/{zoneLayoutId}/enriched")
-    public ResponseEntity<EnrichedZoneLayoutResponse> getEnrichedZoneLayout(
-            @PathVariable String zoneLayoutId) {
-        return ResponseEntity.ok(layoutService.getEnrichedZoneLayout(zoneLayoutId));
+    @PutMapping("/zones/{zoneLayoutId}")
+    public ResponseEntity<RawZoneLayoutResponse> updateZoneLayout(
+            @PathVariable String zoneLayoutId,
+            @RequestBody UpdateZoneLayoutRequest request) {
+        return ResponseEntity.ok(layoutService.updateZoneLayout(zoneLayoutId, request));
     }
 
     @DeleteMapping("/zones/{zoneLayoutId}")
@@ -54,13 +61,6 @@ public class ClubLayoutController {
             @PathVariable String zoneLayoutId) {
         layoutService.deleteZoneLayout(zoneLayoutId);
         return ResponseEntity.noContent().build();
-    }
-
-    @PutMapping("/zones/{zoneLayoutId}")
-    public ResponseEntity<RawZoneLayoutResponse> updateZoneLayoutName(
-            @PathVariable String zoneLayoutId,
-            @RequestParam String newName) {
-        return ResponseEntity.ok(layoutService.updateZoneLayoutName(zoneLayoutId, newName));
     }
 
     // === GROUP ===
@@ -72,23 +72,22 @@ public class ClubLayoutController {
     }
 
     @GetMapping("/groups/{stationGroupLayoutId}")
-    public ResponseEntity<RawStationGroupLayoutResponse> getRawStationGroupLayout(
-            @PathVariable String stationGroupLayoutId) {
-        return ResponseEntity.ok(layoutService.getRawStationGroupLayout(stationGroupLayoutId));
-    }
+    public ResponseEntity<?> getStationGroupLayout(
+            @PathVariable String stationGroupLayoutId,
+            @RequestParam(name = "enriched", defaultValue = "false") boolean enriched) {
 
-    @GetMapping("/groups/{stationGroupLayoutId}/enriched")
-    public ResponseEntity<EnrichedStationGroupLayoutResponse> getEnrichedStationGroupLayout(
-            @PathVariable String stationGroupLayoutId) {
-        return ResponseEntity.ok(layoutService.getEnrichedStationGroupLayout(stationGroupLayoutId));
+        if (enriched) {
+            return ResponseEntity.ok(layoutService.getEnrichedStationGroupLayout(stationGroupLayoutId));
+        } else {
+            return ResponseEntity.ok(layoutService.getRawStationGroupLayout(stationGroupLayoutId));
+        }
     }
 
     @PutMapping("/groups/{stationGroupLayoutId}")
-    public ResponseEntity<RawStationGroupLayoutResponse> updateStationGroupLayoutName(
+    public ResponseEntity<RawStationGroupLayoutResponse> updateStationGroupLayout(
             @PathVariable String stationGroupLayoutId,
-            @RequestParam String newName) {
-        return ResponseEntity.ok(layoutService.updateStationGroupLayoutName(
-                stationGroupLayoutId, newName));
+            @RequestBody UpdateStationGroupLayoutRequest request) {
+        return ResponseEntity.ok(layoutService.updateStationGroupLayout(stationGroupLayoutId, request));
     }
 
     @DeleteMapping("/groups/{stationGroupLayoutId}")
@@ -99,16 +98,17 @@ public class ClubLayoutController {
     }
 
     // === STATION ===
-    @GetMapping("/stations/{stationLayoutId}")
-    public ResponseEntity<RawStationLayoutResponse> getRawStationLayout(
-            @PathVariable String stationLayoutId) {
-        return ResponseEntity.ok(layoutService.getRawStationLayout(stationLayoutId));
-    }
 
-    @GetMapping("/stations/{stationLayoutId}/enriched")
-    public ResponseEntity<EnrichedStationLayoutResponse> getEnrichedStationLayout(
-            @PathVariable String stationLayoutId) {
-        return ResponseEntity.ok(layoutService.getEnrichedStationLayout(stationLayoutId));
+    @GetMapping("/stations/{stationLayoutId}")
+    public ResponseEntity<?> getStationLayout(
+            @PathVariable String stationLayoutId,
+            @RequestParam(name = "enriched", defaultValue = "false") boolean enriched) {
+
+        if (enriched) {
+            return ResponseEntity.ok(layoutService.getEnrichedStationLayout(stationLayoutId));
+        } else {
+            return ResponseEntity.ok(layoutService.getRawStationLayout(stationLayoutId));
+        }
     }
 
     @PutMapping("/stations/{stationLayoutId}")
