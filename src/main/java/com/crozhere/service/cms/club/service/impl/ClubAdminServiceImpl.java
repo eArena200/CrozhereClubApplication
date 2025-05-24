@@ -1,13 +1,14 @@
 package com.crozhere.service.cms.club.service.impl;
 
-
 import com.crozhere.service.cms.auth.repository.entity.User;
 import com.crozhere.service.cms.club.controller.model.request.UpdateClubAdminRequest;
 import com.crozhere.service.cms.club.repository.dao.ClubAdminDao;
 import com.crozhere.service.cms.club.repository.dao.exception.ClubAdminDAOException;
+import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.club.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.club.service.ClubAdminService;
 import com.crozhere.service.cms.club.service.exception.ClubAdminServiceException;
+import com.crozhere.service.cms.club.service.exception.ClubAdminServiceExceptionType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,10 @@ public class ClubAdminServiceImpl implements ClubAdminService {
             clubAdminDao.save(clubAdmin);
             return clubAdmin;
         } catch (ClubAdminDAOException e){
-            log.error("Exception while saving newly created ClubAdmin for userId: {}", user.getId());
-            throw new ClubAdminServiceException("CreateClubAdminForUserException");
+            log.error("Exception while saving newly created ClubAdmin for userId: {}",
+                    user.getId(), e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.CREATE_CLUB_ADMIN_FAILED);
         }
     }
 
@@ -45,10 +48,15 @@ public class ClubAdminServiceImpl implements ClubAdminService {
     public ClubAdmin getClubAdminByUserId(Long userId) throws ClubAdminServiceException {
         try {
             return clubAdminDao.findByUserId(userId)
-                    .orElseThrow(ClubAdminDAOException::new);
+                    .orElseThrow(DataNotFoundException::new);
+        } catch (DataNotFoundException e) {
+            log.error("ClubAdmin not found for userId: {}", userId);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
         } catch (ClubAdminDAOException e) {
-            log.error("Exception while getting ClubAdmin for userId: {}", userId);
-            throw new ClubAdminServiceException("GetClubAdminByUserIdException");
+            log.error("Exception while getting ClubAdmin for userId: {}", userId, e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.GET_CLUB_ADMIN_FAILED);
         }
     }
 
@@ -56,9 +64,14 @@ public class ClubAdminServiceImpl implements ClubAdminService {
     public ClubAdmin getClubAdminById(Long adminId) throws ClubAdminServiceException {
         try {
             return clubAdminDao.getById(adminId);
+        } catch (DataNotFoundException e){
+            log.error("ClubAdmin not found with adminId: {}", adminId);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
         } catch (ClubAdminDAOException e){
-            log.error("Exception while getting ClubAdmin with adminId: {}", adminId);
-            throw new ClubAdminServiceException("GetClubAdminByIdException");
+            log.error("Exception while getting ClubAdmin with adminId: {}", adminId, e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.GET_CLUB_ADMIN_FAILED);
         }
     }
 
@@ -67,19 +80,25 @@ public class ClubAdminServiceImpl implements ClubAdminService {
             throws ClubAdminServiceException {
         try {
             ClubAdmin clubAdmin = clubAdminDao.getById(adminId);
-            if(StringUtils.hasText(request.getEmail())){
+            if (StringUtils.hasText(request.getEmail())) {
                 clubAdmin.setEmail(request.getEmail());
             }
 
-            if(StringUtils.hasText(request.getName())){
+            if (StringUtils.hasText(request.getName())) {
                 clubAdmin.setName(request.getName());
             }
 
             clubAdminDao.update(adminId, clubAdmin);
             return clubAdmin;
+        } catch (DataNotFoundException e){
+            log.error("ClubAdmin not found for update with adminId: {}", adminId);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
         } catch (ClubAdminDAOException e){
-            log.error("Exception while updating clubAdmin details with adminId: {}", adminId);
-            throw new ClubAdminServiceException("UpdateClubAdminDetailsException");
+            log.error("Exception while updating ClubAdmin details with adminId: {}",
+                    adminId, e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.UPDATE_CLUB_ADMIN_FAILED);
         }
     }
 
@@ -88,8 +107,9 @@ public class ClubAdminServiceImpl implements ClubAdminService {
         try {
             clubAdminDao.deleteById(adminId);
         } catch (ClubAdminDAOException e){
-            log.error("Exception while deleting clubAdmin with adminId: {}", adminId);
-            throw new ClubAdminServiceException("DeleteClubAdminException");
+            log.error("Exception while deleting ClubAdmin with adminId: {}", adminId, e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.DELETE_CLUB_ADMIN_FAILED);
         }
     }
 }

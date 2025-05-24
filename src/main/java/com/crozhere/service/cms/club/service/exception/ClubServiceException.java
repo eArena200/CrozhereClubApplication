@@ -1,20 +1,19 @@
 package com.crozhere.service.cms.club.service.exception;
 
+import lombok.Getter;
+
+@Getter
 public class ClubServiceException extends RuntimeException {
+    private final ClubServiceExceptionType type;
 
-    public ClubServiceException() {
-        super();
+    public ClubServiceException(ClubServiceExceptionType type) {
+        super(type.name());
+        this.type = type;
     }
 
-    public ClubServiceException(String message) {
-        super(message);
+    public ClubServiceException(ClubServiceExceptionType type, Throwable cause) {
+        super(type.name(), cause);
+        this.type = type;
     }
 
-    public ClubServiceException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public ClubServiceException(Throwable cause) {
-        super(cause);
-    }
 }

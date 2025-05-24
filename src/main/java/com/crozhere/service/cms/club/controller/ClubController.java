@@ -34,24 +34,15 @@ public class ClubController {
     @PostMapping
     public ResponseEntity<ClubResponse> createClub(
             @RequestBody CreateClubRequest createClubRequest) {
-        try {
-            Club club = clubService.createClub(createClubRequest);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(getClubResponse(club));
-
-        } catch (ClubServiceException e) {
-            log.error("Exception in CreateClub for request: {}", createClubRequest.toString());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        Club club = clubService.createClub(createClubRequest);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(getClubResponse(club));
     }
 
     @GetMapping
     public ResponseEntity<List<ClubResponse>> getClubs(
             @RequestParam(value = "clubAdminId", required = false) Long clubAdminId){
-        try {
             List<Club> clubs;
             if (clubAdminId != null) {
                 clubs = clubService.getClubsByAdmin(clubAdminId);
@@ -62,33 +53,18 @@ public class ClubController {
                     .map(this::getClubResponse)
                     .toList();
 
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(clubsResponse);
-
-        } catch (ClubServiceException clubServiceException){
-            log.error("Exception in GetAllClub request");
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+            return ResponseEntity.status(HttpStatus.OK).body(clubsResponse);
     }
 
     @GetMapping("/{clubId}")
     public ResponseEntity<ClubResponse> getClubById(
             @PathVariable("clubId") Long clubId) {
-        try {
-            Club club = clubService.getClubById(clubId);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(getClubResponse(club));
 
-        } catch (ClubServiceException e) {
-            log.error("Exception in GetClubById request for clubId: {}", clubId);
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .build();
-        }
+        Club club = clubService.getClubById(clubId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(getClubResponse(club));
+
     }
 
 
@@ -96,129 +72,77 @@ public class ClubController {
     public ResponseEntity<ClubResponse> updateClub(
             @PathVariable("clubId") Long clubId,
             @RequestBody UpdateClubRequest updateClubRequest) {
-        try {
-            Club club = clubService.updateClub(clubId, updateClubRequest);
-            return ResponseEntity.
-                    status(HttpStatus.OK)
-                    .body(getClubResponse(club));
 
-        } catch (ClubServiceException e) {
-            log.error("Exception in UpdateClub request for clubId: {}", clubId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        Club club = clubService.updateClub(clubId, updateClubRequest);
+        return ResponseEntity.
+                status(HttpStatus.OK)
+                .body(getClubResponse(club));
+
     }
 
 
     @DeleteMapping("/{clubId}")
     public ResponseEntity<Void> deleteClub(
             @PathVariable("clubId") Long clubId) {
-        try {
-            clubService.deleteClub(clubId);
-            return ResponseEntity
-                    .status(HttpStatus.NO_CONTENT)
-                    .build();
 
-        } catch (ClubServiceException e) {
-            log.error("Exception in DeleteClub request for clubId: {}", clubId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        clubService.deleteClub(clubId);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 
     @PostMapping("/stations")
     public ResponseEntity<StationResponse> addStation(
             @RequestBody AddStationRequest addStationRequest){
-        try {
-            Station station = clubService.addStation(addStationRequest);
-            return ResponseEntity
-                    .status(HttpStatus.CREATED)
-                    .body(getStationResponse(station));
-
-        } catch (ClubServiceException clubServiceException){
-            log.error("Exception in AddStation request: {}", addStationRequest.toString());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        Station station = clubService.addStation(addStationRequest);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(getStationResponse(station));
     }
 
     @GetMapping("/stations/{stationId}")
     public ResponseEntity<StationResponse> getStation(
             @PathVariable("stationId") Long stationId){
-        try {
-            Station station = clubService.getStation(stationId);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(getStationResponse(station));
 
-        } catch (ClubServiceException clubServiceException){
-            log.error("Exception in GetStation request for stationId: {}", stationId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        Station station = clubService.getStation(stationId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(getStationResponse(station));
     }
 
     @PutMapping("/stations/{stationId}")
     public ResponseEntity<StationResponse> updateStation(
             @PathVariable("stationId") Long stationId,
             @RequestBody UpdateStationRequest updateStationRequest){
-        try {
-            Station station =
-                    clubService.updateStation(stationId, updateStationRequest);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(getStationResponse(station));
-
-        } catch (ClubServiceException clubServiceException){
-            log.error("Exception in UpdateStation request for stationId: {}", stationId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        Station station =
+                clubService.updateStation(stationId, updateStationRequest);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(getStationResponse(station));
     }
 
 
     @DeleteMapping("/stations/{stationId}")
     public ResponseEntity<Void> deleteStation(
             @PathVariable Long stationId){
-        try {
-            clubService.deleteStation(stationId);
-            return ResponseEntity
-                    .status(HttpStatus.NO_CONTENT)
-                    .build();
-
-        } catch (ClubServiceException clubServiceException){
-            log.error("Exception in DeleteStation request for stationId: {}", stationId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        clubService.deleteStation(stationId);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
     }
 
     @GetMapping("/stations")
     public ResponseEntity<List<StationResponse>> getStationsByClubId(
             @RequestParam(value = "clubId") Long clubId){
-        try {
-            List<StationResponse> stationsResponse =
-                    clubService.getStationsByClubId(clubId)
-                            .stream()
-                            .map(this::getStationResponse)
-                            .toList();
+        List<StationResponse> stationsResponse =
+                clubService.getStationsByClubId(clubId)
+                        .stream()
+                        .map(this::getStationResponse)
+                        .toList();
 
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(stationsResponse);
-
-        } catch (ClubServiceException clubServiceException) {
-            log.error("Exception in GetStationsByClubId request for clubId: {}", clubId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(stationsResponse);
     }
 
     private ClubResponse getClubResponse(Club club) {
