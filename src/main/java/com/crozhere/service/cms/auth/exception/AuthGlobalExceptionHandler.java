@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "com.crozhere.service.cms.auth")
 public class AuthGlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

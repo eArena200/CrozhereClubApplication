@@ -11,6 +11,7 @@ import com.crozhere.service.cms.layout.repository.entity.StationGroupLayout;
 import com.crozhere.service.cms.layout.repository.entity.StationLayout;
 import com.crozhere.service.cms.layout.repository.entity.ZoneLayout;
 import com.crozhere.service.cms.layout.service.exception.ClubLayoutServiceException;
+import com.crozhere.service.cms.layout.service.exception.ClubLayoutServiceExceptionType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,7 +40,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             if (clubLayoutRepository.existsByClubId(request.getClubId())) {
                 log.error("ClubLayout already exists for clubId: {}", request.getClubId());
-                throw new ClubLayoutServiceException("ClubLayoutAlreadyExists");
+                throw new ClubLayoutServiceException(
+                        ClubLayoutServiceExceptionType.CLUB_LAYOUT_ALREADY_EXISTS);
             }
 
             ClubLayout layout = ClubLayout.builder()
@@ -54,9 +56,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(layout.getId())
                     .clubId(layout.getClubId())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in create club layout for request: {}", request.toString());
-            throw new ClubLayoutServiceException("CreateClubLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.CREATE_CLUB_LAYOUT_FAILED);
         }
     }
 
@@ -66,18 +71,20 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             ClubLayout clubLayout = clubLayoutRepository
                     .findById(clubLayoutId)
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("ClubLayout not found")
-                    );
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.CLUB_LAYOUT_NOT_FOUND));
 
             return RawClubLayoutResponse.builder()
                     .id(clubLayout.getId())
                     .clubId(clubLayout.getClubId())
                     .zoneIds(clubLayout.getZoneLayoutIds())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
-            log.error("Exception in get club layout for clubLayoutId: {}", clubLayoutId);
-            throw new ClubLayoutServiceException("GetRawClubLayoutException", e);
+            log.error("Exception in getting club layout for clubLayoutId: {}", clubLayoutId);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.GET_CLUB_LAYOUT_FAILED);
         }
     }
 
@@ -87,9 +94,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             ClubLayout layout = clubLayoutRepository
                     .findById(clubLayoutId)
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("ClubLayout not found")
-                    );
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.CLUB_LAYOUT_NOT_FOUND));
 
             List<ZoneLayout> zoneLayouts = zoneLayoutRepository
                     .findAllById(layout.getZoneLayoutIds());
@@ -144,9 +150,11 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .clubId(layout.getClubId())
                     .zones(enrichedZones)
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in get enriched club layout for clubLayoutId: {}", clubLayoutId);
-            throw new ClubLayoutServiceException("GetEnrichedClubLayoutException", e);
+            throw new ClubLayoutServiceException(ClubLayoutServiceExceptionType.GET_CLUB_LAYOUT_FAILED);
         }
     }
 
@@ -154,7 +162,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
     public void deleteClubLayout(String clubLayoutId) throws ClubLayoutServiceException {
         try {
             ClubLayout clubLayout = clubLayoutRepository.findById(clubLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("ClubLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.CLUB_LAYOUT_NOT_FOUND));
 
             List<ZoneLayout> zones = zoneLayoutRepository.findAllById(clubLayout.getZoneLayoutIds());
 
@@ -168,9 +177,11 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
             zoneLayoutRepository.deleteAllById(clubLayout.getZoneLayoutIds());
             clubLayoutRepository.deleteById(clubLayoutId);
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in delete club layout for clubLayoutId: {}", clubLayoutId);
-            throw new ClubLayoutServiceException("DeleteClubLayoutException", e);
+            throw new ClubLayoutServiceException(ClubLayoutServiceExceptionType.DELETE_CLUB_LAYOUT_FAILED);
         }
     }
 
@@ -183,7 +194,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             ClubLayout clubLayout = clubLayoutRepository
                     .findById(request.getClubLayoutId())
-                    .orElseThrow(() -> new IllegalArgumentException("ClubLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.CLUB_LAYOUT_NOT_FOUND));
 
             String zoneId = UUID.randomUUID().toString();
 
@@ -205,10 +217,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .name(zone.getName())
                     .stationGroupLayoutIds(zone.getStationGroupLayoutIds())
                     .build();
+        } catch (ClubLayoutServiceException e){
+           throw e;
         } catch (Exception e){
             log.error("Exception in adding zone layout for clubLayoutId: {}",
                     request.getClubLayoutId());
-            throw new ClubLayoutServiceException("AddZoneLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.ADD_ZONE_LAYOUT_FAILED);
         }
     }
 
@@ -217,9 +232,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             throws ClubLayoutServiceException {
         try {
             ZoneLayout zoneLayout = zoneLayoutRepository.findById(zoneLayoutId)
-                    .orElseThrow(
-                            () -> new IllegalArgumentException("ZoneLayout not found")
-                    );
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.ZONE_LAYOUT_NOT_FOUND));
 
             return RawZoneLayoutResponse.builder()
                     .id(zoneLayout.getId())
@@ -227,9 +241,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .stationGroupLayoutIds(zoneLayout.getStationGroupLayoutIds())
                     .name(zoneLayout.getName())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in getting raw zone-layout for zoneLayoutId: {}", zoneLayoutId);
-            throw new ClubLayoutServiceException("GetRawZoneLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.GET_ZONE_LAYOUT_FAILED);
         }
     }
 
@@ -237,7 +254,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
     public EnrichedZoneLayoutResponse getEnrichedZoneLayout(String zoneLayoutId) {
         try {
             ZoneLayout zone = zoneLayoutRepository.findById(zoneLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("ZoneLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.ZONE_LAYOUT_NOT_FOUND));
 
             List<StationGroupLayout> groupLayouts = stationGroupLayoutRepository
                     .findAllById(zone.getStationGroupLayoutIds());
@@ -274,9 +292,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .name(zone.getName())
                     .stationGroups(enrichedGroups)
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in getting enriched zone-layout for zoneLayoutId: {}", zoneLayoutId);
-            throw new ClubLayoutServiceException("GetEnrichedZoneLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.GET_ZONE_LAYOUT_FAILED);
         }
     }
 
@@ -285,7 +306,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             throws ClubLayoutServiceException {
         try {
             ZoneLayout zoneLayout = zoneLayoutRepository.findById(zoneLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("ZoneLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.ZONE_LAYOUT_NOT_FOUND));
 
             if(StringUtils.hasText(request.getName())){
                 zoneLayout.setName(request.getName());
@@ -300,9 +322,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .stationGroupLayoutIds(zoneLayout.getStationGroupLayoutIds())
                     .build();
 
+        } catch (ClubLayoutServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Exception in updating zone-layout for zoneLayoutId: {}", zoneLayoutId);
-            throw new ClubLayoutServiceException("UpdateZoneLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.UPDATE_ZONE_LAYOUT_FAILED);
         }
     }
 
@@ -310,7 +335,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
     public void deleteZoneLayout(String zoneLayoutId) throws ClubLayoutServiceException {
         try {
             ZoneLayout zoneLayout = zoneLayoutRepository.findById(zoneLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("ZoneLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.ZONE_LAYOUT_NOT_FOUND));
 
             ClubLayout clubLayout = clubLayoutRepository.findById(zoneLayout.getClubLayoutId())
                     .orElseThrow(() -> new IllegalArgumentException("ClubLayout not found"));
@@ -323,9 +349,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             stationGroupLayoutRepository.deleteAllById(zoneLayout.getStationGroupLayoutIds());
 
             zoneLayoutRepository.deleteById(zoneLayoutId);
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in deleting zone-layout for zoneLayoutId: {}", zoneLayoutId);
-            throw new ClubLayoutServiceException("DeleteZoneLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.DELETE_ZONE_LAYOUT_FAILED);
         }
     }
 
@@ -339,7 +368,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             ZoneLayout zoneLayout = zoneLayoutRepository
                     .findById(request.getZoneLayoutId())
-                    .orElseThrow(() -> new IllegalArgumentException("ZoneLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.ZONE_LAYOUT_NOT_FOUND));
 
 
             String groupId = UUID.randomUUID().toString();
@@ -366,10 +396,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .layoutType(group.getLayoutType())
                     .stationLayoutIds(group.getStationLayoutIds())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in adding station-group-layout for zoneLayoutId: {}",
                     request.getZoneLayoutId());
-            throw new ClubLayoutServiceException("AddStationGroupLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.ADD_GROUP_LAYOUT_FAILED);
         }
     }
 
@@ -379,7 +412,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             StationGroupLayout stationGroupLayout =
                     stationGroupLayoutRepository.findById(stationGroupLayoutId)
-                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.GROUP_LAYOUT_NOT_FOUND));
 
             return RawStationGroupLayoutResponse.builder()
                     .id(stationGroupLayout.getId())
@@ -389,10 +423,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .stationType(stationGroupLayout.getStationType())
                     .name(stationGroupLayout.getName())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in getting raw station-group-layout for groupLayoutId: {}",
                     stationGroupLayoutId);
-            throw new ClubLayoutServiceException("GetRawStationGroupLayoutException", e);
+            throw new ClubLayoutServiceException(ClubLayoutServiceExceptionType.GET_GROUP_LAYOUT_FAILED);
         }
     }
 
@@ -402,7 +438,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             StationGroupLayout group =
                     stationGroupLayoutRepository.findById(stationGroupLayoutId)
-                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.GROUP_LAYOUT_NOT_FOUND));
 
             List<StationLayout> stationLayouts =
                     stationLayoutRepository.findAllById(group.getStationLayoutIds());
@@ -431,10 +468,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .layoutType(group.getLayoutType())
                     .stations(enrichedStations)
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
-            log.error("Exception in getting enriched station-group-layout for zoneLayoutId: {}",
+            log.error("Exception in getting enriched station-group-layout for groupLayoutId: {}",
                     stationGroupLayoutId);
-            throw new ClubLayoutServiceException("GetEnrichedStationGroupLayoutException", e);
+            throw new ClubLayoutServiceException(ClubLayoutServiceExceptionType.GET_GROUP_LAYOUT_FAILED);
         }
     }
 
@@ -445,7 +484,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             StationGroupLayout stationGroupLayout =
                     stationGroupLayoutRepository.findById(stationGroupLayoutId)
-                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.GROUP_LAYOUT_NOT_FOUND));
 
 
             if(StringUtils.hasText(request.getName())){
@@ -462,9 +502,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .stationType(stationGroupLayout.getStationType())
                     .stationLayoutIds(stationGroupLayout.getStationLayoutIds())
                     .build();
+
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in updating group-layout for zoneLayoutId: {}", stationGroupLayoutId);
-            throw new ClubLayoutServiceException("UpdateStationGroupLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.UPDATE_GROUP_LAYOUT_FAILED);
         }
     }
 
@@ -474,11 +518,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             StationGroupLayout stationGroupLayout =
                     stationGroupLayoutRepository.findById(stationGroupLayoutId)
-                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.GROUP_LAYOUT_NOT_FOUND));
 
             ZoneLayout zoneLayout =
                     zoneLayoutRepository.findById(stationGroupLayout.getZoneLayoutId())
-                            .orElseThrow(() -> new IllegalArgumentException("ZoneLayout not found"));
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.ZONE_LAYOUT_NOT_FOUND));
 
             zoneLayout.getStationGroupLayoutIds().removeIf(stationGroupLayoutId::equals);
             zoneLayoutRepository.save(zoneLayout);
@@ -487,10 +533,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             stationLayoutRepository.deleteAllById(stationIds);
 
             stationGroupLayoutRepository.deleteById(stationGroupLayoutId);
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in deleting group-layout for zoneLayoutId: {}",
                     stationGroupLayoutId);
-            throw new ClubLayoutServiceException("DeleteStationGroupLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.DELETE_GROUP_LAYOUT_FAILED);
         }
     }
 
@@ -501,13 +550,16 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             throws ClubLayoutServiceException {
         try {
             if(stationLayoutRepository.existsByStationId(request.getStationId())){
-                log.error("StationLayout already exists for stationId: {}", request.getStationId());
-                throw new ClubLayoutServiceException("StationLayoutAlreadyExists");
+                log.error("StationLayout already exists for stationId: {}",
+                        request.getStationId());
+                throw new ClubLayoutServiceException(
+                        ClubLayoutServiceExceptionType.STATION_LAYOUT_ALREADY_EXISTS);
             }
 
             StationGroupLayout group = stationGroupLayoutRepository
                     .findById(request.getStationGroupLayoutId())
-                    .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.GROUP_LAYOUT_NOT_FOUND));
 
             String stationLayoutId = UUID.randomUUID().toString();
 
@@ -537,10 +589,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .width(station.getWidth())
                     .height(station.getHeight())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in adding station-layout for stationGroupLayoutId: {}",
                     request.getStationGroupLayoutId());
-            throw new ClubLayoutServiceException("AddStationLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.ADD_STATION_LAYOUT_FAILED);
         }
     }
 
@@ -549,7 +604,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
             throws ClubLayoutServiceException {
         try {
             StationLayout stationLayout = stationLayoutRepository.findById(stationLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("StationLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.STATION_LAYOUT_NOT_FOUND));
 
             return RawStationLayoutResponse.builder()
                     .id(stationLayout.getId())
@@ -561,9 +617,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .width(stationLayout.getWidth())
                     .height(stationLayout.getHeight())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
-            log.error("Exception in getting raw station-layout for stationLayoutId: {}", stationLayoutId);
-            throw new ClubLayoutServiceException("GetRawStationLayoutException", e);
+            log.error("Exception in getting raw station-layout for stationLayoutId: {}",
+                    stationLayoutId);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.GET_STATION_LAYOUT_FAILED);
         }
     }
 
@@ -573,7 +633,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
         try {
             StationLayout stationLayout =
                     stationLayoutRepository.findById(stationLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("StationLayout not found"));
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.STATION_LAYOUT_NOT_FOUND));
 
             return EnrichedStationLayoutResponse.builder()
                     .id(stationLayout.getId())
@@ -585,10 +646,13 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .height(stationLayout.getHeight())
                     .width(stationLayout.getWidth())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in getting enriched station-layout for stationLayoutId: {}",
                     stationLayoutId);
-            throw new ClubLayoutServiceException("GetEnrichedStationLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.GET_STATION_LAYOUT_FAILED);
         }
     }
 
@@ -599,7 +663,8 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
         try {
             StationLayout station = stationLayoutRepository.findById(stationLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("StationLayout not found"));
+                    .orElseThrow(() -> new ClubLayoutServiceException(
+                            ClubLayoutServiceExceptionType.STATION_LAYOUT_NOT_FOUND));
 
             if(hasValue(request.getOffsetX())){
                 station.setOffsetX(request.getOffsetX());
@@ -628,9 +693,11 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .width(station.getWidth())
                     .height(station.getHeight())
                     .build();
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in updating station-layout for stationLayoutId: {}", stationLayoutId);
-            throw new ClubLayoutServiceException("UpdateStationLayoutException", e);
+            throw new ClubLayoutServiceException(ClubLayoutServiceExceptionType.UPDATE_STATION_LAYOUT_FAILED);
         }
     }
 
@@ -638,14 +705,15 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
     public void deleteStationLayout(String stationLayoutId)
             throws ClubLayoutServiceException {
         try {
-            StationLayout stationLayout = stationLayoutRepository
-                    .findById(stationLayoutId)
-                    .orElseThrow(() -> new IllegalArgumentException("StationLayout not found"));
+            StationLayout stationLayout =
+                    stationLayoutRepository.findById(stationLayoutId)
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.STATION_LAYOUT_NOT_FOUND));
 
             StationGroupLayout stationGroupLayout =
-                    stationGroupLayoutRepository
-                            .findById(stationLayout.getStationGroupLayoutId())
-                            .orElseThrow(() -> new IllegalArgumentException("StationGroupLayout not found"));
+                    stationGroupLayoutRepository.findById(stationLayout.getStationGroupLayoutId())
+                            .orElseThrow(() -> new ClubLayoutServiceException(
+                                    ClubLayoutServiceExceptionType.GROUP_LAYOUT_NOT_FOUND));
 
             stationGroupLayout.getStationLayoutIds()
                     .removeIf(stationLayoutId::equals);
@@ -655,9 +723,12 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
 
             log.info("Deleted StationLayout {} from group {}",
                     stationLayoutId, stationGroupLayout.getId());
+        } catch (ClubLayoutServiceException e){
+            throw e;
         } catch (Exception e){
             log.error("Exception in deleting station-layout for stationLayoutId: {}", stationLayoutId);
-            throw new ClubLayoutServiceException("DeleteStationLayoutException", e);
+            throw new ClubLayoutServiceException(
+                    ClubLayoutServiceExceptionType.DELETE_STATION_LAYOUT_FAILED);
         }
     }
 
