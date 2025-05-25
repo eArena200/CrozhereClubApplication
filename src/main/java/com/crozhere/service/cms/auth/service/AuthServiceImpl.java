@@ -11,6 +11,7 @@ import com.crozhere.service.cms.auth.repository.entity.User;
 import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import com.crozhere.service.cms.auth.repository.entity.UserRoleMapping;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
+import com.crozhere.service.cms.auth.service.exception.AuthServiceExceptionType;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
 import com.crozhere.service.cms.club.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.club.service.ClubAdminService;
@@ -33,7 +34,6 @@ public class AuthServiceImpl implements AuthService {
     private final UserRoleDao userRoleDao;
     private final OTPService otpService;
     private final JwtService jwtService;
-
     private final PlayerService playerService;
     private final ClubAdminService clubAdminService;
 
@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService {
             OTPService otpService,
             JwtService jwtService,
             PlayerService playerService,
-            ClubAdminService clubAdminService){
+            ClubAdminService clubAdminService) {
         this.userDao = userDao;
         this.userRoleDao = userRoleDao;
         this.otpService = otpService;
@@ -59,7 +59,8 @@ public class AuthServiceImpl implements AuthService {
             otpService.sendOTP(request.getPhone());
         } catch (OTPServiceException e) {
             log.error("Failed to initialize auth for phone: {}", request.getPhone(), e);
-            throw new AuthServiceException("InitAuthException", e);
+            throw new AuthServiceException(
+                    AuthServiceExceptionType.INIT_AUTH_FAILED);
         }
     }
 
@@ -67,13 +68,18 @@ public class AuthServiceImpl implements AuthService {
     public VerifyAuthResponse verifyAuth(VerifyAuthRequest request) throws AuthServiceException {
         try {
             boolean valid = otpService.verifyOTP(request.getPhone(), request.getOtp());
-            if (!valid) throw new AuthServiceException("Invalid OTP");
-
+            if (!valid) {
+                throw new AuthServiceException(
+                        AuthServiceExceptionType.INVALID_OTP);
+            }
             return createUserAndToken(request);
 
+        } catch (AuthServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Verify auth failed: {}", request.getPhone(), e);
-            throw new AuthServiceException("VerifyAuthException", e);
+            throw new AuthServiceException(
+                    AuthServiceExceptionType.VERIFY_AUTH_FAILED, e);
         }
     }
 
@@ -104,14 +110,20 @@ public class AuthServiceImpl implements AuthService {
 
         if (isNewRole) {
             try {
-                if(request.getRole() == UserRole.PLAYER){
+                if (request.getRole() == UserRole.PLAYER) {
                     playerService.createPlayerForUser(user);
-                } else if(request.getRole() == UserRole.CLUB_ADMIN) {
+                } else if (request.getRole() == UserRole.CLUB_ADMIN) {
                     clubAdminService.createClubAdminForUser(user);
                 }
             } catch (Exception e) {
-                log.error("Failed to create player for user ID: {}", user.getId(), e);
-                throw new RuntimeException("Failed to create player profile", e);
+                log.error("Failed to create role-based profile for user ID: {}", user.getId(), e);
+                if (request.getRole() == UserRole.PLAYER) {
+                    throw new AuthServiceException(
+                            AuthServiceExceptionType.CREATE_PLAYER_FAILED);
+                } else if (request.getRole() == UserRole.CLUB_ADMIN) {
+                    throw new AuthServiceException(
+                            AuthServiceExceptionType.CREATE_CLUB_ADMIN_FAILED);
+                }
             }
         }
 
@@ -120,15 +132,19 @@ public class AuthServiceImpl implements AuthService {
                 .map(UserRoleMapping::getRole)
                 .collect(Collectors.toList());
 
-        String token = jwtService.generateToken(
-                user.getId(),
-                roles.stream().map(Enum::name).toList()
-        );
+        String token;
+        try {
+            token = jwtService.generateToken(
+                    user.getId(),
+                    roles.stream().map(Enum::name).toList()
+            );
+        } catch (Exception e) {
+            throw new AuthServiceException(AuthServiceExceptionType.GENERATE_TOKEN_FAILED);
+        }
 
         if (request.getRole().equals(UserRole.PLAYER)) {
             try {
                 Player player = playerService.getPlayerByUserId(user.getId());
-
                 return VerifyAuthResponse.builder()
                         .jwt(token)
                         .userId(user.getId())
@@ -137,14 +153,14 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             } catch (Exception e) {
                 log.warn("User has PLAYER role but player record not found for user ID: {}", user.getId());
+                throw new AuthServiceException(
+                        AuthServiceExceptionType.GET_PLAYER_PROFILE_FAILED);
             }
         }
 
         if (request.getRole().equals(UserRole.CLUB_ADMIN)) {
             try {
-                ClubAdmin clubAdmin =
-                        clubAdminService.getClubAdminByUserId(user.getId());
-
+                ClubAdmin clubAdmin = clubAdminService.getClubAdminByUserId(user.getId());
                 return VerifyAuthResponse.builder()
                         .jwt(token)
                         .userId(user.getId())
@@ -153,6 +169,8 @@ public class AuthServiceImpl implements AuthService {
                         .build();
             } catch (Exception e) {
                 log.warn("User has CLUB_ADMIN role but clubAdmin record not found for user ID: {}", user.getId());
+                throw new AuthServiceException(
+                        AuthServiceExceptionType.GET_CLUB_ADMIN_PROFILE_FAILED);
             }
         }
 
@@ -162,5 +180,4 @@ public class AuthServiceImpl implements AuthService {
                 .roles(roles)
                 .build();
     }
-
 }
