@@ -688,6 +688,7 @@ public class ClubLayoutServiceImpl implements ClubLayoutService {
                     .id(station.getId())
                     .stationGroupLayoutId((station.getStationGroupLayoutId()))
                     .stationType(station.getStationType())
+                    .stationId(station.getStationId())
                     .offsetX(station.getOffsetX())
                     .offsetY(station.getOffsetY())
                     .width(station.getWidth())

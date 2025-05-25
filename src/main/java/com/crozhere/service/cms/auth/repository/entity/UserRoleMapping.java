@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user_role")
+@Table(name = "users_role")
 public class UserRoleMapping {
 
     @Id
