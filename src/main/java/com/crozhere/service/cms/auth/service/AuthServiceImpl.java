@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -130,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
         List<UserRoleMapping> roleMappings = userRoleDao.getRolesByUserId(user.getId());
         List<UserRole> roles = roleMappings.stream()
                 .map(UserRoleMapping::getRole)
-                .collect(Collectors.toList());
+                .toList();
 
         String token;
         try {
@@ -148,7 +147,7 @@ public class AuthServiceImpl implements AuthService {
                 return VerifyAuthResponse.builder()
                         .jwt(token)
                         .userId(user.getId())
-                        .roles(roles)
+                        .role(UserRole.PLAYER)
                         .playerId(player.getId())
                         .build();
             } catch (Exception e) {
@@ -164,7 +163,7 @@ public class AuthServiceImpl implements AuthService {
                 return VerifyAuthResponse.builder()
                         .jwt(token)
                         .userId(user.getId())
-                        .roles(roles)
+                        .role(UserRole.CLUB_ADMIN)
                         .clubAdminId(clubAdmin.getId())
                         .build();
             } catch (Exception e) {
@@ -177,7 +176,7 @@ public class AuthServiceImpl implements AuthService {
         return VerifyAuthResponse.builder()
                 .jwt(token)
                 .userId(user.getId())
-                .roles(roles)
+                .role(UserRole.GUEST)
                 .build();
     }
 }

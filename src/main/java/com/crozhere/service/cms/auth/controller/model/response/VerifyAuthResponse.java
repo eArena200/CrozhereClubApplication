@@ -13,5 +13,5 @@ public class VerifyAuthResponse {
     private Long userId;
     private Long playerId;
     private Long clubAdminId;
-    private List<UserRole> roles;
+    private UserRole role;
 }
