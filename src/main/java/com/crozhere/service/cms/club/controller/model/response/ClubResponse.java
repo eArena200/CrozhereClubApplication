@@ -8,6 +8,5 @@ import lombok.Data;
 public class ClubResponse {
     private Long clubId;
     private Long clubAdminId;
-    private String clubLayoutId;
-    private String name;
+    private String clubName;
 }

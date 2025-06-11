@@ -1,5 +1,7 @@
 package com.crozhere.service.cms.club.service.impl;
 
+import com.crozhere.service.cms.club.controller.model.ClubAddress;
+import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.request.AddStationRequest;
 import com.crozhere.service.cms.club.controller.model.request.CreateClubRequest;
 import com.crozhere.service.cms.club.controller.model.request.UpdateClubRequest;
@@ -19,8 +21,6 @@ import com.crozhere.service.cms.club.service.exception.ClubAdminServiceException
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
 import com.crozhere.service.cms.layout.controller.model.request.AddStationLayoutRequest;
-import com.crozhere.service.cms.layout.controller.model.request.CreateClubLayoutRequest;
-import com.crozhere.service.cms.layout.controller.model.response.RawClubLayoutResponse;
 import com.crozhere.service.cms.layout.controller.model.response.RawStationLayoutResponse;
 import com.crozhere.service.cms.layout.service.ClubLayoutService;
 import com.crozhere.service.cms.layout.service.exception.ClubLayoutServiceException;
@@ -30,6 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+
+import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertStringToLocalTime;
 
 @Slf4j
 @Service
@@ -61,25 +63,22 @@ public class ClubServiceImpl implements ClubService {
 
             Club club = Club.builder()
                     .clubAdmin(clubAdmin)
-                    .name(createClubRequest.getName())
+                    .clubName(createClubRequest.getClubName())
+                    .street(createClubRequest.getClubAddress().getStreetAddress())
+                    .city(createClubRequest.getClubAddress().getCity())
+                    .state(createClubRequest.getClubAddress().getState())
+                    .pincode(createClubRequest.getClubAddress().getPinCode())
+                    .latitude(createClubRequest.getClubAddress().getGeoLocation().getLatitude())
+                    .longitude(createClubRequest.getClubAddress().getGeoLocation().getLongitude())
+                    .openTime(convertStringToLocalTime(
+                                    createClubRequest.getOperatingHours().getOpenTime()))
+                    .closeTime(convertStringToLocalTime(
+                                    createClubRequest.getOperatingHours().getCloseTime()))
+                    .primaryContact(createClubRequest.getPrimaryContact())
+                    .secondaryContact(createClubRequest.getSecondaryContact())
                     .build();
+
             clubDAO.save(club);
-
-            RawClubLayoutResponse clubLayoutResponse;
-            try {
-                clubLayoutResponse = clubLayoutService.createClubLayout(
-                        CreateClubLayoutRequest.builder()
-                                .clubId(club.getId())
-                                .build());
-            } catch (ClubLayoutServiceException e) {
-                log.error("Exception in creating clubLayout for clubId: {}", club.getId());
-                clubDAO.delete(club.getId());
-                throw e;
-            }
-
-            club.setClubLayoutId(clubLayoutResponse.getId());
-            clubDAO.update(club.getId(), club);
-
             return club;
         } catch (ClubAdminServiceException e){
             log.error("Exception while getting clubAdmin for clubAdminId: {}",
@@ -88,9 +87,6 @@ public class ClubServiceImpl implements ClubService {
         } catch (ClubDAOException e){
             log.error("Exception while saving club for clubAdminId: {}",
                     createClubRequest.getClubAdminId());
-            throw new ClubServiceException(ClubServiceExceptionType.CREATE_CLUB_FAILED);
-        } catch (ClubLayoutServiceException e){
-            log.error("Exception in creating club-layout for request: {}", createClubRequest);
             throw new ClubServiceException(ClubServiceExceptionType.CREATE_CLUB_FAILED);
         }
     }
@@ -110,17 +106,64 @@ public class ClubServiceImpl implements ClubService {
 
     @Override
     public Club updateClub(Long clubId, UpdateClubRequest updateClubRequest)
-            throws ClubServiceException
-    {
+            throws ClubServiceException {
         try {
             Club club = getClubById(clubId);
-            if(StringUtils.hasText(updateClubRequest.getName())){
-                club.setName(updateClubRequest.getName());
+
+            if (StringUtils.hasText(updateClubRequest.getClubName())) {
+                club.setClubName(updateClubRequest.getClubName());
             }
+
+            ClubAddress address = updateClubRequest.getClubAddress();
+            if (address != null) {
+                if (StringUtils.hasText(address.getStreetAddress())) {
+                    club.setStreet(address.getStreetAddress());
+                }
+                if (StringUtils.hasText(address.getCity())) {
+                    club.setCity(address.getCity());
+                }
+                if (StringUtils.hasText(address.getState())) {
+                    club.setState(address.getState());
+                }
+                if (StringUtils.hasText(address.getPinCode())) {
+                    club.setPincode(address.getPinCode());
+                }
+
+                if (address.getGeoLocation() != null) {
+                    if (address.getGeoLocation().getLatitude() != null) {
+                        club.setLatitude(address.getGeoLocation().getLatitude());
+                    }
+                    if (address.getGeoLocation().getLongitude() != null) {
+                        club.setLongitude(address.getGeoLocation().getLongitude());
+                    }
+                }
+            }
+
+            OperatingHours operatingHours = updateClubRequest.getOperatingHours();
+            if (operatingHours != null){
+                if(StringUtils.hasText(operatingHours.getOpenTime())){
+                    club.setOpenTime(convertStringToLocalTime(
+                            operatingHours.getOpenTime()));
+                }
+
+                if(StringUtils.hasText(operatingHours.getCloseTime())){
+                    club.setCloseTime(convertStringToLocalTime(
+                            operatingHours.getCloseTime()));
+                }
+            }
+
+            if (StringUtils.hasText(updateClubRequest.getPrimaryContact())) {
+                club.setPrimaryContact(updateClubRequest.getPrimaryContact());
+            }
+            if (StringUtils.hasText(updateClubRequest.getSecondaryContact())) {
+                club.setSecondaryContact(updateClubRequest.getSecondaryContact());
+            }
+
             clubDAO.update(clubId, club);
             return club;
-        } catch (ClubDAOException e){
-            log.error("Exception while updating club for clubId: {}", clubId);
+
+        } catch (ClubDAOException e) {
+            log.error("Exception while updating club for clubId: {}", clubId, e);
             throw new ClubServiceException(ClubServiceExceptionType.UPDATE_CLUB_FAILED);
         }
     }
@@ -135,13 +178,8 @@ public class ClubServiceImpl implements ClubService {
                             .map(Station::getId)
                             .toList();
 
-
-            clubLayoutService.deleteClubLayout(club.getClubLayoutId());
             stationDAO.deleteAllById(stationsIds);
             clubDAO.delete(clubId);
-        } catch (ClubLayoutServiceException e) {
-            log.error("Exception in deleting club-layout for clubId: {}", clubId);
-            throw new ClubServiceException(ClubServiceExceptionType.DELETE_CLUB_FAILED);
         } catch (ClubDAOException e){
             log.error("Exception while deleting club for clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.DELETE_CLUB_FAILED);
@@ -275,5 +313,4 @@ public class ClubServiceImpl implements ClubService {
             throw new ClubServiceException(ClubServiceExceptionType.GET_STATIONS_BY_TYPE_FAILED);
         }
     }
-
 }
