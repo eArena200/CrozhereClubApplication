@@ -16,6 +16,7 @@ public enum ClubServiceExceptionType {
     DELETE_STATION_FAILED("Failed to delete station."),
     GET_STATION_FAILED("Failed to get station."),
     UPDATE_STATION_FAILED("Failed to update station."),
+    TOGGLE_STATION_STATUS("Failed to toggle station status"),
 
     GET_STATIONS_BY_CLUB_FAILED("Failed to get stations by club."),
     GET_STATIONS_BY_TYPE_FAILED("Failed to get stations by type.");

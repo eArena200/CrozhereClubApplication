@@ -29,7 +29,7 @@ import static com.crozhere.service.cms.club.controller.model.OperatingHours.conv
 @Slf4j
 @RestController
 @RequestMapping("/manage/clubs")
-@Tag(name = "Club Management", description = "Admin-level APIs for creating and managing clubs")
+@Tag(name = "Club Management", description = "APIs for creating and managing clubs")
 public class ClubManagementController {
 
     private final ClubService clubService;

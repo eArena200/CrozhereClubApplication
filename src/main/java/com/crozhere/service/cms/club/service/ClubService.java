@@ -30,6 +30,8 @@ public interface ClubService {
     Station getStation(Long stationId) throws ClubServiceException;
     void deleteStation(Long stationId) throws ClubServiceException;
 
+    Station toggleStationStatus(Long stationId) throws ClubServiceException;
+
     List<Station> getStationsByClubId(Long clubId) throws ClubServiceException;
     List<Station> getStationsByClubIdAndType(Long clubId, StationType stationType)
             throws ClubServiceException;

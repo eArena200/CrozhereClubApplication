@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @Builder
@@ -31,11 +32,14 @@ public class Station {
     @Enumerated(EnumType.STRING)
     private StationType stationType;
 
-    @Column(name = "station_group_id")
-    private String stationGroupLayoutId;
+    @Column(name = "open_time")
+    private LocalTime openTime;
 
-    @Column(name = "station_layout_id")
-    private String stationLayoutId;
+    @Column(name = "close_time")
+    private LocalTime closeTime;
+
+    @Column(name = "capacity")
+    private Integer capacity;
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;

@@ -20,10 +20,6 @@ import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubAdminServiceException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
-import com.crozhere.service.cms.layout.controller.model.request.AddStationLayoutRequest;
-import com.crozhere.service.cms.layout.controller.model.response.RawStationLayoutResponse;
-import com.crozhere.service.cms.layout.service.ClubLayoutService;
-import com.crozhere.service.cms.layout.service.exception.ClubLayoutServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -41,17 +37,14 @@ public class ClubServiceImpl implements ClubService {
     private final StationDao stationDAO;
 
     private final ClubAdminService clubAdminService;
-    private final ClubLayoutService clubLayoutService;
 
     public ClubServiceImpl(
             @Qualifier("ClubSqlDao") ClubDao clubDAO,
             @Qualifier("StationSqlDao") StationDao stationDAO,
-            ClubAdminService clubAdminService,
-            ClubLayoutService clubLayoutService){
+            ClubAdminService clubAdminService){
         this.clubDAO = clubDAO;
         this.stationDAO = stationDAO;
         this.clubAdminService = clubAdminService;
-        this.clubLayoutService = clubLayoutService;
     }
 
     @Override
@@ -209,34 +202,15 @@ public class ClubServiceImpl implements ClubService {
                     .club(club)
                     .stationName(addStationRequest.getStationName())
                     .stationType(addStationRequest.getStationType())
-                    .stationGroupLayoutId(addStationRequest.getStationGroupLayoutId())
-                    .isActive(true)
+                    .openTime(convertStringToLocalTime(
+                            addStationRequest.getOperatingHours().getOpenTime()))
+                    .closeTime(convertStringToLocalTime(
+                            addStationRequest.getOperatingHours().getCloseTime()))
+                    .capacity(addStationRequest.getCapacity())
+                    .isActive(false)
                     .build();
 
             stationDAO.save(station);
-
-            RawStationLayoutResponse rawStationLayoutResponse;
-            try {
-                rawStationLayoutResponse = clubLayoutService.addStationLayout(
-                        AddStationLayoutRequest.builder()
-                                .stationGroupLayoutId(
-                                        addStationRequest.getStationGroupLayoutId())
-                                .stationType(addStationRequest.getStationType())
-                                .stationId(station.getId())
-                                .offsetX(1)
-                                .offsetY(1)
-                                .height(10)
-                                .width(10)
-                                .build());
-            } catch (ClubLayoutServiceException e) {
-                log.error("Exception in adding station-layout for request: {}", addStationRequest);
-                stationDAO.delete(station.getId());
-                throw new ClubServiceException(ClubServiceExceptionType.ADD_STATION_FAILED);
-            }
-
-            station.setStationLayoutId(rawStationLayoutResponse.getId());
-            stationDAO.update(station.getId(), station);
-
             return station;
         } catch (StationDAOException e) {
             log.error("Exception while saving station for clubId: {}",
@@ -250,8 +224,24 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Station station = getStation(stationId);
+
             if(StringUtils.hasText(updateStationRequest.getStationName())){
                 station.setStationName(updateStationRequest.getStationName());
+            }
+
+            OperatingHours operatingHours = updateStationRequest.getOperatingHours();
+            if( operatingHours != null){
+                if(StringUtils.hasText(operatingHours.getOpenTime())){
+                    station.setOpenTime(convertStringToLocalTime(operatingHours.getOpenTime()));
+                }
+
+                if(StringUtils.hasText(operatingHours.getCloseTime())){
+                    station.setCloseTime(convertStringToLocalTime(operatingHours.getCloseTime()));
+                }
+            }
+
+            if( updateStationRequest.getCapacity() != null){
+                station.setCapacity(updateStationRequest.getCapacity());
             }
 
             stationDAO.update(stationId, station);
@@ -278,15 +268,23 @@ public class ClubServiceImpl implements ClubService {
     @Override
     public void deleteStation(Long stationId) throws ClubServiceException {
         try {
-            Station station = stationDAO.getById(stationId);
-            clubLayoutService.deleteStationLayout(station.getStationLayoutId());
             stationDAO.delete(stationId);
-        } catch (ClubLayoutServiceException e) {
-            log.error("Exception in deleting station-layout for stationId: {}", stationId);
-            throw new ClubServiceException(ClubServiceExceptionType.DELETE_STATION_FAILED);
         } catch (StationDAOException e){
             log.error("Exception while deleting station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.DELETE_STATION_FAILED, e);
+        }
+    }
+
+    @Override
+    public Station toggleStationStatus(Long stationId) throws ClubServiceException {
+        try {
+            Station station = stationDAO.getById(stationId);
+            station.setIsActive(!station.getIsActive());
+            stationDAO.save(station);
+            return station;
+        } catch (StationDAOException e){
+            log.error("Exception while toggling station for stationId: {}", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.TOGGLE_STATION_STATUS);
         }
     }
 
