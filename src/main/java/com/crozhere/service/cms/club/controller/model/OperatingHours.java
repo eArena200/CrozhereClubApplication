@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -20,10 +21,18 @@ public class OperatingHours {
             = DateTimeFormatter.ofPattern("HH:mm");
 
     public static String convertLocalTimeToString(LocalTime localTime){
-        return localTime.format(timeFormatter);
+        if(localTime != null){
+            return localTime.format(timeFormatter);
+        }
+
+        return null;
     }
 
     public static LocalTime convertStringToLocalTime(String stringTime){
-        return LocalTime.parse(stringTime, timeFormatter);
+        if (StringUtils.hasText(stringTime)){
+            return LocalTime.parse(stringTime, timeFormatter);
+        }
+
+        return null;
     }
 }

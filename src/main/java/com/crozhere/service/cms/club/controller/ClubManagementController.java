@@ -11,6 +11,7 @@ import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.service.ClubService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -51,28 +52,28 @@ public class ClubManagementController {
             @Parameter(description = "CreateClubRequest", required = true)
             @RequestBody CreateClubRequest request) {
         Club club = clubService.createClub(request);
-        return ResponseEntity.status(201).body(getClubResponse(club));
+        return ResponseEntity.status(HttpStatus.CREATED).body(getClubResponse(club));
     }
 
     @Operation(summary = "UpdateClubDetails", description = "Updates existing club details")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Club updated",
-                    content = @Content(schema = @Schema(implementation = ClubResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ClubDetailsResponse.class))),
             @ApiResponse(responseCode = "404", description = "Club not found")
     })
     @PutMapping("/{clubId}")
-    public ResponseEntity<ClubResponse> updateClub(
+    public ResponseEntity<ClubDetailsResponse> updateClub(
             @PathVariable Long clubId,
             @RequestBody UpdateClubRequest request) {
         Club club = clubService.updateClub(clubId, request);
-        return ResponseEntity.ok(getClubResponse(club));
+        return ResponseEntity.ok(getClubDetailsResponse(club));
     }
 
 
     @Operation(summary = "GetClubDetailsByClubId", description = "Fetches club details by ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Club fetched",
-                    content = @Content(schema = @Schema(implementation = ClubResponse.class))),
+                    content = @Content(schema = @Schema(implementation = ClubDetailsResponse.class))),
             @ApiResponse(responseCode = "404", description = "Club not found")
     })
     @GetMapping("/{clubId}")
@@ -91,7 +92,7 @@ public class ClubManagementController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Successfully retrieved clubs",
-                    content = @Content(schema = @Schema(implementation = ClubResponse.class))
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = ClubResponse.class)))
             ),
             @ApiResponse(
                     responseCode = "500",

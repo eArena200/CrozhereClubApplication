@@ -65,6 +65,7 @@ public class StationManagementController {
     public ResponseEntity<StationResponse> addStation(
             @Parameter(description = "AddStationRequest", required = true)
             @RequestBody AddStationRequest addStationRequest){
+        log.info("AddStationRequest: {}", addStationRequest.toString());
         Station station = clubService.addStation(addStationRequest);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -197,6 +198,7 @@ public class StationManagementController {
     public ResponseEntity<Void> deleteStation(
             @Parameter(description = "ID of the station to delete", required = true)
             @PathVariable Long stationId){
+        log.info("Delete Station request for stationId: {}", stationId);
         clubService.deleteStation(stationId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)

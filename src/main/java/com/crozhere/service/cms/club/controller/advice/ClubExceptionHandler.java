@@ -52,6 +52,25 @@ public class ClubExceptionHandler {
         return ResponseEntity.status(status).body(error);
     }
 
+    @ExceptionHandler(RateCardServiceException.class)
+    public ResponseEntity<ErrorResponse> handleRateCardServiceException(
+            RateCardServiceException ex) {
+
+        RateCardServiceExceptionType type = ex.getType();
+        HttpStatus status = resolveHttpStatus(type.name());
+
+        log.error("Handled RateCardServiceException [{}]: {}", type.name(), type.getMessage(), ex);
+
+        ErrorResponse error = ErrorResponse.builder()
+                .error("RateCardServiceException")
+                .type(type.name())
+                .message(type.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(status).body(error);
+    }
+
     private HttpStatus resolveHttpStatus(String name) {
         if (name.endsWith("_NOT_FOUND")) return HttpStatus.NOT_FOUND;
         if (name.endsWith("_FAILED")) return HttpStatus.INTERNAL_SERVER_ERROR;

@@ -1,6 +1,7 @@
 package com.crozhere.service.cms.club.service.impl;
 
 import com.crozhere.service.cms.club.controller.model.ClubAddress;
+import com.crozhere.service.cms.club.controller.model.GeoLocation;
 import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.request.AddStationRequest;
 import com.crozhere.service.cms.club.controller.model.request.CreateClubRequest;
@@ -61,8 +62,6 @@ public class ClubServiceImpl implements ClubService {
                     .city(createClubRequest.getClubAddress().getCity())
                     .state(createClubRequest.getClubAddress().getState())
                     .pincode(createClubRequest.getClubAddress().getPinCode())
-                    .latitude(createClubRequest.getClubAddress().getGeoLocation().getLatitude())
-                    .longitude(createClubRequest.getClubAddress().getGeoLocation().getLongitude())
                     .openTime(convertStringToLocalTime(
                                     createClubRequest.getOperatingHours().getOpenTime()))
                     .closeTime(convertStringToLocalTime(
@@ -70,6 +69,12 @@ public class ClubServiceImpl implements ClubService {
                     .primaryContact(createClubRequest.getPrimaryContact())
                     .secondaryContact(createClubRequest.getSecondaryContact())
                     .build();
+
+            GeoLocation geoLocation = createClubRequest.getClubAddress().getGeoLocation();
+            if(geoLocation != null){
+                club.setLatitude(geoLocation.getLatitude());
+                club.setLongitude(geoLocation.getLongitude());
+            }
 
             clubDAO.save(club);
             return club;
