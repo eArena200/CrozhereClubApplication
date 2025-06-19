@@ -7,20 +7,16 @@ import com.crozhere.service.cms.club.controller.model.request.AddStationRequest;
 import com.crozhere.service.cms.club.controller.model.request.CreateClubRequest;
 import com.crozhere.service.cms.club.controller.model.request.UpdateClubRequest;
 import com.crozhere.service.cms.club.controller.model.request.UpdateStationRequest;
+import com.crozhere.service.cms.club.repository.RateRepository;
 import com.crozhere.service.cms.club.repository.dao.StationDao;
 import com.crozhere.service.cms.club.repository.dao.exception.ClubDAOException;
 import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.club.repository.dao.exception.StationDAOException;
-import com.crozhere.service.cms.club.repository.entity.Club;
+import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.repository.dao.ClubDao;
-import com.crozhere.service.cms.club.repository.entity.ClubAdmin;
-import com.crozhere.service.cms.club.repository.entity.Station;
-import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.ClubAdminService;
 import com.crozhere.service.cms.club.service.ClubService;
-import com.crozhere.service.cms.club.service.exception.ClubAdminServiceException;
-import com.crozhere.service.cms.club.service.exception.ClubServiceException;
-import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
+import com.crozhere.service.cms.club.service.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -36,16 +32,19 @@ public class ClubServiceImpl implements ClubService {
 
     private final ClubDao clubDAO;
     private final StationDao stationDAO;
+    private final RateRepository rateRepository;
 
     private final ClubAdminService clubAdminService;
 
     public ClubServiceImpl(
             @Qualifier("ClubSqlDao") ClubDao clubDAO,
             @Qualifier("StationSqlDao") StationDao stationDAO,
-            ClubAdminService clubAdminService){
+            ClubAdminService clubAdminService,
+            RateRepository rateRepository){
         this.clubDAO = clubDAO;
         this.stationDAO = stationDAO;
         this.clubAdminService = clubAdminService;
+        this.rateRepository = rateRepository;
     }
 
     @Override
@@ -203,6 +202,13 @@ public class ClubServiceImpl implements ClubService {
     public Station addStation(AddStationRequest addStationRequest) throws ClubServiceException {
         try {
             Club club = getClubById(addStationRequest.getClubId());
+            Rate rate = rateRepository
+                    .findById(addStationRequest.getRateId())
+                    .orElseThrow(() -> {
+                        log.info("Rate not found with Id: {}", addStationRequest.getRateId());
+                        return new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
+                    });
+
             Station station = Station.builder()
                     .club(club)
                     .stationName(addStationRequest.getStationName())
@@ -211,12 +217,17 @@ public class ClubServiceImpl implements ClubService {
                             addStationRequest.getOperatingHours().getOpenTime()))
                     .closeTime(convertStringToLocalTime(
                             addStationRequest.getOperatingHours().getCloseTime()))
+                    .rate(rate)
                     .capacity(addStationRequest.getCapacity())
                     .isActive(false)
                     .build();
 
             stationDAO.save(station);
             return station;
+        } catch (RateCardServiceException e) {
+            log.error("Exception while getting rate for rateId for new addition: {}",
+                    addStationRequest.getRateId());
+            throw e;
         } catch (StationDAOException e) {
             log.error("Exception while saving station for clubId: {}",
                     addStationRequest.getClubId());
@@ -249,8 +260,21 @@ public class ClubServiceImpl implements ClubService {
                 station.setCapacity(updateStationRequest.getCapacity());
             }
 
+            if( updateStationRequest.getRateId() != null) {
+                Rate rate = rateRepository
+                        .findById(updateStationRequest.getRateId())
+                        .orElseThrow(() -> {
+                            log.info("Rate not found with Id for update: {}", updateStationRequest.getRateId());
+                            return new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
+                        });
+                station.setRate(rate);
+            }
+
             stationDAO.update(stationId, station);
             return station;
+        } catch (RateCardServiceException e){
+            log.error("Exception while getting rate for rateId for update: {}", updateStationRequest.getRateId());
+            throw new ClubServiceException(ClubServiceExceptionType.UPDATE_STATION_FAILED);
         } catch (StationDAOException e){
             log.error("Exception while updating station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.UPDATE_STATION_FAILED);

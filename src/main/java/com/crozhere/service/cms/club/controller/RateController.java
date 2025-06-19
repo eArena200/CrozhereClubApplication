@@ -108,17 +108,17 @@ public class RateController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Successfully retrieved all rate cards",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = RateCardResponse.class)))
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = RateCardDetailsResponse.class)))
             ),
     })
     @GetMapping
-    public ResponseEntity<List<RateCardResponse>> getAllRateCards(
+    public ResponseEntity<List<RateCardDetailsResponse>> getAllRateCards(
             @PathVariable Long clubId) {
         List<RateCard> rateCards = rateService.getRateCardsForClubId(clubId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(rateCards.stream()
-                        .map(this::getRateCardResponse)
+                        .map(this::getRateCardDetailsResponse)
                         .toList());
     }
 

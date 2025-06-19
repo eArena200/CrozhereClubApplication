@@ -38,6 +38,10 @@ public class Station {
     @Column(name = "close_time")
     private LocalTime closeTime;
 
+    @ManyToOne
+    @JoinColumn(name = "rate_id", nullable = false)
+    private Rate rate;
+
     @Column(name = "capacity")
     private Integer capacity;
 

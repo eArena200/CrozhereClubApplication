@@ -17,4 +17,5 @@ public class AddStationRequest {
     private StationType stationType;
     private OperatingHours operatingHours;
     private Integer capacity;
+    private Long rateId;
 }

@@ -251,6 +251,8 @@ public class StationManagementController {
                         .openTime(convertLocalTimeToString(station.getOpenTime()))
                         .closeTime(convertLocalTimeToString(station.getCloseTime()))
                         .build())
+                .rateId(station.getRate().getId())
+                .rateName(station.getRate().getName())
                 .capacity(station.getCapacity())
                 .isActive(station.getIsActive())
                 .build();

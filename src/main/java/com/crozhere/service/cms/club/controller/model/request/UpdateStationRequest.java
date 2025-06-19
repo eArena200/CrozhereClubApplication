@@ -14,5 +14,6 @@ import lombok.AllArgsConstructor;
 public class UpdateStationRequest {
     private String stationName;
     private OperatingHours operatingHours;
+    private Long rateId;
     private Integer capacity;
 }

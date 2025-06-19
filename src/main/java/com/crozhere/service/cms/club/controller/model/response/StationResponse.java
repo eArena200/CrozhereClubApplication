@@ -14,5 +14,7 @@ public class StationResponse {
     private StationType stationType;
     private OperatingHours operatingHours;
     private Integer capacity;
+    private Long rateId;
+    private String rateName;
     private Boolean isActive;
 }
