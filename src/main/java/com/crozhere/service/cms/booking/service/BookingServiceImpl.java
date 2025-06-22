@@ -1,8 +1,6 @@
 package com.crozhere.service.cms.booking.service;
 
-import com.crozhere.service.cms.booking.controller.model.request.BookingAvailabilityByStationRequest;
-import com.crozhere.service.cms.booking.controller.model.request.BookingAvailabilityByTimeRequest;
-import com.crozhere.service.cms.booking.controller.model.request.CreateBookingRequest;
+import com.crozhere.service.cms.booking.controller.model.request.*;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
 import com.crozhere.service.cms.booking.controller.model.response.StationAvailability;
@@ -217,6 +215,23 @@ public class BookingServiceImpl implements BookingService {
             throw new BookingServiceException(
                     BookingServiceExceptionType.CHECK_AVAILABILITY_BY_STATIONS_FAILED);
         }
+    }
+
+    @Override
+    public BookingIntent createBookingIntent(CreateBookingIntentRequest request)
+            throws InvalidRequestException, BookingServiceException {
+        return null;
+    }
+
+    @Override
+    public BookingIntent getBookingIntentById(Long intentId) throws BookingServiceException {
+        return null;
+    }
+
+    @Override
+    public Booking confirmBookingIntent(ConfirmBookingIntentRequest request)
+            throws InvalidRequestException, BookingServiceException {
+        return null;
     }
 
     // TODO: Implement booking durations should be a multiple of an hour

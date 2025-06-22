@@ -1,29 +1,32 @@
 package com.crozhere.service.cms.booking.repository.dao.impl;
 
+import com.crozhere.service.cms.booking.repository.PaymentRepository;
 import com.crozhere.service.cms.booking.repository.dao.PaymentDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.dao.exception.PaymentDAOException;
 import com.crozhere.service.cms.booking.repository.entity.Payment;
-import com.crozhere.service.cms.common.IdSetters;
-import com.crozhere.service.cms.common.InMemRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Slf4j
-@Component("PaymentInMemDao")
-public class PaymentInMemDao implements PaymentDao {
+@Component("PaymentSqlDao")
+public class PaymentDaoImpl implements PaymentDao {
 
-    private final InMemRepository<Payment> paymentRepository
-            = new InMemRepository<>(IdSetters.PAYMENT_ID_SETTER);
+    private final PaymentRepository paymentRepository;
+
+    @Autowired
+    public PaymentDaoImpl(PaymentRepository paymentRepository){
+        this.paymentRepository = paymentRepository;
+    }
 
     @Override
     public void save(Payment payment) throws PaymentDAOException {
         try {
             paymentRepository.save(payment);
-        } catch (Exception e) {
+        } catch (Exception e){
             log.error("Failed to save payment: {}", payment.toString());
             throw new PaymentDAOException("SaveException", e);
         }
@@ -42,10 +45,11 @@ public class PaymentInMemDao implements PaymentDao {
     @Override
     public Payment getById(Long paymentId) throws DataNotFoundException, PaymentDAOException {
         try {
-            return paymentRepository.getById(paymentId);
-        } catch (NoSuchElementException e){
-            log.error("Payment not found with Id: {}", paymentId);
-            throw new DataNotFoundException("GetByIdException");
+            return paymentRepository.findById(paymentId)
+                    .orElseThrow(() -> new DataNotFoundException("GetByIdException"));
+        } catch (DataNotFoundException e){
+            log.error("Payment not found with ID: {}", paymentId);
+            throw e;
         } catch (Exception e){
             log.error("Exception while getting payment for Id: {}", paymentId);
             throw new PaymentDAOException("GetByIdException", e);
@@ -55,28 +59,22 @@ public class PaymentInMemDao implements PaymentDao {
     @Override
     public void update(Long paymentId, Payment payment)
             throws DataNotFoundException, PaymentDAOException {
-        try {
-            paymentRepository.update(paymentId, payment);
-        } catch (NoSuchElementException e){
-            log.error("Payment not found for update with Id: {}", paymentId);
+        if(!paymentRepository.existsById(paymentId)){
+            log.error("Payment not found with id: {}", paymentId);
             throw new DataNotFoundException("UpdateException");
-        } catch (Exception e){
-            log.error("Exception while updating payment for Id: {}", paymentId);
-            throw new PaymentDAOException("UpdateException", e);
         }
+
+        payment.setId(paymentId);
+        paymentRepository.save(payment);
     }
 
     @Override
     public void deleteById(Long paymentId) throws PaymentDAOException {
         try {
             paymentRepository.deleteById(paymentId);
-        } catch (NoSuchElementException e){
-            log.error("Payment not found for delete with Id: {}", paymentId);
-            throw new DataNotFoundException("DeleteByIdException");
         } catch (Exception e){
-            log.error("Exception while deleting payment for Id: {}", paymentId);
+            log.error("Exception while deleting payment for ID: {}", paymentId);
             throw new PaymentDAOException("DeleteByIdException", e);
         }
     }
 }
-

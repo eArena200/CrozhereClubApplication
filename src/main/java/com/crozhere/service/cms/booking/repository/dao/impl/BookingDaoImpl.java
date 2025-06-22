@@ -16,12 +16,12 @@ import java.util.Optional;
 
 @Slf4j
 @Component("BookingSqlDao")
-public class BookingSqlDao implements BookingDao {
+public class BookingDaoImpl implements BookingDao {
 
     private final BookingRepository bookingRepository;
 
     @Autowired
-    public BookingSqlDao(BookingRepository bookingRepository) {
+    public BookingDaoImpl(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
     }
 

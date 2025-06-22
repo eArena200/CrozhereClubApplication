@@ -25,6 +25,4 @@ public interface BookingDao {
     List<Booking> getBookingsForStationsForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingDAOException;
-
-
 }
