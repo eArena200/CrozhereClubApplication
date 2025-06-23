@@ -1,53 +1,46 @@
-package com.crozhere.service.cms.auth.service;
+package com.crozhere.service.cms.auth.service.impl;
 
 import com.crozhere.service.cms.auth.controller.model.request.InitAuthRequest;
 import com.crozhere.service.cms.auth.controller.model.request.VerifyAuthRequest;
 import com.crozhere.service.cms.auth.controller.model.response.VerifyAuthResponse;
-import com.crozhere.service.cms.auth.repository.dao.UserDao;
-import com.crozhere.service.cms.auth.repository.dao.UserRoleDao;
-import com.crozhere.service.cms.auth.repository.dao.exception.UserDAOException;
-import com.crozhere.service.cms.auth.repository.dao.exception.UserRoleDAOException;
 import com.crozhere.service.cms.auth.repository.entity.User;
 import com.crozhere.service.cms.auth.repository.entity.UserRole;
-import com.crozhere.service.cms.auth.repository.entity.UserRoleMapping;
+import com.crozhere.service.cms.auth.service.AuthService;
+import com.crozhere.service.cms.auth.service.OTPService;
+import com.crozhere.service.cms.auth.service.UserService;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceException;
 import com.crozhere.service.cms.auth.service.exception.AuthServiceExceptionType;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
+import com.crozhere.service.cms.auth.service.exception.UserServiceException;
 import com.crozhere.service.cms.club.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.club.service.ClubAdminService;
 import com.crozhere.service.cms.player.repository.entity.Player;
 import com.crozhere.service.cms.player.service.PlayerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    private final UserDao userDao;
-    private final UserRoleDao userRoleDao;
     private final OTPService otpService;
     private final JwtService jwtService;
+    private final UserService userService;
     private final PlayerService playerService;
     private final ClubAdminService clubAdminService;
 
     @Autowired
     public AuthServiceImpl(
-            @Qualifier("UserSqlDao") UserDao userDao,
-            @Qualifier("UserRoleSqlDao") UserRoleDao userRoleDao,
             OTPService otpService,
             JwtService jwtService,
+            UserService userService,
             PlayerService playerService,
             ClubAdminService clubAdminService) {
-        this.userDao = userDao;
-        this.userRoleDao = userRoleDao;
         this.otpService = otpService;
         this.jwtService = jwtService;
+        this.userService = userService;
         this.playerService = playerService;
         this.clubAdminService = clubAdminService;
     }
@@ -84,59 +77,26 @@ public class AuthServiceImpl implements AuthService {
 
     @Transactional(rollbackFor = RuntimeException.class)
     protected VerifyAuthResponse createUserAndToken(VerifyAuthRequest request)
-            throws UserDAOException, UserRoleDAOException {
+            throws UserServiceException {
 
         User user;
         try {
-            user = userDao.findUserByPhoneNumber(request.getPhone());
-        } catch (UserDAOException e) {
-            user = User.builder()
-                    .phone(request.getPhone())
-                    .isActive(true)
-                    .build();
-            userDao.save(user);
-        }
+            user = userService.getOrCreateUserByPhoneNumber(
+                    request.getPhone(), request.getRole());
 
-        boolean isNewRole = false;
-        if (!userRoleDao.hasRole(user.getId(), request.getRole().name())) {
-            UserRoleMapping roleMapping = UserRoleMapping.builder()
-                    .user(user)
-                    .role(request.getRole())
-                    .build();
-            userRoleDao.save(roleMapping);
-            isNewRole = true;
+        } catch (UserServiceException e) {
+            log.error("Exception in getOrCreateUser for request: {}", request, e);
+            throw e;
         }
-
-        if (isNewRole) {
-            try {
-                if (request.getRole() == UserRole.PLAYER) {
-                    playerService.createPlayerForUser(user);
-                } else if (request.getRole() == UserRole.CLUB_ADMIN) {
-                    clubAdminService.createClubAdminForUser(user);
-                }
-            } catch (Exception e) {
-                log.error("Failed to create role-based profile for user ID: {}", user.getId(), e);
-                if (request.getRole() == UserRole.PLAYER) {
-                    throw new AuthServiceException(
-                            AuthServiceExceptionType.CREATE_PLAYER_FAILED);
-                } else if (request.getRole() == UserRole.CLUB_ADMIN) {
-                    throw new AuthServiceException(
-                            AuthServiceExceptionType.CREATE_CLUB_ADMIN_FAILED);
-                }
-            }
-        }
-
-        List<UserRoleMapping> roleMappings = userRoleDao.getRolesByUserId(user.getId());
-        List<UserRole> roles = roleMappings.stream()
-                .map(UserRoleMapping::getRole)
-                .toList();
 
         String token;
         try {
             token = jwtService.generateToken(
-                    user.getId(),
-                    roles.stream().map(Enum::name).toList()
-            );
+                        user.getId(),
+                        user.getRoles()
+                                .stream()
+                                .map(userRole -> userRole.getRole().name())
+                                .toList());
         } catch (Exception e) {
             throw new AuthServiceException(AuthServiceExceptionType.GENERATE_TOKEN_FAILED);
         }

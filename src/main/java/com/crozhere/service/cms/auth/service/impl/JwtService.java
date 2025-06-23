@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.auth.service;
+package com.crozhere.service.cms.auth.service.impl;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

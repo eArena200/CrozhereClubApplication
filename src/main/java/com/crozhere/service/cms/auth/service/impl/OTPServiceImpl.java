@@ -1,9 +1,10 @@
-package com.crozhere.service.cms.auth.service;
+package com.crozhere.service.cms.auth.service.impl;
 
 import com.crozhere.service.cms.auth.repository.dao.OtpDao;
 import com.crozhere.service.cms.auth.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.auth.repository.dao.exception.OtpDAOException;
 import com.crozhere.service.cms.auth.repository.entity.OTP;
+import com.crozhere.service.cms.auth.service.OTPService;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Random;
-import java.util.UUID;
 
 @Slf4j
 @Service
