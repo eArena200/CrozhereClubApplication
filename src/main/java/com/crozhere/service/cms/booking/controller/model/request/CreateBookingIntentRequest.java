@@ -14,12 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateBookingIntentRequest {
-    // should be present for playerSide booking
+    // optional for adminSide booking
     private Long playerId;
 
-    // should be present for adminSide booking
     private String playerPhoneNumber;
-
     private Long clubId;
     private List<Long> stationIds;
     private StationType stationType;

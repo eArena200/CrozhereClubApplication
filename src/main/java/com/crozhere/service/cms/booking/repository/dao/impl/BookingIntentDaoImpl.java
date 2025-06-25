@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Slf4j
-@Component("BookingIntentSqlDao")
+@Component
 public class BookingIntentDaoImpl implements BookingIntentDao {
 
     private final BookingIntentRepository repository;

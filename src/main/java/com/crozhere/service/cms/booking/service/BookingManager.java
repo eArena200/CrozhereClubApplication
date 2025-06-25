@@ -32,7 +32,7 @@ public class BookingManager {
 
     @Autowired
     public BookingManager(
-            @Qualifier("BookingSqlDao") BookingDao bookingDao,
+            BookingDao bookingDao,
             ClubService clubService){
         this.bookingDao = bookingDao;
         this.clubService = clubService;

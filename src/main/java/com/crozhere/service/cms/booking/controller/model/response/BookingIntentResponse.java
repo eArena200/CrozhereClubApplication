@@ -15,16 +15,18 @@ import java.util.List;
 @AllArgsConstructor
 public class BookingIntentResponse {
     private Long intentId;
+    private Long clubId;
+
     private Long playerId;
     private Long playerPhoneNumber;
-    private Long clubId;
+
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime expiresAt;
 
     private StationType stationType;
-    private List<Long> stationId;
+    private List<Long> stationIds;
     private Integer players;
-
-
+    private Boolean isConfirmed;
     private Cost totalCost;
 }

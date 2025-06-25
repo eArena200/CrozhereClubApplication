@@ -22,8 +22,11 @@ public class BookingIntent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "player_phone", nullable = false)
-    private String playerPhone;
+    @Column(name = "player_Id", nullable = false)
+    private Long playerId;
+
+    @Column(name = "club_Id", nullable = false)
+    private Long clubId;
 
     @ManyToMany
     @JoinTable(
@@ -41,6 +44,9 @@ public class BookingIntent {
 
     @Column(name = "player_count", nullable = false)
     private Integer playerCount;
+
+    @Column(name = "total_cost", nullable = false)
+    private Double totalCost;
 
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;

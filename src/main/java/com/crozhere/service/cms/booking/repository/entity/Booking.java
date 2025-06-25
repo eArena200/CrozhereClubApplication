@@ -28,6 +28,9 @@ public class Booking {
     @JoinColumn(name = "player_id", nullable = false)
     private Player player;
 
+    @Column(name = "club_Id", nullable = false)
+    private Long clubId;
+
     @ManyToMany
     @JoinTable(
             name = "booking_station",

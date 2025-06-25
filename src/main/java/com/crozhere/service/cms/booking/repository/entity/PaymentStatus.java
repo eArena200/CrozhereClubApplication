@@ -1,8 +1,7 @@
 package com.crozhere.service.cms.booking.repository.entity;
 
 public enum PaymentStatus {
-    INIT,
+    PENDING,
     SUCCESS,
-    FAILED,
-    PENDING
+    FAILED
 }

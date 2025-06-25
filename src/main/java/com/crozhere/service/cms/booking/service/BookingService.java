@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.booking.service;
 
+import com.crozhere.service.cms.auth.repository.entity.UserRole;
 import com.crozhere.service.cms.booking.controller.model.request.*;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
@@ -11,9 +12,15 @@ import com.crozhere.service.cms.booking.service.exception.InvalidRequestExceptio
 import java.util.List;
 
 public interface BookingService {
-
-    Booking createBooking(CreateBookingRequest createBookingRequest)
+    BookingIntent createBookingIntent(UserRole creatorRole, CreateBookingIntentRequest request)
             throws InvalidRequestException, BookingServiceException;
+
+    BookingIntent getBookingIntentById(Long intentId)
+            throws BookingServiceException;
+
+    Booking confirmBookingIntent(ConfirmBookingIntentRequest request)
+            throws InvalidRequestException, BookingServiceException;
+
     Booking getBookingById(Long bookingId) throws BookingServiceException;
     Booking cancelBooking(Long bookingId) throws BookingServiceException;
 
@@ -25,13 +32,4 @@ public interface BookingService {
 
     BookingAvailabilityByStationResponse checkAvailabilityByStations(
             BookingAvailabilityByStationRequest bookingAvailabilityByStationRequest) throws BookingServiceException;
-
-    BookingIntent createBookingIntent(CreateBookingIntentRequest request)
-            throws InvalidRequestException, BookingServiceException;
-
-    BookingIntent getBookingIntentById(Long intentId)
-            throws BookingServiceException;
-
-    Booking confirmBookingIntent(ConfirmBookingIntentRequest request)
-            throws InvalidRequestException, BookingServiceException;
 }

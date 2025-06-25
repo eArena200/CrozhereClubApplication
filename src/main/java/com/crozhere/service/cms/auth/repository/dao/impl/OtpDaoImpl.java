@@ -7,18 +7,18 @@ import com.crozhere.service.cms.auth.repository.dao.exception.OtpDAOException;
 import com.crozhere.service.cms.auth.repository.entity.OTP;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Slf4j
-@Component("OtpSqlDao")
-public class OtpSqlDao implements OtpDao {
+@Repository
+public class OtpDaoImpl implements OtpDao {
 
     private final OtpRepository otpRepository;
 
     @Autowired
-    public OtpSqlDao(OtpRepository otpRepository) {
+    public OtpDaoImpl(OtpRepository otpRepository) {
         this.otpRepository = otpRepository;
     }
 

@@ -24,7 +24,7 @@ public class OTPServiceImpl implements OTPService {
 
     @Autowired
     public OTPServiceImpl(
-            @Qualifier("OtpSqlDao") OtpDao otpDao){
+            OtpDao otpDao){
         this.otpDao = otpDao;
     }
 
