@@ -1,6 +1,6 @@
-package com.crozhere.service.cms.booking.controller.model.request;
+package com.crozhere.service.cms.payment.controller.model.request;
 
-import com.crozhere.service.cms.booking.repository.entity.PaymentStatus;
+import com.crozhere.service.cms.payment.repository.entity.PaymentStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

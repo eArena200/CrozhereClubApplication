@@ -21,7 +21,7 @@ public interface BookingIntentDao {
 
     void deleteById(Long intentId) throws BookingIntentDaoException;
 
-    List<BookingIntent> getActiveBookingIntentsForStationsForSearchWindow(
+    List<BookingIntent> getActiveIntentsForStationsAndForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingIntentDaoException;
 

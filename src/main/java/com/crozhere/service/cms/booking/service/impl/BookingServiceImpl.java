@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.booking.service.impl;
 
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.user.repository.entity.UserRole;
 import com.crozhere.service.cms.user.service.UserService;
@@ -8,7 +9,6 @@ import com.crozhere.service.cms.booking.controller.model.response.BookingAvailab
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
 import com.crozhere.service.cms.booking.controller.model.response.StationAvailability;
 import com.crozhere.service.cms.booking.repository.dao.BookingIntentDao;
-import com.crozhere.service.cms.booking.repository.dao.PaymentDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
@@ -26,46 +26,31 @@ import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.PlayerService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
     private final BookingIntentDao bookingIntentDao;
     private final BookingDao bookingDAO;
-    private final PaymentDao paymentDao;
     private final BookingManager bookingManager;
+
     private final ClubService clubService;
     private final PlayerService playerService;
     private final UserService userService;
-
-    @Autowired
-    public BookingServiceImpl(
-            BookingDao bookingDAO,
-            PaymentDao paymentDao,
-            BookingIntentDao bookingIntentDao,
-            BookingManager bookingManager,
-            ClubService clubService,
-            UserService userService,
-            PlayerService playerService){
-        this.bookingIntentDao = bookingIntentDao;
-        this.bookingDAO = bookingDAO;
-        this.paymentDao = paymentDao;
-        this.bookingManager = bookingManager;
-        this.userService = userService;
-        this.clubService = clubService;
-        this.playerService = playerService;
-    }
 
     @Override
     @Transactional
@@ -102,14 +87,15 @@ public class BookingServiceImpl implements BookingService {
                 throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
             }
 
-            List<Station> stations = validateAndGetRequestStations(request);
-
+            validateBookingTimes(request.getStartTime(), request.getEndTime());
+            validateStations(request.getClubId(), request.getStationType(), request.getStationIds());
             validateStationAvailability(request);
 
             BookingIntent bookingIntent = BookingIntent.builder()
                     .playerId(player.getId())
                     .clubId(request.getClubId())
-                    .stations(stations)
+                    .stationType(request.getStationType())
+                    .stationIds(request.getStationIds())
                     .startTime(request.getStartTime())
                     .endTime(request.getEndTime())
                     .playerCount(request.getPlayers())
@@ -121,7 +107,7 @@ public class BookingServiceImpl implements BookingService {
             bookingIntentDao.save(bookingIntent);
             return bookingIntent;
         } catch (InvalidRequestException e) {
-            log.error("Exception while creating booking-intent for request: {}", request);
+            log.error("Exception while creating booking-intent for request: {}", request, e);
             throw e;
         } catch (Exception e) {
             log.error("Error while creating booking intent for role {}, request: {}", creatorRole, request, e);
@@ -154,24 +140,24 @@ public class BookingServiceImpl implements BookingService {
 
             if(intent.isConfirmed()){
                 log.info("Booking-Intent already confirmed");
-                throw new BookingServiceException(BookingServiceExceptionType.GET_BOOKING_INTENT_FAILED);
+                throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_ALREADY_USED);
             }
 
             if(intent.getExpiresAt().isBefore(LocalDateTime.now())){
                 log.info("Booking-Intent confirmation period expired");
-                throw new BookingServiceException(BookingServiceExceptionType.GET_BOOKING_INTENT_FAILED);
+                throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_EXPIRED);
             }
 
             intent.setConfirmed(true);
             bookingIntentDao.save(intent);
 
-            Payment payment = paymentDao.getById(request.getPaymentId());
-            Player player = playerService.getPlayerById(intent.getPlayerId());
             Booking booking = Booking.builder()
-                    .player(player)
-                    .payment(payment)
+                    .bookingIntent(intent)
+                    .playerId(intent.getPlayerId())
+                    .paymentId(request.getPaymentId())
                     .clubId(intent.getClubId())
-                    .stations(intent.getStations())
+                    .stationType(intent.getStationType())
+                    .stationIds(new ArrayList<>(intent.getStationIds()))
                     .status(BookingStatus.CONFIRMED)
                     .playersCount(intent.getPlayerCount())
                     .bookingType(getBookingType(intent.getPlayerCount()))
@@ -216,6 +202,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional
     public Booking cancelBooking(Long bookingId) throws BookingServiceException {
         try {
             Booking booking = bookingDAO.getById(bookingId);
@@ -262,6 +249,7 @@ public class BookingServiceImpl implements BookingService {
             BookingAvailabilityByTimeRequest request)
             throws BookingServiceException {
         try {
+            validateBookingTimes(request.getStartTime(), request.getEndTime());
             List<StationAvailability> availableStations =
                     bookingManager.getAvailableStationsForTime(
                             request.getClubId(),
@@ -274,6 +262,9 @@ public class BookingServiceImpl implements BookingService {
                     .stationType(request.getStationType())
                     .stationsAvailability(availableStations)
                     .build();
+        } catch (InvalidRequestException e) {
+            log.error("Exception in checkAvailabilityByTime for request: {}", request, e);
+            throw e;
         } catch (BookingManagerException e) {
             log.error("Exception in BookingManager in checkAvailabilityByTime", e);
             throw new BookingServiceException(
@@ -290,6 +281,16 @@ public class BookingServiceImpl implements BookingService {
             BookingAvailabilityByStationRequest request)
             throws BookingServiceException {
         try {
+            validateStations(request.getClubId(), request.getStationType(), request.getStationIds());
+
+            if (isNotAlignedTo30Minutes(request.getSearchWindow().getDateTime())){
+                throw new InvalidRequestException("Search window should be multiple of 30 minutes");
+            }
+
+            if( request.getDurationHrs() < 1){
+                throw new InvalidRequestException("Duration of booking should be minimum of 1 hour");
+            }
+
             List<TimeSlot> availableTimeSlots =
                     bookingManager.getAvailableTimeSlotsForStations(
                             request.getClubId(),
@@ -308,6 +309,9 @@ public class BookingServiceImpl implements BookingService {
                     .stationIds(request.getStationIds())
                     .availableTimes(availableTimes)
                     .build();
+        } catch (InvalidRequestException e) {
+            log.error("Exception in checkAvailabilityByStation for request: {}", request, e);
+            throw e;
         } catch (BookingManagerException e) {
             log.error("Exception in BookingManager in checkAvailabilityByStations", e);
             throw new BookingServiceException(
@@ -319,35 +323,71 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    // TODO: Implement booking durations should be a multiple of an hour
-    private List<Station> validateAndGetRequestStations(CreateBookingIntentRequest request)
+
+
+    private void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime)
+            throws InvalidRequestException {
+        if (startTime == null || endTime == null) {
+            throw new InvalidRequestException("Start time and end time must be provided");
+        }
+
+        if (startTime.isBefore(LocalDateTime.now())) {
+            throw new InvalidRequestException("Start time must be in the present or future");
+        }
+
+        if (!startTime.isBefore(endTime)) {
+            throw new InvalidRequestException("Start time must be before end time");
+        }
+
+        long minutesDiff = Duration.between(startTime, endTime).toMinutes();
+
+        if (minutesDiff < 60) {
+            throw new InvalidRequestException("Booking duration must be at least 1 hour");
+        }
+
+        if (minutesDiff % 30 != 0) {
+            throw new InvalidRequestException("Booking duration must be a multiple of 30 minutes");
+        }
+
+        if (isNotAlignedTo30Minutes(startTime) || isNotAlignedTo30Minutes(endTime)) {
+            throw new InvalidRequestException("Start and end time must be aligned to 30-minute intervals (e.g., 10:00, 10:30)");
+        }
+    }
+
+    private boolean isNotAlignedTo30Minutes(LocalDateTime time) {
+        int minute = time.getMinute();
+        int second = time.getSecond();
+        int nano = time.getNano();
+
+        return !( (minute == 0 || minute == 30) && second == 0 && nano == 0 );
+    }
+
+
+    private void validateStations(Long clubId, StationType stationType, List<Long> stationIds)
             throws InvalidRequestException {
         try {
-            if (request.getStationIds() == null || request.getStationIds().isEmpty()) {
+            if (clubId == null){
+                throw new InvalidRequestException("Valid clubId is required");
+            }
+
+            if (stationIds == null || stationIds.isEmpty()) {
                 throw new InvalidRequestException("At least one station is required for booking");
             }
 
-            List<Station> allowedStations = clubService.getStationsByClubIdAndType(
-                    request.getClubId(), request.getStationType());
-
+            List<Station> allowedStations = clubService.getStationsByClubIdAndType(clubId, stationType);
             List<Long> allowedStationIds = allowedStations.stream()
                     .map(Station::getId)
                     .toList();
 
-            for (Long id : request.getStationIds()) {
+            for (Long id : stationIds) {
                 if (!allowedStationIds.contains(id)) {
-                    log.error("StationId {} not found for clubId {}", id, request.getClubId());
+                    log.error("StationId {} not found for clubId {}", id, clubId);
                     throw new InvalidRequestException("InvalidStationId: " + id);
                 }
             }
-
-            return allowedStations.stream()
-                    .filter(station -> request.getStationIds().contains(station.getId()))
-                    .toList();
-
         } catch (ClubServiceException e) {
-            log.error("ClubId {} not found or invalid", request.getClubId(), e);
-            throw new InvalidRequestException("InvalidClubId: " + request.getClubId());
+            log.error("Exception in clubService while creating booking-intent", e);
+            throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
         }
     }
 

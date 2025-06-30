@@ -1,9 +1,9 @@
-package com.crozhere.service.cms.booking.controller;
+package com.crozhere.service.cms.payment.controller;
 
-import com.crozhere.service.cms.booking.controller.model.request.InitPaymentRequest;
-import com.crozhere.service.cms.booking.controller.model.response.PaymentResponse;
-import com.crozhere.service.cms.booking.repository.entity.Payment;
-import com.crozhere.service.cms.booking.service.PaymentService;
+import com.crozhere.service.cms.payment.controller.model.request.InitPaymentRequest;
+import com.crozhere.service.cms.payment.controller.model.response.PaymentResponse;
+import com.crozhere.service.cms.payment.repository.entity.Payment;
+import com.crozhere.service.cms.payment.service.PaymentService;
 import com.crozhere.service.cms.booking.service.exception.PaymentServiceException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

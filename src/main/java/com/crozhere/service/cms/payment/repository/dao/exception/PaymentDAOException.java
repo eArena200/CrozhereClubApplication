@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.booking.repository.dao.exception;
+package com.crozhere.service.cms.payment.repository.dao.exception;
 
 
 public class PaymentDAOException extends RuntimeException {

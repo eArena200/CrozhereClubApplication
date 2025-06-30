@@ -8,7 +8,6 @@ import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
 import com.crozhere.service.cms.booking.service.BookingService;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
-import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.user.repository.entity.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -126,7 +125,7 @@ public class ClubBookingController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @GetMapping("/{bookingId}")
-    public ResponseEntity<BookingResponse> getBookingForClub(
+    public ResponseEntity<BookingResponse> getBookingsForClub(
             @Parameter(
                     description = "ID of the club",
                     required = true
@@ -172,11 +171,13 @@ public class ClubBookingController {
     private BookingResponse toBookingResponse(Booking booking) {
         return BookingResponse.builder()
                 .bookingId(booking.getId())
-                .playerId(booking.getPlayer().getId())
+                .clubId(booking.getClubId())
+                .playerId(booking.getPlayerId())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
                 .players(booking.getPlayersCount())
-                .stationIds(booking.getStations().stream().map(Station::getId).toList())
+                .stationType(booking.getStationType())
+                .stationIds(booking.getStationIds())
                 .build();
     }
 
@@ -185,12 +186,14 @@ public class ClubBookingController {
                 .intentId(intent.getId())
                 .clubId(intent.getClubId())
                 .playerId(intent.getPlayerId())
-                .stationIds(intent.getStations().stream().map(Station::getId).toList())
+                .stationType(intent.getStationType())
+                .stationIds(intent.getStationIds())
+                .players(intent.getPlayerCount())
                 .startTime(intent.getStartTime())
                 .endTime(intent.getEndTime())
-                .isConfirmed(intent.isConfirmed())
                 .expiresAt(intent.getExpiresAt())
-                .players(intent.getPlayerCount())
+                .totalCost(intent.getTotalCost())
+                .isConfirmed(intent.isConfirmed())
                 .build();
     }
 }

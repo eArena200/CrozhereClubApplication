@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.booking.repository.entity;
 
-import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,13 +28,14 @@ public class BookingIntent {
     @Column(name = "club_Id", nullable = false)
     private Long clubId;
 
-    @ManyToMany
-    @JoinTable(
-            name = "booking_intent_station",
-            joinColumns = @JoinColumn(name = "intent_id"),
-            inverseJoinColumns = @JoinColumn(name = "station_id")
-    )
-    private List<Station> stations;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "station_type", nullable = false)
+    private StationType stationType;
+
+    @ElementCollection
+    @CollectionTable(name = "booking_intent_station_ids", joinColumns = @JoinColumn(name = "intent_id"))
+    @Column(name = "station_id")
+    private List<Long> stationIds;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;

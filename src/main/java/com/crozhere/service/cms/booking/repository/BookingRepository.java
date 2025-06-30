@@ -1,7 +1,6 @@
 package com.crozhere.service.cms.booking.repository;
 
 import com.crozhere.service.cms.booking.repository.entity.Booking;
-import com.crozhere.service.cms.club.repository.entity.Station;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,29 +10,27 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    List<Booking> findByPlayer_Id(Long playerId);
+    List<Booking> findByPlayerId(Long playerId);
 
-    @Query("""
-        SELECT DISTINCT b FROM Booking b
-        JOIN b.stations s
-        WHERE s.club.id = :clubId
-    """)
+    @Query(value = """
+        SELECT DISTINCT b.* FROM booking b
+        JOIN booking_station_ids bs ON b.id = bs.booking_id
+        WHERE b.club_id = :clubId
+    """, nativeQuery = true)
     List<Booking> findByClubId(@Param("clubId") Long clubId);
 
-    @Query(
-    """
-        SELECT b FROM Booking b
-        WHERE EXISTS (
-            SELECT s FROM b.stations s
-            WHERE s IN :stations
-        )
-        AND b.startTime < :endTime
-        AND b.endTime > :startTime
-    """)
+    @Query(value = """
+        SELECT DISTINCT b.* FROM booking b
+        JOIN booking_station_ids bs ON b.id = bs.booking_id
+        WHERE bs.station_id IN :stationIds
+        AND b.start_time < :endTime
+        AND b.end_time > :startTime
+    """, nativeQuery = true)
     List<Booking> findBookingsForStationForSearchWindow(
-            @Param("stations") List<Station> stations,
+            @Param("stationIds") List<Long> stationIds,
             @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime);
-
-
+            @Param("endTime") LocalDateTime endTime
+    );
 }
+
+

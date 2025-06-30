@@ -6,24 +6,20 @@ import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDa
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
 import com.crozhere.service.cms.club.repository.entity.Station;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Slf4j
-@Component
+@Repository
+@RequiredArgsConstructor
 public class BookingIntentDaoImpl implements BookingIntentDao {
 
     private final BookingIntentRepository repository;
-
-    @Autowired
-    public BookingIntentDaoImpl(BookingIntentRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public void save(BookingIntent bookingIntent) throws BookingIntentDaoException {
@@ -76,7 +72,7 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
     }
 
     @Override
-    public List<BookingIntent> getActiveBookingIntentsForStationsForSearchWindow(
+    public List<BookingIntent> getActiveIntentsForStationsAndForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime) throws BookingIntentDaoException {
         try {
             List<Long> stationIds = stations.stream().map(Station::getId).toList();

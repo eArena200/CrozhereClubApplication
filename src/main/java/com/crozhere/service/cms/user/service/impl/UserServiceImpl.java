@@ -11,8 +11,8 @@ import com.crozhere.service.cms.user.service.exception.UserServiceException;
 import com.crozhere.service.cms.user.service.exception.UserServiceExceptionType;
 import com.crozhere.service.cms.user.service.ClubAdminService;
 import com.crozhere.service.cms.user.service.PlayerService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,25 +22,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
     private final UserRoleDao userRoleDao;
-
     private final PlayerService playerService;
     private final ClubAdminService clubAdminService;
-
-    @Autowired
-    public UserServiceImpl(
-            UserDao userDao,
-            UserRoleDao userRoleDao,
-            PlayerService playerService,
-            ClubAdminService clubAdminService) {
-        this.userDao = userDao;
-        this.userRoleDao = userRoleDao;
-        this.playerService = playerService;
-        this.clubAdminService = clubAdminService;
-    }
 
     @Override
     @Transactional

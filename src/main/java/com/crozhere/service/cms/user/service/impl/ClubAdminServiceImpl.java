@@ -9,21 +9,17 @@ import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.user.service.ClubAdminService;
 import com.crozhere.service.cms.user.service.exception.ClubAdminServiceException;
 import com.crozhere.service.cms.user.service.exception.ClubAdminServiceExceptionType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ClubAdminServiceImpl implements ClubAdminService {
 
     private final ClubAdminDao clubAdminDao;
-
-    public ClubAdminServiceImpl(
-            @Qualifier("ClubAdminSqlDao") ClubAdminDao clubAdminDao){
-        this.clubAdminDao = clubAdminDao;
-    }
 
     @Override
     public ClubAdmin createClubAdminForUser(User user) throws ClubAdminServiceException {

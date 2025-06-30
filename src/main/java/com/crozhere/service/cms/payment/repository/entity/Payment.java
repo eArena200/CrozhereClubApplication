@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.booking.repository.entity;
+package com.crozhere.service.cms.payment.repository.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

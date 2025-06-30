@@ -5,20 +5,16 @@ import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.user.repository.dao.UserDao;
 import com.crozhere.service.cms.user.repository.dao.exception.UserDAOException;
 import com.crozhere.service.cms.user.repository.dao.exception.DataNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class UserDaoImpl implements UserDao {
 
     private final UserRepository userRepository;
-
-    @Autowired
-    public UserDaoImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public void save(User user) throws UserDAOException {

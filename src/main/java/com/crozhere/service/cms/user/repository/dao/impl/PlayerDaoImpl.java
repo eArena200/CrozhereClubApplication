@@ -5,22 +5,18 @@ import com.crozhere.service.cms.user.repository.dao.PlayerDao;
 import com.crozhere.service.cms.user.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.user.repository.dao.exception.PlayerDAOException;
 import com.crozhere.service.cms.user.repository.entity.Player;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Slf4j
-@Component("PlayerSqlDao")
+@Repository
+@RequiredArgsConstructor
 public class PlayerDaoImpl implements PlayerDao {
 
     private final PlayerRepository playerRepository;
-
-    @Autowired
-    public PlayerDaoImpl(PlayerRepository playerRepository) {
-        this.playerRepository = playerRepository;
-    }
 
     @Override
     public void save(Player player) throws PlayerDAOException {

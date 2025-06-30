@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.config;
+package com.crozhere.service.cms.common.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

@@ -6,6 +6,7 @@ import com.crozhere.service.cms.user.repository.entity.UserRole;
 import com.crozhere.service.cms.user.repository.dao.UserRoleDao;
 import com.crozhere.service.cms.user.repository.dao.exception.UserRoleDAOException;
 import com.crozhere.service.cms.user.repository.dao.exception.DataNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -14,14 +15,10 @@ import java.util.List;
 
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class UserRoleDaoImpl implements UserRoleDao {
 
     private final UserRolesRepository userRolesRepository;
-
-    @Autowired
-    public UserRoleDaoImpl(UserRolesRepository userRolesRepository) {
-        this.userRolesRepository = userRolesRepository;
-    }
 
     @Override
     public void save(UserRoles roleMapping) throws UserRoleDAOException {

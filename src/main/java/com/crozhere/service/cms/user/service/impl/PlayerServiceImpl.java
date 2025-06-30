@@ -9,23 +9,17 @@ import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.exception.PlayerServiceException;
 import com.crozhere.service.cms.user.service.exception.PlayerServiceExceptionType;
 import com.crozhere.service.cms.user.service.PlayerService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PlayerServiceImpl implements PlayerService {
 
     private final PlayerDao playerDao;
-
-    @Autowired
-    public PlayerServiceImpl(
-            @Qualifier("PlayerSqlDao") PlayerDao playerDao){
-        this.playerDao = playerDao;
-    }
 
     @Override
     public Player createPlayerForUser(User user) throws PlayerServiceException {

@@ -1,21 +1,22 @@
-package com.crozhere.service.cms.booking.service.impl;
+package com.crozhere.service.cms.payment.service.impl;
 
 import com.crozhere.service.cms.booking.controller.model.request.ConfirmBookingIntentRequest;
-import com.crozhere.service.cms.booking.controller.model.request.InitPaymentRequest;
-import com.crozhere.service.cms.booking.controller.model.request.UpdatePaymentRequest;
-import com.crozhere.service.cms.booking.repository.dao.PaymentDao;
+import com.crozhere.service.cms.payment.controller.model.request.InitPaymentRequest;
+import com.crozhere.service.cms.payment.controller.model.request.UpdatePaymentRequest;
+import com.crozhere.service.cms.payment.repository.dao.PaymentDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
-import com.crozhere.service.cms.booking.repository.dao.exception.PaymentDAOException;
+import com.crozhere.service.cms.payment.repository.dao.exception.PaymentDAOException;
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
-import com.crozhere.service.cms.booking.repository.entity.Payment;
-import com.crozhere.service.cms.booking.repository.entity.PaymentMode;
-import com.crozhere.service.cms.booking.repository.entity.PaymentStatus;
+import com.crozhere.service.cms.payment.repository.entity.Payment;
+import com.crozhere.service.cms.payment.repository.entity.PaymentMode;
+import com.crozhere.service.cms.payment.repository.entity.PaymentStatus;
 import com.crozhere.service.cms.booking.service.BookingService;
-import com.crozhere.service.cms.booking.service.PaymentService;
+import com.crozhere.service.cms.payment.service.PaymentService;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceExceptionType;
 import com.crozhere.service.cms.booking.service.exception.PaymentServiceException;
 import com.crozhere.service.cms.booking.service.exception.PaymentServiceExceptionType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,18 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
     private final PaymentDao paymentDao;
     private final BookingService bookingService;
-
-    @Autowired
-    public PaymentServiceImpl(
-            PaymentDao paymentDao,
-            BookingService bookingService){
-        this.paymentDao = paymentDao;
-        this.bookingService = bookingService;
-    }
 
     @Override
     @Transactional

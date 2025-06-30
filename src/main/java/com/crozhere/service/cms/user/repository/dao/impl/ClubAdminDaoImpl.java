@@ -7,12 +7,12 @@ import com.crozhere.service.cms.user.repository.dao.exception.DataNotFoundExcept
 import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Slf4j
-@Component("ClubAdminSqlDao")
+@Repository
 @RequiredArgsConstructor
 public class ClubAdminDaoImpl implements ClubAdminDao {
 

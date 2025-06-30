@@ -1,26 +1,22 @@
-package com.crozhere.service.cms.booking.repository.dao.impl;
+package com.crozhere.service.cms.payment.repository.dao.impl;
 
-import com.crozhere.service.cms.booking.repository.PaymentRepository;
-import com.crozhere.service.cms.booking.repository.dao.PaymentDao;
-import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
-import com.crozhere.service.cms.booking.repository.dao.exception.PaymentDAOException;
-import com.crozhere.service.cms.booking.repository.entity.Payment;
+import com.crozhere.service.cms.payment.repository.PaymentRepository;
+import com.crozhere.service.cms.payment.repository.dao.PaymentDao;
+import com.crozhere.service.cms.payment.repository.dao.exception.DataNotFoundException;
+import com.crozhere.service.cms.payment.repository.dao.exception.PaymentDAOException;
+import com.crozhere.service.cms.payment.repository.entity.Payment;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Slf4j
-@Component
+@Repository
+@RequiredArgsConstructor
 public class PaymentDaoImpl implements PaymentDao {
 
     private final PaymentRepository paymentRepository;
-
-    @Autowired
-    public PaymentDaoImpl(PaymentRepository paymentRepository){
-        this.paymentRepository = paymentRepository;
-    }
 
     @Override
     public void save(Payment payment) throws PaymentDAOException {

@@ -1,8 +1,8 @@
-package com.crozhere.service.cms.booking.repository.dao;
+package com.crozhere.service.cms.payment.repository.dao;
 
-import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
-import com.crozhere.service.cms.booking.repository.dao.exception.PaymentDAOException;
-import com.crozhere.service.cms.booking.repository.entity.Payment;
+import com.crozhere.service.cms.payment.repository.dao.exception.DataNotFoundException;
+import com.crozhere.service.cms.payment.repository.dao.exception.PaymentDAOException;
+import com.crozhere.service.cms.payment.repository.entity.Payment;
 
 import java.util.Optional;
 

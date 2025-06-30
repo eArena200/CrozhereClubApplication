@@ -27,6 +27,7 @@ public class BookingIntentResponse {
     private StationType stationType;
     private List<Long> stationIds;
     private Integer players;
+
     private Boolean isConfirmed;
-    private Cost totalCost;
+    private Double totalCost;
 }

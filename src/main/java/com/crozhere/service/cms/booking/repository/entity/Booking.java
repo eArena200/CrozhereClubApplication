@@ -1,7 +1,6 @@
 package com.crozhere.service.cms.booking.repository.entity;
 
-import com.crozhere.service.cms.club.repository.entity.Station;
-import com.crozhere.service.cms.user.repository.entity.Player;
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,32 +19,37 @@ import java.util.List;
 public class Booking {
 
     @Id
-    @Column(name = "id", nullable = false, unique = true)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne()
-    @JoinColumn(name = "player_id", nullable = false)
-    private Player player;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_intent_id", nullable = false)
+    private BookingIntent bookingIntent;
 
-    @Column(name = "club_Id", nullable = false)
+    @Column(name = "player_id", nullable = false)
+    private Long playerId;
+
+    @Column(name = "club_id", nullable = false)
     private Long clubId;
 
-    @ManyToMany
-    @JoinTable(
-            name = "booking_station",
-            joinColumns = @JoinColumn(name = "booking_id"),
-            inverseJoinColumns = @JoinColumn(name = "station_id")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "station_type", nullable = false)
+    private StationType stationType;
+
+    @ElementCollection
+    @CollectionTable(
+            name = "booking_station_ids",
+            joinColumns = @JoinColumn(name = "booking_id")
     )
-    private List<Station> stations;
+    @Column(name = "station_id", nullable = false)
+    private List<Long> stationIds;
+
+    @Column(name = "payment_id", nullable = false)
+    private Long paymentId;
 
     @Column(name = "booking_type", nullable = false)
     @Enumerated(EnumType.STRING)
     private BookingType bookingType;
-
-    @OneToOne
-    @JoinColumn(name = "payment_id")
-    private Payment payment;
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
@@ -59,5 +63,4 @@ public class Booking {
 
     @Column(name = "player_count", nullable = false)
     private Integer playersCount;
-
 }

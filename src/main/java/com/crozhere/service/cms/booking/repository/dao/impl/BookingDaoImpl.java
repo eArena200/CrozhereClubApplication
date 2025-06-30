@@ -6,24 +6,20 @@ import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOExcep
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.club.repository.entity.Station;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Slf4j
-@Component
+@Repository
+@RequiredArgsConstructor
 public class BookingDaoImpl implements BookingDao {
 
     private final BookingRepository bookingRepository;
-
-    @Autowired
-    public BookingDaoImpl(BookingRepository bookingRepository) {
-        this.bookingRepository = bookingRepository;
-    }
 
     @Override
     public void save(Booking booking) throws BookingDAOException {
@@ -69,7 +65,6 @@ public class BookingDaoImpl implements BookingDao {
                 log.error("Booking not found for update with ID: {}", bookingId);
                 throw new DataNotFoundException("UpdateException");
             }
-            booking.setId(bookingId);
             bookingRepository.save(booking);
         } catch (DataNotFoundException e) {
             throw e;
@@ -93,7 +88,7 @@ public class BookingDaoImpl implements BookingDao {
     public List<Booking> getBookingByPlayerId(Long playerId)
             throws BookingDAOException {
         try {
-            return bookingRepository.findByPlayer_Id(playerId);
+            return bookingRepository.findByPlayerId(playerId);
         } catch (Exception e) {
             log.error("Exception while fetching bookings for playerId: {}", playerId, e);
             throw new BookingDAOException("GetBookingByPlayerIdException", e);
@@ -113,11 +108,12 @@ public class BookingDaoImpl implements BookingDao {
 
 
     @Override
-    public List<Booking> getBookingsForStationsForSearchWindow(
+    public List<Booking> getBookingsForStationsAndForSearchWindow(
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingDAOException {
         try {
-            return bookingRepository.findBookingsForStationForSearchWindow(stations, startTime, endTime);
+            List<Long> stationIds = stations.stream().map(Station::getId).toList();
+            return bookingRepository.findBookingsForStationForSearchWindow(stationIds, startTime, endTime);
         } catch (Exception e) {
             log.error("Failed to fetch overlapping bookings", e);
             throw new BookingDAOException("GetOverlappingBookingsException", e);

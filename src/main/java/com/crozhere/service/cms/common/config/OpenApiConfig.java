@@ -1,4 +1,4 @@
-package com.crozhere.service.cms.config;
+package com.crozhere.service.cms.common.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;

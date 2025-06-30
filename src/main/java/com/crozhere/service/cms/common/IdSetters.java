@@ -2,7 +2,7 @@ package com.crozhere.service.cms.common;
 
 import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
-import com.crozhere.service.cms.booking.repository.entity.Payment;
+import com.crozhere.service.cms.payment.repository.entity.Payment;
 
 public class IdSetters {
     public static final InMemRepository.IdSetter<Payment> PAYMENT_ID_SETTER =
