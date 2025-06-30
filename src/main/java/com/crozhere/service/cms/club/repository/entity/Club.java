@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.club.repository.entity;
 
+import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

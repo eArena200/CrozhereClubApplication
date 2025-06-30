@@ -1,8 +1,8 @@
 package com.crozhere.service.cms.booking.service.impl;
 
-import com.crozhere.service.cms.auth.repository.entity.User;
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
-import com.crozhere.service.cms.auth.service.UserService;
+import com.crozhere.service.cms.user.repository.entity.User;
+import com.crozhere.service.cms.user.repository.entity.UserRole;
+import com.crozhere.service.cms.user.service.UserService;
 import com.crozhere.service.cms.booking.controller.model.request.*;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
@@ -24,8 +24,8 @@ import com.crozhere.service.cms.booking.service.exception.BookingServiceExceptio
 import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
-import com.crozhere.service.cms.player.repository.entity.Player;
-import com.crozhere.service.cms.player.service.PlayerService;
+import com.crozhere.service.cms.user.repository.entity.Player;
+import com.crozhere.service.cms.user.service.PlayerService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -115,6 +115,7 @@ public class BookingServiceImpl implements BookingService {
                     .playerCount(request.getPlayers())
                     .expiresAt(LocalDateTime.now().plusMinutes(10))
                     .isConfirmed(false)
+                    .totalCost(0.0)
                     .build();
 
             bookingIntentDao.save(bookingIntent);

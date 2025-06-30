@@ -14,9 +14,11 @@ import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundExcept
 import com.crozhere.service.cms.club.repository.dao.exception.StationDAOException;
 import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.repository.dao.ClubDao;
-import com.crozhere.service.cms.club.service.ClubAdminService;
+import com.crozhere.service.cms.user.service.ClubAdminService;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.*;
+import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
+import com.crozhere.service.cms.user.service.exception.ClubAdminServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;

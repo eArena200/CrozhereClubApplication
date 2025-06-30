@@ -1,10 +1,8 @@
 package com.crozhere.service.cms.auth.controller.model.response;
 
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
+import com.crozhere.service.cms.user.repository.entity.UserRole;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
 
 @Data
 @Builder

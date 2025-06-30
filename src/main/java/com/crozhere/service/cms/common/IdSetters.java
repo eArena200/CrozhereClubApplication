@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.common;
 
-import com.crozhere.service.cms.auth.repository.entity.User;
+import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.repository.entity.Payment;
 

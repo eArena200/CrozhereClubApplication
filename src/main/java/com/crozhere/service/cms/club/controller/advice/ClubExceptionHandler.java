@@ -33,25 +33,6 @@ public class ClubExceptionHandler {
         return ResponseEntity.status(status).body(error);
     }
 
-    @ExceptionHandler(ClubAdminServiceException.class)
-    public ResponseEntity<ErrorResponse> handleClubAdminServiceException(
-            ClubAdminServiceException ex) {
-
-        ClubAdminServiceExceptionType type = ex.getType();
-        HttpStatus status = resolveHttpStatus(type.name());
-
-        log.error("Handled ClubAdminServiceException [{}]: {}", type.name(), type.getMessage(), ex);
-
-        ErrorResponse error = ErrorResponse.builder()
-                .error("ClubAdminServiceException")
-                .type(type.name())
-                .message(type.getMessage())
-                .timestamp(LocalDateTime.now())
-                .build();
-
-        return ResponseEntity.status(status).body(error);
-    }
-
     @ExceptionHandler(RateCardServiceException.class)
     public ResponseEntity<ErrorResponse> handleRateCardServiceException(
             RateCardServiceException ex) {

@@ -1,7 +1,7 @@
 package com.crozhere.service.cms.booking.repository.entity;
 
 import com.crozhere.service.cms.club.repository.entity.Station;
-import com.crozhere.service.cms.player.repository.entity.Player;
+import com.crozhere.service.cms.user.repository.entity.Player;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

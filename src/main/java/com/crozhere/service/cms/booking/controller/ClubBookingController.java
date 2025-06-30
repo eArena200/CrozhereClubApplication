@@ -9,7 +9,7 @@ import com.crozhere.service.cms.booking.service.BookingService;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
 import com.crozhere.service.cms.club.repository.entity.Station;
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
+import com.crozhere.service.cms.user.repository.entity.UserRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;

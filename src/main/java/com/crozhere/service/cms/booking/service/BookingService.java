@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.booking.service;
 
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
+import com.crozhere.service.cms.user.repository.entity.UserRole;
 import com.crozhere.service.cms.booking.controller.model.request.*;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
 import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;

@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.auth.controller.model.request;
 
-import com.crozhere.service.cms.auth.repository.entity.UserRole;
+import com.crozhere.service.cms.user.repository.entity.UserRole;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
