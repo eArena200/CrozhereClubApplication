@@ -28,6 +28,8 @@ import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -35,6 +37,7 @@ import org.springframework.util.StringUtils;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -233,16 +236,30 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<Booking> listBookingByClubId(Long clubId)
-            throws BookingServiceException {
+    public Page<Booking> listBookingByClubIdWithFilters(
+            Long clubId,
+            LocalDateTime fromDateTime,
+            LocalDateTime toDateTime,
+            List<StationType> stationTypes,
+            List<BookingStatus> bookingStatuses,
+            List<BookingType> bookingTypes,
+            Pageable pageable
+    ) throws BookingServiceException {
         try {
-            return bookingDAO.getBookingByClubId(clubId);
+            Set<StationType> stationTypeSet = stationTypes != null ? new HashSet<>(stationTypes): null;
+            Set<BookingStatus> bookingStatusSet = bookingStatuses != null ? new HashSet<>(bookingStatuses) : null;
+            Set<BookingType> bookingTypeSet = bookingTypes != null ? new HashSet<>(bookingTypes) : null;
+            return bookingDAO.getBookingsByClubIdWithFilters(
+                    clubId, fromDateTime, toDateTime,
+                    stationTypeSet, bookingStatusSet, bookingTypeSet,
+                    pageable);
         } catch (BookingDAOException e) {
-            log.error("Failed to list bookings for clubAdminId: {}", clubId, e);
+            log.error("Failed to list bookings for clubId: {}", clubId, e);
             throw new BookingServiceException(
                     BookingServiceExceptionType.LIST_BOOKINGS_BY_CLUB_FAILED);
         }
     }
+
 
     @Override
     public BookingAvailabilityByTimeResponse checkAvailabilityByTime(

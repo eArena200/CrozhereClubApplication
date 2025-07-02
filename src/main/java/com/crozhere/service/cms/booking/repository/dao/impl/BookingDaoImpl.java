@@ -5,14 +5,21 @@ import com.crozhere.service.cms.booking.repository.dao.BookingDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
+import com.crozhere.service.cms.booking.repository.entity.BookingStatus;
+import com.crozhere.service.cms.booking.repository.entity.BookingType;
+import com.crozhere.service.cms.booking.repository.specification.BookingSpecifications;
 import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Repository
@@ -96,13 +103,23 @@ public class BookingDaoImpl implements BookingDao {
     }
 
     @Override
-    public List<Booking> getBookingByClubId(Long clubId)
-            throws BookingDAOException {
+    public Page<Booking> getBookingsByClubIdWithFilters(
+            Long clubId,
+            LocalDateTime fromDateTime,
+            LocalDateTime toDateTime,
+            Set<StationType> stationTypes,
+            Set<BookingStatus> bookingStatuses,
+            Set<BookingType> bookingTypes,
+            Pageable pageable
+    ) throws BookingDAOException {
         try {
-            return bookingRepository.findByClubId(clubId);
+            var spec = BookingSpecifications.filterBookings(
+                    clubId, fromDateTime, toDateTime, stationTypes, bookingStatuses, bookingTypes);
+
+            return bookingRepository.findAll(spec, pageable);
         } catch (Exception e) {
-            log.error("Exception while fetching bookings for clubAdminId: {}", clubId, e);
-            throw new BookingDAOException("GetBookingByClubAdminIdException", e);
+            log.error("Exception while fetching filtered bookings for clubId: {}", clubId, e);
+            throw new BookingDAOException("Error fetching filtered bookings", e);
         }
     }
 

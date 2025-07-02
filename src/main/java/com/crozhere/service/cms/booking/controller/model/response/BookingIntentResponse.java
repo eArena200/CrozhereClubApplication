@@ -18,7 +18,6 @@ public class BookingIntentResponse {
     private Long clubId;
 
     private Long playerId;
-    private Long playerPhoneNumber;
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
