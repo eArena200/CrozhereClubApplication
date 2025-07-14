@@ -5,10 +5,14 @@ import com.crozhere.service.cms.user.controller.model.request.UpdatePlayerReques
 import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.exception.PlayerServiceException;
 
+import java.util.List;
+
 public interface PlayerService {
     Player createPlayerForUser(User user) throws PlayerServiceException;
     Player getPlayerByUserId(Long userId) throws PlayerServiceException;
     Player getPlayerById(Long playerId) throws PlayerServiceException;
+    List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerServiceException;
+    List<Player> getPlayersForPlayerIds(List<Long> playerIds) throws PlayerServiceException;
     Player updatePlayerDetails(Long playerId, UpdatePlayerRequest updatePlayerRequest)
             throws PlayerServiceException;
     void deletePlayer(Long playerId) throws PlayerServiceException;

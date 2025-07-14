@@ -9,6 +9,7 @@ public enum ClubServiceExceptionType {
     CREATE_CLUB_FAILED("Failed to create club."),
     DELETE_CLUB_FAILED("Failed to delete club."),
     GET_CLUB_FAILED("Failed to retrieve club."),
+    GET_CLUBS_FAILED("Failed to retrieve clubs."),
     UPDATE_CLUB_FAILED("Failed to update club."),
 
     STATION_NOT_FOUND("Station not found."),
@@ -19,6 +20,7 @@ public enum ClubServiceExceptionType {
     TOGGLE_STATION_STATUS("Failed to toggle station status"),
 
     GET_STATIONS_BY_CLUB_FAILED("Failed to get stations by club."),
+    GET_STATIONS_BY_CLUBS_FAILED("Failed get stations for clubIds."),
     GET_STATIONS_BY_TYPE_FAILED("Failed to get stations by type.");
 
     private final String message;

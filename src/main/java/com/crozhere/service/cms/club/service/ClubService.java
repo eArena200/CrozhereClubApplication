@@ -15,6 +15,8 @@ public interface ClubService {
     Club createClub(CreateClubRequest createClubRequest)
             throws ClubServiceException;
     Club getClubById(Long clubId) throws ClubServiceException;
+    List<Club> getClubsByIds(List<Long> clubIds) throws ClubServiceException;
+
     Club updateClub(Long clubId, UpdateClubRequest updateClubRequest)
             throws ClubServiceException;
     void deleteClub(Long clubId) throws ClubServiceException;
@@ -33,6 +35,8 @@ public interface ClubService {
     Station toggleStationStatus(Long stationId) throws ClubServiceException;
 
     List<Station> getStationsByClubId(Long clubId) throws ClubServiceException;
+    List<Station> getStationsByClubIds(List<Long> clubIds) throws ClubServiceException;
+
     List<Station> getStationsByClubIdAndType(Long clubId, StationType stationType)
             throws ClubServiceException;
 }

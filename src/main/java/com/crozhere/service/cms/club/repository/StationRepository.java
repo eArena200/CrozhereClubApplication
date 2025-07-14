@@ -7,5 +7,6 @@ import java.util.List;
 
 public interface StationRepository extends JpaRepository<Station, Long> {
     List<Station> findByClub_Id(Long clubId);
+    List<Station> findByClubIdIn(List<Long> clubIds);
 }
 

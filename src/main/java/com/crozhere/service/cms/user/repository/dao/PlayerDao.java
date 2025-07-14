@@ -4,6 +4,7 @@ import com.crozhere.service.cms.user.repository.dao.exception.DataNotFoundExcept
 import com.crozhere.service.cms.user.repository.dao.exception.PlayerDAOException;
 import com.crozhere.service.cms.user.repository.entity.Player;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PlayerDao {
@@ -15,6 +16,8 @@ public interface PlayerDao {
 
     Player getById(Long playerId) throws DataNotFoundException, PlayerDAOException;
     Optional<Player> findById(Long playerId) throws PlayerDAOException;
+
+    List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerDAOException;
 
     void deleteById(Long id) throws PlayerDAOException;
 

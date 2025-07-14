@@ -13,10 +13,13 @@ public interface StationDao {
     Optional<Station> findById(Long stationId) throws StationDAOException;
     Station getById(Long stationId) throws DataNotFoundException, StationDAOException;
 
+    List<Station> getStationsByIds(List<Long> stationIds) throws StationDAOException;
+
     void update(Long stationId, Station station) throws StationDAOException;
 
     void delete(Long stationId) throws StationDAOException;
     void deleteAllById(List<Long> stationIds) throws StationDAOException;
 
     List<Station> getStationsByClubId(Long clubId) throws StationDAOException;
+    List<Station> getStationsByClubIds(List<Long> clubIds) throws StationDAOException;
 }

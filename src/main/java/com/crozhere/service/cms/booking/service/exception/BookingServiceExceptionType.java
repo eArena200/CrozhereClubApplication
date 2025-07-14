@@ -18,9 +18,12 @@ public enum BookingServiceExceptionType {
     BOOKING_INTENT_VALIDATION_FAILED("Failed to validate stations for booking-intent"),
     BOOKING_INTENT_NOT_FOUND("Booking intent not found"),
     BOOKING_INTENT_EXPIRED("Booking-intent expired"),
+    BOOKING_INTENT_NOT_CANCELLABLE("Booking-intent is not cancellable"),
     BOOKING_INTENT_ALREADY_USED("Booking intent already used"),
     GET_BOOKING_INTENT_FAILED("Failed to retrieve booking-intent"),
-    CONFIRM_BOOKING_INTENT_FAILED("Failed to confirm booking");
+    GET_ACTIVE_INTENTS_FAILED("Failed to retrieve active intents"),
+    CONFIRM_BOOKING_INTENT_FAILED("Failed to confirm booking"),
+    CANCEL_BOOKING_INTENT_FAILED("Failed to cancel booking-intent");
 
     private final String message;
 

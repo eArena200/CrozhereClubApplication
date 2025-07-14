@@ -13,6 +13,8 @@ public interface ClubDao {
     Optional<Club> findById(Long clubId) throws ClubDAOException;
     Club getById(Long clubId) throws DataNotFoundException, ClubDAOException;
 
+    List<Club> getClubsByIds(List<Long> clubIds) throws ClubDAOException;
+
     void update(Long clubId, Club club) throws ClubDAOException;
 
     void delete(Long clubId) throws ClubDAOException;

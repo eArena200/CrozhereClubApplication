@@ -65,6 +65,21 @@ public class BookingDaoImpl implements BookingDao {
     }
 
     @Override
+    public Booking getByIntentId(Long intentId)
+            throws DataNotFoundException, BookingDAOException {
+        try {
+            return bookingRepository.findByBookingIntentId(intentId)
+                    .orElseThrow(() -> new DataNotFoundException("Booking not found for intentId: " + intentId));
+        } catch (DataNotFoundException e) {
+            log.info("Booking not found with intentId: {}", intentId);
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while getting booking for intentId: {}", intentId, e);
+            throw new BookingDAOException("GetByIntentIdException", e);
+        }
+    }
+
+    @Override
     public void update(Long bookingId, Booking booking)
             throws DataNotFoundException, BookingDAOException {
         try {
@@ -92,7 +107,7 @@ public class BookingDaoImpl implements BookingDao {
     }
 
     @Override
-    public List<Booking> getBookingByPlayerId(Long playerId)
+    public List<Booking> getBookingsByPlayerId(Long playerId)
             throws BookingDAOException {
         try {
             return bookingRepository.findByPlayerId(playerId);

@@ -7,6 +7,7 @@ import com.crozhere.service.cms.booking.service.exception.InvalidRequestExceptio
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -34,6 +35,22 @@ public class BookingServiceExceptionHandler {
                 .build();
 
         return ResponseEntity.status(status).body(error);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+            InvalidRequestException ex) {
+
+        log.error("Handled MethodArgumentNotValidException: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.builder()
+                .error("InvalidRequestException")
+                .type("INVALID_REQUEST")
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.badRequest().body(error);
     }
 
     @ExceptionHandler(InvalidRequestException.class)

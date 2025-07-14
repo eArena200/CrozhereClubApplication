@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.club.repository.dao.impl;
 
+import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
 import com.crozhere.service.cms.club.repository.StationRepository;
 import com.crozhere.service.cms.club.repository.dao.StationDao;
 import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
@@ -57,6 +58,20 @@ public class StationDaoImpl implements StationDao {
     }
 
     @Override
+    public List<Station> getStationsByIds(List<Long> stationIds) throws StationDAOException {
+        try {
+            if(stationIds == null || stationIds.isEmpty()){
+                return List.of();
+            }
+
+            return stationRepository.findAllById(stationIds);
+        } catch (Exception e){
+            log.error("Failed to fetch stations by IDs: {}", stationIds, e);
+            throw new StationDAOException("GetStationsByIdsException", e);
+        }
+    }
+
+    @Override
     public void update(Long stationId, Station station) throws StationDAOException {
         try {
             if (!stationRepository.existsById(stationId)) {
@@ -97,6 +112,19 @@ public class StationDaoImpl implements StationDao {
         } catch (Exception e) {
             log.error("Failed to fetch stations for club ID: {}", clubId, e);
             throw new StationDAOException("Error fetching stations by club ID", e);
+        }
+    }
+
+    @Override
+    public List<Station> getStationsByClubIds(List<Long> clubIds) throws StationDAOException {
+        try {
+            if (clubIds == null || clubIds.isEmpty()) {
+                return List.of();
+            }
+            return stationRepository.findByClubIdIn(clubIds);
+        } catch (Exception e) {
+            log.error("Failed to fetch stations for clubIds: {}", clubIds, e);
+            throw new StationDAOException("Failed to fetch stations for given club IDs", e);
         }
     }
 }

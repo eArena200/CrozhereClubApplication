@@ -21,11 +21,13 @@ public interface BookingDao {
     Optional<Booking> findById(Long bookingId) throws BookingDAOException;
     Booking getById(Long bookingId) throws DataNotFoundException, BookingDAOException;
 
+    Booking getByIntentId(Long intentId) throws DataNotFoundException, BookingDAOException;
+
     void update(Long bookingId, Booking booking) throws DataNotFoundException, BookingDAOException;
 
     void deleteById(Long bookingId) throws BookingDAOException;
 
-    List<Booking> getBookingByPlayerId(Long playerId) throws BookingDAOException;
+    List<Booking> getBookingsByPlayerId(Long playerId) throws BookingDAOException;
     Page<Booking> getBookingsByClubIdWithFilters(
             Long clubId,
             LocalDateTime fromDateTime,

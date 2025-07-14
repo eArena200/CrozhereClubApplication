@@ -1,13 +1,15 @@
 package com.crozhere.service.cms.booking.service.impl;
 
+import com.crozhere.service.cms.booking.controller.model.response.BookingIntentClubDetails;
+import com.crozhere.service.cms.booking.controller.model.response.BookingIntentPlayerDetails;
+import com.crozhere.service.cms.booking.controller.model.response.BookingIntentStationDetails;
+import com.crozhere.service.cms.booking.controller.model.response.*;
+import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.user.repository.entity.UserRole;
 import com.crozhere.service.cms.user.service.UserService;
 import com.crozhere.service.cms.booking.controller.model.request.*;
-import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
-import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
-import com.crozhere.service.cms.booking.controller.model.response.StationAvailability;
 import com.crozhere.service.cms.booking.repository.dao.BookingIntentDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
@@ -23,7 +25,6 @@ import com.crozhere.service.cms.booking.repository.dao.BookingDao;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.service.ClubService;
-import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.PlayerService;
 import lombok.RequiredArgsConstructor;
@@ -34,12 +35,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -55,91 +55,346 @@ public class BookingServiceImpl implements BookingService {
     private final PlayerService playerService;
     private final UserService userService;
 
+    private final Integer INTENT_EXPIRATION_INTERVAL_MIN = 10;
+
     @Override
     @Transactional
-    public BookingIntent createBookingIntent(UserRole creatorRole, CreateBookingIntentRequest request)
+    public BookingIntentDetailsResponse createBookingIntentForClub(CreateClubBookingIntentRequest request)
             throws InvalidRequestException, BookingServiceException {
         try {
-            if (creatorRole == null) {
-                log.error("Creator role can't be null");
-                throw new InvalidRequestException("Creator role is required");
-            }
-
             if (!StringUtils.hasText(request.getPlayerPhoneNumber())) {
                 log.info("Player phone number is required for booking");
                 throw new InvalidRequestException("PhoneNumber is required");
             }
 
-            Player player;
-            if (UserRole.PLAYER.equals(creatorRole)) {
-                if (request.getPlayerId() == null) {
-                    throw new InvalidRequestException("Player ID is required");
-                }
-                player = playerService.getPlayerById(request.getPlayerId());
-            } else if (UserRole.CLUB_ADMIN.equals(creatorRole)) {
-                User user = userService.getOrCreateUserByPhoneNumber(
-                        request.getPlayerPhoneNumber(), UserRole.PLAYER);
-                player = playerService.getPlayerByUserId(user.getId());
-            } else {
-                log.error("Unsupported role: {}", creatorRole);
-                throw new InvalidRequestException("Unsupported creator role: " + creatorRole);
-            }
+            User user = userService.getOrCreateUserByPhoneNumber(
+                    request.getPlayerPhoneNumber(), UserRole.PLAYER);
+            Player player = playerService.getPlayerByUserId(user.getId());
 
             if(player == null){
-                log.error("Cannot proceed booking without a player");
+                log.error("Cannot proceed club booking without a player");
                 throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
             }
 
             validateBookingTimes(request.getStartTime(), request.getEndTime());
-            validateStations(request.getClubId(), request.getStationType(), request.getStationIds());
-            validateStationAvailability(request);
+
+            Club club = clubService.getClubById(request.getClubId());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubIdAndType(
+                            request.getClubId(), request.getStationType())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                Station::getId,
+                                Function.identity()
+                            ));
+
+            validateStations(stationMap , request.getStations());
+
+            validateStationAvailability(
+                    request.getClubId(),
+                    request.getStationType(),
+                    request.getStartTime(),
+                    request.getEndTime(),
+                    request.getStations()
+            );
+
+            List<BookingIntentStation> bookingIntentStations = request.getStations()
+                    .stream()
+                    .map(s -> BookingIntentStation.builder()
+                            .stationId(s.getStationId())
+                            .playerCount(s.getPlayerCount())
+                            .build())
+                    .toList();
 
             BookingIntent bookingIntent = BookingIntent.builder()
                     .playerId(player.getId())
                     .clubId(request.getClubId())
                     .stationType(request.getStationType())
-                    .stationIds(request.getStationIds())
+                    .stations(bookingIntentStations)
                     .startTime(request.getStartTime())
                     .endTime(request.getEndTime())
-                    .playerCount(request.getPlayers())
-                    .expiresAt(LocalDateTime.now().plusMinutes(10))
+                    .playerCount(
+                            request.getStations().stream()
+                                    .mapToInt(BookingStationRequest::getPlayerCount)
+                                    .sum()
+                    )
+                    .expiresAt(
+                            LocalDateTime.now()
+                                    .plusMinutes(INTENT_EXPIRATION_INTERVAL_MIN)
+                    )
+                    .isCancelled(false)
                     .isConfirmed(false)
                     .totalCost(0.0)
+                    .intentMode(BookingIntentMode.OFFLINE)
                     .build();
 
             bookingIntentDao.save(bookingIntent);
-            return bookingIntent;
+            return getBookingIntentResponse(bookingIntent, player, club, stationMap);
+
         } catch (InvalidRequestException e) {
             log.error("Exception while creating booking-intent for request: {}", request, e);
             throw e;
         } catch (Exception e) {
-            log.error("Error while creating booking intent for role {}, request: {}", creatorRole, request, e);
+            log.error("Error while creating booking-intent for request: {}", request, e);
             throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED, e);
         }
     }
 
+    @Override
+    public BookingIntentDetailsResponse createBookingIntentForPlayer(CreatePlayerBookingIntentRequest request)
+            throws InvalidRequestException, BookingServiceException {
+        try {
+            if (request.getPlayerId() == null) {
+                log.info("PlayerId is required for booking");
+                throw new InvalidRequestException("PhoneNumber is required");
+            }
+
+            Player player = playerService.getPlayerById(request.getPlayerId());
+            if(player == null){
+                log.error("Cannot proceed player booking without a player");
+                throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
+            }
+
+            validateBookingTimes(request.getStartTime(), request.getEndTime());
+
+            Club club = clubService.getClubById(request.getClubId());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubIdAndType(
+                                    request.getClubId(), request.getStationType())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Station::getId,
+                                    Function.identity()
+                            ));
+
+            validateStations(stationMap, request.getStations());
+
+            validateStationAvailability(
+                    request.getClubId(),
+                    request.getStationType(),
+                    request.getStartTime(),
+                    request.getEndTime(),
+                    request.getStations()
+            );
+
+            List<BookingIntentStation> bookingIntentStations = request.getStations()
+                    .stream()
+                    .map(s -> BookingIntentStation.builder()
+                            .stationId(s.getStationId())
+                            .playerCount(s.getPlayerCount())
+                            .build())
+                    .toList();
+
+            BookingIntent bookingIntent = BookingIntent.builder()
+                    .playerId(player.getId())
+                    .clubId(request.getClubId())
+                    .stationType(request.getStationType())
+                    .stations(bookingIntentStations)
+                    .startTime(request.getStartTime())
+                    .endTime(request.getEndTime())
+                    .playerCount(
+                            request.getStations().stream()
+                                    .mapToInt(BookingStationRequest::getPlayerCount)
+                                    .sum()
+                    )
+                    .expiresAt(
+                            LocalDateTime.now()
+                                    .plusMinutes(INTENT_EXPIRATION_INTERVAL_MIN)
+                    )
+                    .isCancelled(false)
+                    .isConfirmed(false)
+                    .totalCost(0.0)
+                    .intentMode(BookingIntentMode.ONLINE)
+                    .build();
+
+            bookingIntentDao.save(bookingIntent);
+            return getBookingIntentResponse(bookingIntent, player, club, stationMap);
+        } catch (InvalidRequestException e) {
+            log.error("Exception while creating booking-intent for request: {}", request, e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Error while creating booking-intent for request: {}", request, e);
+            throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED, e);
+        }
+    }
 
     @Override
-    public BookingIntent getBookingIntentById(Long intentId) throws BookingServiceException {
+    public BookingIntent getBookingIntentById(Long bookingIntentId) throws BookingServiceException {
         try {
-            return bookingIntentDao.getById(intentId);
-        } catch (DataNotFoundException e) {
-            log.info("BookingIntent not found for intentId: {}", intentId);
-            throw new BookingServiceException(
-                    BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND);
-        } catch (Exception e){
-            log.error("Failed to fetch booking-intent for id: {}", intentId, e);
+            return bookingIntentDao.getById(bookingIntentId);
+        } catch (BookingIntentDaoException e){
+            log.error("Exception while getting booking-intent for intentId: {}", bookingIntentId, e);
             throw new BookingServiceException(BookingServiceExceptionType.GET_BOOKING_INTENT_FAILED);
         }
     }
 
     @Override
+    public List<BookingIntentDetailsResponse> getActiveIntentsForClub(Long clubId)
+            throws BookingServiceException {
+
+        try {
+            Club club = clubService.getClubById(clubId);
+            LocalDateTime now = LocalDateTime.now();
+
+            List<BookingIntent> activeIntents =
+                    bookingIntentDao.getActiveIntentsForClubId(clubId, now);
+
+            if (activeIntents.isEmpty()) {
+                return List.of();
+            }
+
+            List<Long> playerIds = activeIntents.stream()
+                    .map(BookingIntent::getPlayerId)
+                    .distinct()
+                    .toList();
+
+            Map<Long, Player> playerMap = playerService.getPlayersByIds(playerIds).stream()
+                    .collect(Collectors.toMap(Player::getId, Function.identity()));
+
+            Map<Long, Station> stationMap = clubService.getStationsByClubId(clubId).stream()
+                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+
+            return activeIntents.stream()
+                    .map(intent -> getBookingIntentResponse(
+                            intent,
+                            playerMap.get(intent.getPlayerId()),
+                            club,
+                            stationMap))
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Error fetching active booking intents for clubId: {}", clubId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_ACTIVE_INTENTS_FAILED);
+        }
+    }
+
+
+    @Override
+    public List<BookingIntentDetailsResponse> getActiveIntentsForPlayer(Long playerId)
+            throws BookingServiceException {
+
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<BookingIntent> activeIntents =
+                    bookingIntentDao.getActiveIntentsForPlayerId(playerId, now);
+
+            if (activeIntents.isEmpty()) {
+                return List.of();
+            }
+
+            Player player = playerService.getPlayerById(playerId);
+
+            List<Long> clubIds = activeIntents.stream()
+                    .map(BookingIntent::getClubId)
+                    .distinct()
+                    .toList();
+
+            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+
+            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+
+            return activeIntents.stream()
+                    .map(intent -> getBookingIntentResponse(
+                            intent,
+                            player,
+                            clubMap.get(intent.getClubId()),
+                            stationMap))
+                    .toList();
+
+        } catch (Exception e) {
+            log.error("Error fetching active booking intents for playerId: {}", playerId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_ACTIVE_INTENTS_FAILED);
+        }
+    }
+
+
+    @Override
     @Transactional
-    public Booking confirmBookingIntent(ConfirmBookingIntentRequest request)
+    public void cancelClubBookingIntent(Long clubId, Long intentId)
+            throws BookingServiceException {
+        try {
+            BookingIntent intent = bookingIntentDao.findById(intentId)
+                    .orElseThrow(() -> new BookingServiceException(
+                            BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND));
+
+            if (!intent.getClubId().equals(clubId)
+                    || !BookingIntentMode.OFFLINE.equals(intent.getIntentMode())) {
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND);
+            }
+
+            if (intent.getIsCancelled()) {
+                return;
+            }
+
+            if (intent.isConfirmed()) {
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_INTENT_NOT_CANCELLABLE);
+            }
+
+            intent.setIsCancelled(true);
+            bookingIntentDao.save(intent);
+        } catch (BookingServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error while cancelling booking intent with ID {}", intentId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CANCEL_BOOKING_INTENT_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void cancelPlayerBookingIntent(Long playerId, Long intentId)
+            throws BookingServiceException {
+        try {
+            BookingIntent intent = bookingIntentDao.findById(intentId)
+                    .orElseThrow(() -> new BookingServiceException(
+                            BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND));
+
+            if (!intent.getPlayerId().equals(playerId)
+                    || !BookingIntentMode.ONLINE.equals(intent.getIntentMode())) {
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND);
+            }
+
+            if (intent.getIsCancelled()) {
+                return;
+            }
+
+            if (intent.isConfirmed()) {
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_INTENT_NOT_CANCELLABLE);
+            }
+
+            intent.setIsCancelled(true);
+            bookingIntentDao.save(intent);
+
+        } catch (BookingServiceException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error while cancelling booking intent with ID {}", intentId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CANCEL_BOOKING_INTENT_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public BookingDetailsResponse confirmBookingIntent(ConfirmBookingIntentRequest request)
             throws InvalidRequestException, BookingServiceException {
         try {
             BookingIntent intent =
                     bookingIntentDao.getById(request.getBookingIntentId());
+
+            if(intent.getIsCancelled()){
+                log.info("Booking-Intent already cancelled");
+                throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_ALREADY_USED);
+            }
 
             if(intent.isConfirmed()){
                 log.info("Booking-Intent already confirmed");
@@ -148,6 +403,7 @@ public class BookingServiceImpl implements BookingService {
 
             if(intent.getExpiresAt().isBefore(LocalDateTime.now())){
                 log.info("Booking-Intent confirmation period expired");
+                // TODO: Refund process should start here.
                 throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_EXPIRED);
             }
 
@@ -155,12 +411,18 @@ public class BookingServiceImpl implements BookingService {
             bookingIntentDao.save(intent);
 
             Booking booking = Booking.builder()
-                    .bookingIntent(intent)
+                    .bookingIntentId(intent.getId())
                     .playerId(intent.getPlayerId())
                     .paymentId(request.getPaymentId())
                     .clubId(intent.getClubId())
                     .stationType(intent.getStationType())
-                    .stationIds(new ArrayList<>(intent.getStationIds()))
+                    .stations(
+                        intent.getStations().stream()
+                            .map(station -> BookingStation.builder()
+                                .stationId(station.getStationId())
+                                .playerCount(station.getPlayerCount())
+                                .build())
+                            .toList())
                     .status(BookingStatus.CONFIRMED)
                     .playersCount(intent.getPlayerCount())
                     .bookingType(getBookingType(intent.getPlayerCount()))
@@ -169,7 +431,15 @@ public class BookingServiceImpl implements BookingService {
                     .build();
 
             bookingDAO.save(booking);
-            return booking;
+            Player player = playerService.getPlayerById(booking.getPlayerId());
+            Club club = clubService.getClubById(booking.getClubId());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubId(intent.getClubId())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Station::getId,
+                                    Function.identity()));
+            return getBookingResponse(booking, intent, player, club, stationMap);
         } catch (DataNotFoundException e){
             log.info("Booking-Intent not found for confirmation with id: {}",
                     request.getBookingIntentId());
@@ -190,13 +460,144 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Booking getBookingById(Long bookingId) throws BookingServiceException {
+    public BookingDetailsResponse getClubBookingByIntentId(Long clubId, Long intentId)
+        throws BookingServiceException {
         try {
-            return bookingDAO.getById(bookingId);
+            BookingIntent intent = bookingIntentDao.getById(intentId);
+            if(!intent.getClubId().equals(clubId)
+                    || !BookingIntentMode.OFFLINE.equals(intent.getIntentMode())){
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+            Booking booking = bookingDAO.getByIntentId(intentId);
+            Player player = playerService.getPlayerById(intent.getPlayerId());
+            Club club = clubService.getClubById(intent.getClubId());
+            Map<Long, Station> stationMap =
+                clubService.getStationsByClubId(intent.getClubId())
+                    .stream()
+                    .collect(Collectors.toMap(
+                        Station::getId,
+                        Function.identity()));
+
+            return getBookingResponse(booking, intent, player, club, stationMap);
         } catch (DataNotFoundException e) {
-            log.error("Booking not found with ID: {}", bookingId);
+            log.error("Booking not found for intentId: {}", intentId);
             throw new BookingServiceException(
                     BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to fetch booking-intent with intentId: {}", intentId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
+        } catch (BookingDAOException e) {
+            log.error("Failed to fetch booking with intentId: {}", intentId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
+        }
+    }
+
+    @Override
+    public BookingDetailsResponse getPlayerBookingByIntentId(Long playerId, Long intentId)
+            throws BookingServiceException {
+        try {
+            BookingIntent intent = bookingIntentDao.getById(intentId);
+            if(!intent.getPlayerId().equals(playerId)
+                    || !BookingIntentMode.ONLINE.equals(intent.getIntentMode())){
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+            Booking booking = bookingDAO.getByIntentId(intentId);
+            Player player = playerService.getPlayerById(intent.getPlayerId());
+            Club club = clubService.getClubById(intent.getClubId());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubId(intent.getClubId())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Station::getId,
+                                    Function.identity()));
+
+            return getBookingResponse(booking, intent, player, club, stationMap);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to fetch booking-intent with intentId: {}", intentId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
+        } catch (DataNotFoundException e) {
+            log.error("Booking not found for intentId: {}", intentId);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingDAOException e) {
+            log.error("Failed to fetch booking with intentId: {}", intentId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
+        }
+    }
+
+    @Override
+    public BookingDetailsResponse getClubBookingById(Long clubId, Long bookingId)
+            throws BookingServiceException {
+        try {
+            Booking booking = bookingDAO.getById(bookingId);
+            if(!booking.getClubId().equals(clubId)){
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+            Club club = clubService.getClubById(booking.getClubId());
+            Player player = playerService.getPlayerById(booking.getPlayerId());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubId(booking.getClubId())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Station::getId,
+                                    Function.identity()));
+            BookingIntent bookingIntent =
+                    bookingIntentDao.getById(booking.getBookingIntentId());
+
+            return getBookingResponse(booking, bookingIntent, player, club, stationMap);
+
+        } catch (DataNotFoundException e) {
+            log.error("Club-Booking not found with ID: {}", bookingId);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to fetch booking-intent for bookingId: {}", bookingId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
+        } catch (BookingDAOException e) {
+            log.error("Failed to fetch booking with ID: {}", bookingId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
+        }
+    }
+
+    @Override
+    public BookingDetailsResponse getPlayerBookingById(Long playerId, Long bookingId)
+            throws BookingServiceException {
+        try {
+            Booking booking = bookingDAO.getById(bookingId);
+            if(!booking.getPlayerId().equals(playerId)){
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+            Club club = clubService.getClubById(booking.getClubId());
+            Player player = playerService.getPlayerById(booking.getPlayerId());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubId(booking.getClubId())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Station::getId,
+                                    Function.identity()));
+            BookingIntent bookingIntent =
+                    bookingIntentDao.getById(booking.getBookingIntentId());
+
+            return getBookingResponse(booking, bookingIntent, player, club, stationMap);
+
+        } catch (DataNotFoundException e) {
+            log.error("Player-Booking not found with ID: {}", bookingId);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to fetch booking-intent for bookingId: {}", bookingId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_BOOKING_FAILED);
         } catch (BookingDAOException e) {
             log.error("Failed to fetch booking with ID: {}", bookingId, e);
             throw new BookingServiceException(
@@ -206,16 +607,28 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public Booking cancelBooking(Long bookingId) throws BookingServiceException {
+    public void cancelClubBooking(Long clubId, Long bookingId)
+            throws BookingServiceException {
         try {
             Booking booking = bookingDAO.getById(bookingId);
+            BookingIntent bookingIntent =
+                    bookingIntentDao.getById(booking.getBookingIntentId());
+            if(!booking.getClubId().equals(clubId)
+                    || !BookingIntentMode.OFFLINE.equals(bookingIntent.getIntentMode())){
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
             booking.setStatus(BookingStatus.CANCELLED);
             bookingDAO.update(bookingId, booking);
-            return booking;
+
         } catch (DataNotFoundException e) {
-            log.error("Booking not found with ID {} for cancel", bookingId);
+            log.error("Club-Booking not found with ID {} for cancel", bookingId);
             throw new BookingServiceException(
                     BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to fetch booking-intent for booking with ID: {}", bookingId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CANCEL_BOOKING_FAILED);
         } catch (BookingDAOException e) {
             log.error("Failed to cancel booking with ID: {}", bookingId, e);
             throw new BookingServiceException(
@@ -224,10 +637,83 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<Booking> listBookingByPlayerId(Long playerId)
+    @Transactional
+    public void cancelPlayerBooking(Long playerId, Long bookingId)
             throws BookingServiceException {
         try {
-            return bookingDAO.getBookingByPlayerId(playerId);
+            Booking booking = bookingDAO.getById(bookingId);
+            BookingIntent bookingIntent =
+                    bookingIntentDao.getById(booking.getBookingIntentId());
+            if(!booking.getPlayerId().equals(playerId)
+                    || !BookingIntentMode.ONLINE.equals(bookingIntent.getIntentMode())){
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+            booking.setStatus(BookingStatus.CANCELLED);
+            bookingDAO.update(bookingId, booking);
+
+        } catch (DataNotFoundException e) {
+            log.error("Player-Booking not found with ID {} for cancel", bookingId);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.BOOKING_NOT_FOUND);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to fetch booking-intent for booking with ID: {}", bookingId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CANCEL_BOOKING_FAILED);
+        } catch (BookingDAOException e) {
+            log.error("Failed to cancel booking with ID: {}", bookingId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.CANCEL_BOOKING_FAILED);
+        }
+    }
+
+    @Override
+    public List<BookingDetailsResponse> listBookingByPlayerId(Long playerId)
+            throws BookingServiceException {
+        try {
+            List<Booking> bookings = bookingDAO.getBookingsByPlayerId(playerId);
+
+            if (bookings.isEmpty()) {
+                return List.of();
+            }
+
+            Player player = playerService.getPlayerById(playerId);
+
+            List<Long> clubIds = bookings.stream()
+                    .map(Booking::getClubId)
+                    .distinct()
+                    .toList();
+
+            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+
+            List<Long> intentIds = bookings.stream()
+                    .map(Booking::getBookingIntentId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            Map<Long, BookingIntent> intentMap = intentIds.isEmpty()
+                    ? Collections.emptyMap()
+                    : bookingIntentDao.getIntentsByIds(intentIds).stream()
+                    .collect(Collectors.toMap(BookingIntent::getId, Function.identity()));
+
+            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+
+            return bookings.stream()
+                    .map(b -> getBookingResponse(
+                            b,
+                            intentMap.get(b.getBookingIntentId()),
+                            player,
+                            clubMap.get(b.getClubId()),
+                            stationMap))
+                    .toList();
+
+        }  catch (BookingIntentDaoException e) {
+            log.error("Failed to list booking-intents for playerId: {}", playerId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.LIST_BOOKINGS_BY_CLUB_FAILED);
         } catch (BookingDAOException e) {
             log.error("Failed to list bookings for playerId: {}", playerId, e);
             throw new BookingServiceException(
@@ -235,24 +721,86 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+
     @Override
-    public Page<Booking> listBookingByClubIdWithFilters(
+    public Page<BookingDetailsResponse> listBookingByClubIdWithFilters(
             Long clubId,
-            LocalDateTime fromDateTime,
-            LocalDateTime toDateTime,
-            List<StationType> stationTypes,
-            List<BookingStatus> bookingStatuses,
-            List<BookingType> bookingTypes,
+            ClubBookingsListFilterRequest filterRequest,
             Pageable pageable
     ) throws BookingServiceException {
         try {
-            Set<StationType> stationTypeSet = stationTypes != null ? new HashSet<>(stationTypes): null;
-            Set<BookingStatus> bookingStatusSet = bookingStatuses != null ? new HashSet<>(bookingStatuses) : null;
-            Set<BookingType> bookingTypeSet = bookingTypes != null ? new HashSet<>(bookingTypes) : null;
-            return bookingDAO.getBookingsByClubIdWithFilters(
-                    clubId, fromDateTime, toDateTime,
-                    stationTypeSet, bookingStatusSet, bookingTypeSet,
-                    pageable);
+            Set<StationType> stationTypeSet =
+                    filterRequest.getStationTypes() != null
+                            ? new HashSet<>(filterRequest.getStationTypes())
+                            : null;
+
+            Set<BookingStatus> bookingStatusSet =
+                    filterRequest.getBookingStatuses() != null
+                            ? new HashSet<>(filterRequest.getBookingStatuses())
+                            : null;
+            Set<BookingType> bookingTypeSet =
+                    filterRequest.getBookingTypes() != null
+                            ? new HashSet<>(filterRequest.getBookingTypes())
+                            : null;
+
+            Page<Booking> bookings =
+                    bookingDAO.getBookingsByClubIdWithFilters(
+                        clubId,
+                        filterRequest.getFromDateTime(),
+                        filterRequest.getToDateTime(),
+                        stationTypeSet,
+                        bookingStatusSet,
+                        bookingTypeSet,
+                        pageable
+                    );
+
+            if (bookings.isEmpty()) {
+                return Page.empty(pageable);
+            }
+
+            Club club = clubService.getClubById(clubId);
+            List<Long> playerIds = bookings.stream()
+                    .map(Booking::getPlayerId)
+                    .distinct()
+                    .toList();
+
+            Map<Long, Player> playerMap = playerService.getPlayersByIds(playerIds).stream()
+                    .collect(Collectors.toMap(Player::getId, Function.identity()));
+
+            Map<Long, Station> stationMap = clubService.getStationsByClubId(clubId).stream()
+                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+
+            List<Long> intentIds = bookings.stream()
+                    .map(Booking::getBookingIntentId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+
+            Map<Long, BookingIntent> intentMap =
+                    intentIds.isEmpty()
+                            ? Collections.emptyMap()
+                            : bookingIntentDao
+                            .getIntentsByIds(intentIds)
+                            .stream()
+                            .collect(
+                                    Collectors.toMap(
+                                            BookingIntent::getId,
+                                            Function.identity()
+                                    )
+                            );
+
+            return bookings.map(b -> getBookingResponse(
+                    b,
+                    intentMap.get(b.getBookingIntentId()),
+                    playerMap.get(b.getPlayerId()),
+                    club,
+                    stationMap
+            ));
+
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to list booking-intents for clubId: {}", clubId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.LIST_BOOKINGS_BY_CLUB_FAILED);
         } catch (BookingDAOException e) {
             log.error("Failed to list bookings for clubId: {}", clubId, e);
             throw new BookingServiceException(
@@ -298,7 +846,16 @@ public class BookingServiceImpl implements BookingService {
             BookingAvailabilityByStationRequest request)
             throws BookingServiceException {
         try {
-            validateStations(request.getClubId(), request.getStationType(), request.getStationIds());
+            Map<Long, Station> stationMap =
+                    clubService.getStationsByClubIdAndType(
+                                    request.getClubId(), request.getStationType())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    Station::getId,
+                                    Function.identity()
+                            ));
+
+            validateStations(stationMap , request.getStations());
 
             if (isNotAlignedTo30Minutes(request.getSearchWindow().getDateTime())){
                 throw new InvalidRequestException("Search window should be multiple of 30 minutes");
@@ -312,7 +869,9 @@ public class BookingServiceImpl implements BookingService {
                     bookingManager.getAvailableTimeSlotsForStations(
                             request.getClubId(),
                             request.getStationType(),
-                            request.getStationIds(),
+                            request.getStations().stream()
+                                    .map(BookingStationRequest::getStationId)
+                                    .toList(),
                             request.getDurationHrs(),
                             request.getSearchWindow());
 
@@ -323,7 +882,7 @@ public class BookingServiceImpl implements BookingService {
             return BookingAvailabilityByStationResponse.builder()
                     .clubId(request.getClubId())
                     .stationType(request.getStationType())
-                    .stationIds(request.getStationIds())
+                    .stations(request.getStations())
                     .availableTimes(availableTimes)
                     .build();
         } catch (InvalidRequestException e) {
@@ -348,9 +907,9 @@ public class BookingServiceImpl implements BookingService {
             throw new InvalidRequestException("Start time and end time must be provided");
         }
 
-        if (startTime.isBefore(LocalDateTime.now())) {
-            throw new InvalidRequestException("Start time must be in the present or future");
-        }
+            if (startTime.isBefore(LocalDateTime.now(Clock.systemUTC()))) {
+                throw new InvalidRequestException("Start time must be in the present or future");
+            }
 
         if (!startTime.isBefore(endTime)) {
             throw new InvalidRequestException("Start time must be before end time");
@@ -380,53 +939,50 @@ public class BookingServiceImpl implements BookingService {
     }
 
 
-    private void validateStations(Long clubId, StationType stationType, List<Long> stationIds)
-            throws InvalidRequestException {
-        try {
-            if (clubId == null){
-                throw new InvalidRequestException("Valid clubId is required");
+    private void validateStations(
+            Map<Long, Station> allowedStations,
+            List<BookingStationRequest> requestStations
+    ) throws InvalidRequestException {
+
+        if (requestStations == null || requestStations.isEmpty()) {
+            throw new InvalidRequestException("At least one station is required for booking");
+        }
+
+        for (BookingStationRequest station : requestStations) {
+            if (!allowedStations.containsKey(station.getStationId())) {
+                log.error("StationId {} not found for club", station.getStationId());
+                throw new InvalidRequestException("InvalidStationId: " + station.getStationId());
             }
 
-            if (stationIds == null || stationIds.isEmpty()) {
-                throw new InvalidRequestException("At least one station is required for booking");
+            if(station.getPlayerCount() < 1
+                    || station.getPlayerCount() > allowedStations.get(station.getStationId()).getCapacity()){
+                log.error("Invalid playerCount {} for StationId {}",
+                        station.getPlayerCount() ,station.getStationId());
+                throw new InvalidRequestException("InvalidStationCapacity for stationId {}: " + station.getStationId());
             }
-
-            List<Station> allowedStations = clubService.getStationsByClubIdAndType(clubId, stationType);
-            List<Long> allowedStationIds = allowedStations.stream()
-                    .map(Station::getId)
-                    .toList();
-
-            for (Long id : stationIds) {
-                if (!allowedStationIds.contains(id)) {
-                    log.error("StationId {} not found for clubId {}", id, clubId);
-                    throw new InvalidRequestException("InvalidStationId: " + id);
-                }
-            }
-        } catch (ClubServiceException e) {
-            log.error("Exception in clubService while creating booking-intent", e);
-            throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
         }
     }
 
-    private void validateStationAvailability(CreateBookingIntentRequest request)
-            throws Exception {
+    private void validateStationAvailability(
+            Long clubId,
+            StationType stationType,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            List<BookingStationRequest> requestStations
+    ) throws Exception {
         try {
             List<StationAvailability> available =
-                    bookingManager.getAvailableStationsForTime(
-                            request.getClubId(),
-                            request.getStationType(),
-                            request.getStartTime(),
-                            request.getEndTime()
-                    );
+                    bookingManager.getAvailableStationsForTime(clubId, stationType,
+                            startTime, endTime);
 
             Set<Long> availableIds = available.stream()
                     .filter(StationAvailability::isAvailable)
                     .map(StationAvailability::getStationId)
                     .collect(Collectors.toSet());
 
-            for (Long id : request.getStationIds()) {
-                if (!availableIds.contains(id)) {
-                    log.error("StationId {} not available", id);
+            for (BookingStationRequest station : requestStations) {
+                if (!availableIds.contains(station.getStationId())) {
+                    log.error("StationId {} not available", station.getStationId());
                     throw new BookingServiceException(
                             BookingServiceExceptionType.INVALID_AVAILABILITY);
                 }
@@ -442,5 +998,109 @@ public class BookingServiceImpl implements BookingService {
 
     private BookingType getBookingType(Integer players){
         return players > 1 ? BookingType.GRP : BookingType.IND;
+    }
+
+    private BookingIntentDetailsResponse getBookingIntentResponse(
+            BookingIntent bookingIntent,
+            Player player,
+            Club club,
+            Map<Long, Station> stationMap
+    ) {
+        return
+                BookingIntentDetailsResponse.builder()
+                    .intentId(bookingIntent.getId())
+                    .club(
+                        BookingIntentClubDetails.builder()
+                            .clubId(club.getId())
+                            .clubName(club.getClubName())
+                            .build()
+                    )
+                    .player(
+                        BookingIntentPlayerDetails.builder()
+                            .playerId(player.getId())
+                            .playerPhoneNumber(player.getPhone())
+                            .name(player.getName())
+                            .build()
+                    )
+                    .intent(
+                        BookingIntentDetails.builder()
+                            .startTime(bookingIntent.getStartTime())
+                            .endTime(bookingIntent.getEndTime())
+                            .expiresAt(bookingIntent.getExpiresAt())
+                            .stationType(bookingIntent.getStationType())
+                            .stations(
+                                bookingIntent.getStations()
+                                    .stream()
+                                    .map(station ->
+                                            BookingIntentStationDetails.builder()
+                                                    .stationId(station.getStationId())
+                                                    .stationName(stationMap.get(
+                                                            station.getStationId()).getStationName())
+                                                    .playerCount(station.getPlayerCount())
+                                                    .build()
+                                    )
+                                    .toList()
+                            )
+                            .isCancelled(bookingIntent.getIsCancelled())
+                            .isConfirmed(bookingIntent.isConfirmed())
+                            .costDetails(
+                                BookingIntentCostDetails.builder()
+                                    .totalCost(bookingIntent.getTotalCost())
+                                    .build()
+                            )
+                        .build()
+                    )
+                .build();
+    }
+
+    private BookingDetailsResponse getBookingResponse(
+            Booking booking,
+            BookingIntent bookingIntent,
+            Player player,
+            Club club,
+            Map<Long, Station> stationMap
+    ) {
+        return
+            BookingDetailsResponse.builder()
+                .bookingId(booking.getId())
+                .club(
+                    BookingClubDetails.builder()
+                        .clubId(club.getId())
+                        .clubName(club.getClubName())
+                        .build()
+                )
+                .player(
+                    BookingPlayerDetails.builder()
+                        .playerId(player.getId())
+                        .playerPhoneNumber(player.getPhone())
+                        .name(player.getName())
+                        .build()
+                )
+                .booking(
+                    BookingDetails.builder()
+                        .startTime(booking.getStartTime())
+                        .endTime(booking.getEndTime())
+                        .stationType(booking.getStationType())
+                        .stations(
+                            booking.getStations()
+                                .stream()
+                                .map(station ->
+                                    BookingStationDetails.builder()
+                                        .stationId(station.getStationId())
+                                        .stationName(stationMap.get(
+                                                station.getStationId()).getStationName())
+                                        .playerCount(station.getPlayerCount())
+                                        .build())
+                                .toList())
+                        .bookingStatus(booking.getStatus())
+                        .totalPlayers(bookingIntent.getPlayerCount())
+                        .costDetails(
+                            BookingCostDetails.builder()
+                                .totalCost(bookingIntent.getTotalCost())
+                                .build()
+                        )
+                    .build()
+                )
+            .build();
     }
 }

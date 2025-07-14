@@ -40,9 +40,16 @@ public class ClubAvailabilityController {
     })
     @PostMapping("/by-time")
     public ResponseEntity<BookingAvailabilityByTimeResponse> checkAvailabilityByTime(
-            @Parameter(description = "Request with clubId, stationType, startTime, endTime", required = true)
-            @Valid @RequestBody BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest) throws BookingServiceException {
-        BookingAvailabilityByTimeResponse response = bookingService.checkAvailabilityByTime(bookingAvailabilityByTimeRequest);
+            @Parameter(
+                    description = "Request with clubId, stationType, startTime, endTime",
+                    required = true
+            )
+            @Valid
+            @RequestBody
+            BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest
+    ) {
+        BookingAvailabilityByTimeResponse response =
+                bookingService.checkAvailabilityByTime(bookingAvailabilityByTimeRequest);
         return ResponseEntity.ok(response);
     }
 
@@ -58,9 +65,16 @@ public class ClubAvailabilityController {
     })
     @PostMapping("/by-station")
     public ResponseEntity<BookingAvailabilityByStationResponse> checkAvailabilityByStations(
-            @Parameter(description = "Request with clubId, stationIds, startTime, endTime", required = true)
-            @Valid @RequestBody BookingAvailabilityByStationRequest bookingAvailabilityByStationRequest) throws BookingServiceException {
-        BookingAvailabilityByStationResponse response = bookingService.checkAvailabilityByStations(bookingAvailabilityByStationRequest);
+            @Parameter(
+                    description = "Request with clubId, stationIds, startTime, endTime",
+                    required = true
+            )
+            @Valid
+            @RequestBody
+            BookingAvailabilityByStationRequest bookingAvailabilityByStationRequest
+    ) throws BookingServiceException {
+        BookingAvailabilityByStationResponse response =
+                bookingService.checkAvailabilityByStations(bookingAvailabilityByStationRequest);
         return ResponseEntity.ok(response);
     }
 }

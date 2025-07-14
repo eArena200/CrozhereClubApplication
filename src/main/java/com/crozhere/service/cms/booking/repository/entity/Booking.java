@@ -22,9 +22,8 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booking_intent_id", nullable = false)
-    private BookingIntent bookingIntent;
+    @Column(name = "booking_intent_id", nullable = false)
+    private Long bookingIntentId;
 
     @Column(name = "player_id", nullable = false)
     private Long playerId;
@@ -38,11 +37,11 @@ public class Booking {
 
     @ElementCollection
     @CollectionTable(
-            name = "booking_station_ids",
+            name = "booking_stations",
             joinColumns = @JoinColumn(name = "booking_id")
     )
     @Column(name = "station_id", nullable = false)
-    private List<Long> stationIds;
+    private List<BookingStation> stations;
 
     @Column(name = "payment_id", nullable = false)
     private Long paymentId;

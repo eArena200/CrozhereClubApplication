@@ -48,6 +48,19 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
     }
 
     @Override
+    public List<BookingIntent> getIntentsByIds(List<Long> intentIds) throws BookingIntentDaoException {
+        try {
+            if (intentIds == null || intentIds.isEmpty()) {
+                return List.of();
+            }
+            return repository.findAllById(intentIds);
+        } catch (Exception e) {
+            log.error("Failed to fetch booking intents by IDs: {}", intentIds, e);
+            throw new BookingIntentDaoException("FindByIdsException", e);
+        }
+    }
+
+    @Override
     public void update(Long intentId, BookingIntent bookingIntent) throws DataNotFoundException, BookingIntentDaoException {
         try {
             if (!repository.existsById(intentId)) {
@@ -84,7 +97,8 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
     }
 
     @Override
-    public List<BookingIntent> getExpiredUnconfirmedIntents(LocalDateTime beforeTime) throws BookingIntentDaoException {
+    public List<BookingIntent> getExpiredUnconfirmedIntents(LocalDateTime beforeTime)
+            throws BookingIntentDaoException {
         try {
             return repository.findByIsConfirmedFalseAndExpiresAtBefore(beforeTime);
         } catch (Exception e) {
@@ -92,4 +106,27 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
             throw new BookingIntentDaoException("QueryException", e);
         }
     }
+
+    @Override
+    public List<BookingIntent> getActiveIntentsForClubId(Long clubId, LocalDateTime now)
+            throws BookingIntentDaoException {
+        try {
+            return repository.findActiveIntentsByClubId(clubId, now);
+        } catch (Exception e) {
+            log.error("Failed to fetch active intents for clubId: {}", clubId, e);
+            throw new BookingIntentDaoException("Error while fetching active booking intents", e);
+        }
+    }
+
+    @Override
+    public List<BookingIntent> getActiveIntentsForPlayerId(Long playerId, LocalDateTime now)
+            throws BookingIntentDaoException {
+        try {
+            return repository.findActiveIntentsByPlayerId(playerId, now);
+        } catch (Exception e){
+            log.error("Failed to fetch active intents for playerId: {}", playerId, e);
+            throw new BookingIntentDaoException("Error while fetching active booking intents", e);
+        }
+    }
+
 }

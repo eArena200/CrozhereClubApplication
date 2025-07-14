@@ -22,10 +22,10 @@ public class BookingIntent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "player_Id", nullable = false)
+    @Column(name = "player_id", nullable = false)
     private Long playerId;
 
-    @Column(name = "club_Id", nullable = false)
+    @Column(name = "club_id", nullable = false)
     private Long clubId;
 
     @Enumerated(EnumType.STRING)
@@ -33,9 +33,9 @@ public class BookingIntent {
     private StationType stationType;
 
     @ElementCollection
-    @CollectionTable(name = "booking_intent_station_ids", joinColumns = @JoinColumn(name = "intent_id"))
+    @CollectionTable(name = "booking_intent_stations", joinColumns = @JoinColumn(name = "intent_id"))
     @Column(name = "station_id")
-    private List<Long> stationIds;
+    private List<BookingIntentStation> stations;
 
     @Column(name = "start_time", nullable = false)
     private LocalDateTime startTime;
@@ -52,8 +52,15 @@ public class BookingIntent {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
+    @Column(name = "is_cancelled", nullable = false)
+    private Boolean isCancelled;
+
     @Column(name = "is_confirmed", nullable = false)
     private boolean isConfirmed = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mode", nullable = false)
+    private BookingIntentMode intentMode;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

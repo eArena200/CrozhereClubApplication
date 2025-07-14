@@ -98,8 +98,21 @@ public class ClubServiceImpl implements ClubService {
             log.error("club not found for clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
         } catch (ClubDAOException e){
-            log.error("Exception while getting club for clubId: {}", clubId);
+            log.error("Exception while getting club for clubId: {}", clubId, e);
             throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
+        }
+    }
+
+    @Override
+    public List<Club> getClubsByIds(List<Long> clubIds) throws ClubServiceException {
+        try {
+            if (clubIds == null || clubIds.isEmpty()) {
+                return List.of();
+            }
+            return clubDAO.getClubsByIds(clubIds);
+        } catch (ClubDAOException e) {
+            log.error("Exception while getting clubs for clubIds: {}", clubIds, e);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_CLUBS_FAILED);
         }
     }
 
@@ -326,6 +339,20 @@ public class ClubServiceImpl implements ClubService {
         } catch (StationDAOException e){
             log.error("Exception while getting stations for clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.GET_STATIONS_BY_CLUB_FAILED);
+        }
+    }
+
+    @Override
+    public List<Station> getStationsByClubIds(List<Long> clubIds)
+            throws ClubServiceException {
+        try {
+            if (clubIds == null || clubIds.isEmpty()) {
+                return List.of();
+            }
+            return stationDAO.getStationsByClubIds(clubIds);
+        } catch (StationDAOException e) {
+            log.error("Exception while getting stations for clubIds: {}", clubIds, e);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_STATIONS_BY_CLUBS_FAILED);
         }
     }
 

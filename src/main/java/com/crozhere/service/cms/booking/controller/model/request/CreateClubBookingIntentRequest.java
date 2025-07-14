@@ -5,10 +5,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,19 +17,19 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateBookingRequest {
-
-    @NotNull
-    private Long playerId;
+public class CreateClubBookingIntentRequest {
 
     @NotNull
     private Long clubId;
 
-    @NotEmpty
-    private List<Long> stationIds;
+    @NotNull
+    private String playerPhoneNumber;
 
     @NotNull
     private StationType stationType;
+
+    @NotEmpty
+    private List<BookingStationRequest> stations;
 
     @NotNull
     @Schema(
@@ -46,7 +46,4 @@ public class CreateBookingRequest {
     )
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private LocalDateTime endTime;
-
-    @NotNull
-    private Integer players;
 }

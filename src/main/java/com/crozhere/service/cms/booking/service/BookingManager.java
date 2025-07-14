@@ -8,6 +8,8 @@ import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOExcep
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
+import com.crozhere.service.cms.booking.repository.entity.BookingIntentStation;
+import com.crozhere.service.cms.booking.repository.entity.BookingStation;
 import com.crozhere.service.cms.booking.service.exception.BookingManagerException;
 import com.crozhere.service.cms.booking.util.TimeSlot;
 import com.crozhere.service.cms.booking.util.TimeSlotUtil;
@@ -51,11 +53,13 @@ public class BookingManager {
             log.info("FOUND ACTIVE INTENTS: {}", activeIntents);
 
             Set<Long> bookedStationIds = bookings.stream()
-                    .flatMap(b -> b.getStationIds().stream())
+                    .flatMap(b -> b.getStations().stream())
+                    .map(BookingStation::getStationId)
                     .collect(Collectors.toSet());
 
             Set<Long> intentStationIds = activeIntents.stream()
-                    .flatMap(intent -> intent.getStationIds().stream())
+                    .flatMap(intent -> intent.getStations().stream())
+                    .map(BookingIntentStation::getStationId)
                     .collect(Collectors.toSet());
 
             Set<Long> allUnavailable = new HashSet<>();
@@ -115,15 +119,18 @@ public class BookingManager {
 
             for (Station station : stations) {
                 List<TimeSlot> bookingBusySlots = bookings.stream()
-                        .filter(b -> b.getStationIds().contains(station.getId()))
+                        .filter(b -> b.getStations().stream()
+                                .anyMatch(bs -> bs.getStationId().equals(station.getId())))
                         .map(b -> TimeSlot.builder()
                                 .startTime(b.getStartTime())
                                 .endTime(b.getEndTime())
                                 .build())
                         .toList();
 
+
                 List<TimeSlot> intentBusySlots = intents.stream()
-                        .filter(i -> i.getStationIds().contains(station.getId()))
+                        .filter(i -> i.getStations().stream()
+                                .anyMatch(is -> is.getStationId().equals(station.getId())))
                         .map(i -> TimeSlot.builder()
                                 .startTime(i.getStartTime())
                                 .endTime(i.getEndTime())

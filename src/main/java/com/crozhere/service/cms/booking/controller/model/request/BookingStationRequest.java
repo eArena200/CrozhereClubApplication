@@ -10,11 +10,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ConfirmBookingIntentRequest {
+public class BookingStationRequest {
+    @NotNull
+    private Long stationId;
 
     @NotNull
-    private Long bookingIntentId;
-
-    @NotNull
-    private Long paymentId;
+    private Integer playerCount;
 }

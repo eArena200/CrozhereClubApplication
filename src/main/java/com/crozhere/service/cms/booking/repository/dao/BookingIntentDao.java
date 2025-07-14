@@ -15,9 +15,13 @@ public interface BookingIntentDao {
 
     Optional<BookingIntent> findById(Long intentId) throws BookingIntentDaoException;
 
-    BookingIntent getById(Long intentId) throws DataNotFoundException, BookingIntentDaoException;
+    BookingIntent getById(Long intentId)
+            throws DataNotFoundException, BookingIntentDaoException;
+    List<BookingIntent> getIntentsByIds(List<Long> intentIds)
+            throws BookingIntentDaoException;
 
-    void update(Long intentId, BookingIntent bookingIntent) throws DataNotFoundException, BookingIntentDaoException;
+    void update(Long intentId, BookingIntent bookingIntent)
+            throws DataNotFoundException, BookingIntentDaoException;
 
     void deleteById(Long intentId) throws BookingIntentDaoException;
 
@@ -25,5 +29,11 @@ public interface BookingIntentDao {
             List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
             throws BookingIntentDaoException;
 
-    List<BookingIntent> getExpiredUnconfirmedIntents(LocalDateTime beforeTime) throws BookingIntentDaoException;
+    List<BookingIntent> getExpiredUnconfirmedIntents(LocalDateTime beforeTime)
+            throws BookingIntentDaoException;
+
+    List<BookingIntent> getActiveIntentsForClubId(Long clubId, LocalDateTime now)
+            throws BookingIntentDaoException;
+    List<BookingIntent> getActiveIntentsForPlayerId(Long playerId, LocalDateTime now)
+            throws BookingIntentDaoException;
 }

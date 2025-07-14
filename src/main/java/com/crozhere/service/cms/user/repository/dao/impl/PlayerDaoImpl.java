@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -61,6 +62,18 @@ public class PlayerDaoImpl implements PlayerDao {
             return playerRepository.findById(playerId);
         } catch (Exception e) {
             throw new PlayerDAOException("Failed to find player by ID", e);
+        }
+    }
+
+    @Override
+    public List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerDAOException {
+        try{
+            if(playerIds == null || playerIds.isEmpty()){
+                return List.of();
+            }
+            return playerRepository.findAllById(playerIds);
+        } catch (Exception e){
+            throw new PlayerDAOException("Failed to fetch players for playerIds");
         }
     }
 

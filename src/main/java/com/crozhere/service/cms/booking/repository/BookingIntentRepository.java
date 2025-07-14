@@ -14,9 +14,10 @@ public interface BookingIntentRepository extends JpaRepository<BookingIntent, Lo
 
     @Query(value = """
         SELECT DISTINCT bi.* FROM booking_intent bi
-        JOIN booking_intent_station_ids bis ON bi.id = bis.intent_id
+        JOIN booking_intent_stations bis ON bi.id = bis.intent_id
         WHERE bis.station_id IN :stationIds
         AND bi.is_confirmed = false
+        AND bi.is_cancelled = false
         AND bi.expires_at > :now
         AND bi.start_time < :endTime
         AND bi.end_time > :startTime
@@ -26,6 +27,30 @@ public interface BookingIntentRepository extends JpaRepository<BookingIntent, Lo
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime")LocalDateTime endTime,
             @Param("now")LocalDateTime now
+    );
+
+    @Query(value = """
+        SELECT bi.* FROM booking_intent bi
+        WHERE bi.club_id = :clubId
+        AND bi.is_cancelled = false
+        AND bi.is_confirmed = false
+        AND bi.expires_at > :now
+    """, nativeQuery = true)
+    List<BookingIntent> findActiveIntentsByClubId(
+            @Param("clubId") Long clubId,
+            @Param("now") LocalDateTime now
+    );
+
+    @Query(value = """
+        SELECT bi.* FROM booking_intent bi
+        WHERE bi.player_id = :playerId
+        AND bi.is_cancelled = false
+        AND bi.is_confirmed = false
+        AND bi.expires_at > :now
+    """, nativeQuery = true)
+    List<BookingIntent> findActiveIntentsByPlayerId(
+            @Param("playerId") Long playerId,
+            @Param("now") LocalDateTime now
     );
 
     List<BookingIntent> findByIsConfirmedFalseAndExpiresAtBefore(LocalDateTime beforeTime);

@@ -1,5 +1,6 @@
 package com.crozhere.service.cms.club.repository.dao.impl;
 
+import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
 import com.crozhere.service.cms.club.repository.ClubRepository;
 import com.crozhere.service.cms.club.repository.dao.ClubDao;
 import com.crozhere.service.cms.club.repository.dao.exception.ClubDAOException;
@@ -53,6 +54,19 @@ public class ClubDaoImpl implements ClubDao {
         } catch (Exception e) {
             log.error("Failed to get club by ID: {}", clubId, e);
             throw new ClubDAOException("Error getting club", e);
+        }
+    }
+
+    @Override
+    public List<Club> getClubsByIds(List<Long> clubIds) throws ClubDAOException {
+        try {
+            if(clubIds == null || clubIds.isEmpty()){
+                return List.of();
+            }
+            return clubRepository.findAllById(clubIds);
+        } catch (Exception e) {
+            log.error("Failed to fetch clubs by IDs: {}", clubIds, e);
+            throw new ClubDAOException("GetClubsByIdsException", e);
         }
     }
 

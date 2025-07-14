@@ -8,6 +8,7 @@ public enum PlayerServiceExceptionType {
     PLAYER_NOT_FOUND("Player not found."),
     CREATE_PLAYER_FAILED("Failed to create player."),
     GET_PLAYER_FAILED("Failed to retrieve player."),
+    GET_PLAYERS_FAILED("Failed to retrieve players."),
     UPDATE_PLAYER_FAILED("Failed to update player."),
     DELETE_PLAYER_FAILED("Failed to delete player.");
 

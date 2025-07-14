@@ -8,6 +8,6 @@ import java.util.List;
 @Data
 @Builder
 public class PaginatedListBookingsResponse {
-    private List<BookingResponse> bookings;
+    private List<BookingDetailsResponse> bookings;
     private Long totalCount;
 }

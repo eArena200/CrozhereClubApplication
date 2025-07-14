@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -64,6 +66,21 @@ public class PlayerServiceImpl implements PlayerService {
             log.error("Exception while getting Player with playerId: {}", playerId);
             throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
         }
+    }
+
+    @Override
+    public List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerServiceException {
+        try {
+            return playerDao.getPlayersByIds(playerIds);
+        } catch (PlayerDAOException e){
+            log.error("Exception while getting players for playerIds: {}", playerIds, e);
+            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYERS_FAILED);
+        }
+    }
+
+    @Override
+    public List<Player> getPlayersForPlayerIds(List<Long> playerIds) throws PlayerServiceException {
+        return List.of();
     }
 
     @Override

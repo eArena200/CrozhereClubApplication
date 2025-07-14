@@ -8,14 +8,17 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpecificationExecutor<Booking> {
 
     List<Booking> findByPlayerId(Long playerId);
 
+    Optional<Booking> findByBookingIntentId(Long intentId);
+
     @Query(value = """
         SELECT DISTINCT b.* FROM booking b
-        JOIN booking_station_ids bs ON b.id = bs.booking_id
+        JOIN booking_stations bs ON b.id = bs.booking_id
         WHERE bs.station_id IN :stationIds
         AND b.start_time < :endTime
         AND b.end_time > :startTime

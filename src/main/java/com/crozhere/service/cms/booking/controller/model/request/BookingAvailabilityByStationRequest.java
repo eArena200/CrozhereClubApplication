@@ -1,7 +1,6 @@
 package com.crozhere.service.cms.booking.controller.model.request;
 
 import com.crozhere.service.cms.club.repository.entity.StationType;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
@@ -25,7 +24,7 @@ public class BookingAvailabilityByStationRequest {
     private StationType stationType;
 
     @NotEmpty
-    private List<Long> stationIds;
+    private List<BookingStationRequest> stations;
 
     @NotNull
     private Integer durationHrs;
