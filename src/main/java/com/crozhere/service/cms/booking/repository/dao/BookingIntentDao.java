@@ -5,7 +5,7 @@ import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDa
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
 import com.crozhere.service.cms.club.repository.entity.Station;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,14 +26,14 @@ public interface BookingIntentDao {
     void deleteById(Long intentId) throws BookingIntentDaoException;
 
     List<BookingIntent> getActiveIntentsForStationsAndForSearchWindow(
-            List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
+            List<Station> stations, Instant startTime, Instant endTime)
             throws BookingIntentDaoException;
 
-    List<BookingIntent> getExpiredUnconfirmedIntents(LocalDateTime beforeTime)
+    List<BookingIntent> getExpiredUnconfirmedIntents(Instant beforeTime)
             throws BookingIntentDaoException;
 
-    List<BookingIntent> getActiveIntentsForClubId(Long clubId, LocalDateTime now)
+    List<BookingIntent> getActiveIntentsForClubId(Long clubId, Instant now)
             throws BookingIntentDaoException;
-    List<BookingIntent> getActiveIntentsForPlayerId(Long playerId, LocalDateTime now)
+    List<BookingIntent> getActiveIntentsForPlayerId(Long playerId, Instant now)
             throws BookingIntentDaoException;
 }

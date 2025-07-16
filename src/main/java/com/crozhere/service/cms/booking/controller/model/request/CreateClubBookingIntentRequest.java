@@ -1,7 +1,6 @@
 package com.crozhere.service.cms.booking.controller.model.request;
 
 import com.crozhere.service.cms.club.repository.entity.StationType;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -34,16 +33,14 @@ public class CreateClubBookingIntentRequest {
     @NotNull
     @Schema(
             description = "StartTime of booking time range (ISO 8601 format, no seconds)",
-            example = "2025-07-01T09:00"
+            example = "2025-07-01T09:00:00.000Z"
     )
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
-    private LocalDateTime startTime;
+    private Instant startTime;
 
     @NotNull
     @Schema(
             description = "StartTime of booking time range (ISO 8601 format, no seconds)",
-            example = "2025-07-01T09:00"
+            example = "2025-07-01T09:00:00.000Z"
     )
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
-    private LocalDateTime endTime;
+    private Instant endTime;
 }

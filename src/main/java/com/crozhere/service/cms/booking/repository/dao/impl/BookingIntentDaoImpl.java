@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -86,10 +86,11 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
 
     @Override
     public List<BookingIntent> getActiveIntentsForStationsAndForSearchWindow(
-            List<Station> stations, LocalDateTime startTime, LocalDateTime endTime) throws BookingIntentDaoException {
+            List<Station> stations, Instant startTime, Instant endTime
+    ) throws BookingIntentDaoException {
         try {
             List<Long> stationIds = stations.stream().map(Station::getId).toList();
-            return repository.findActiveOverlappingIntents(stationIds, startTime, endTime, LocalDateTime.now());
+            return repository.findActiveOverlappingIntents(stationIds, startTime, endTime, Instant.now());
         } catch (Exception e) {
             log.error("Error fetching active booking intents", e);
             throw new BookingIntentDaoException("QueryException", e);
@@ -97,7 +98,7 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
     }
 
     @Override
-    public List<BookingIntent> getExpiredUnconfirmedIntents(LocalDateTime beforeTime)
+    public List<BookingIntent> getExpiredUnconfirmedIntents(Instant beforeTime)
             throws BookingIntentDaoException {
         try {
             return repository.findByIsConfirmedFalseAndExpiresAtBefore(beforeTime);
@@ -108,7 +109,7 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
     }
 
     @Override
-    public List<BookingIntent> getActiveIntentsForClubId(Long clubId, LocalDateTime now)
+    public List<BookingIntent> getActiveIntentsForClubId(Long clubId, Instant now)
             throws BookingIntentDaoException {
         try {
             return repository.findActiveIntentsByClubId(clubId, now);
@@ -119,7 +120,7 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
     }
 
     @Override
-    public List<BookingIntent> getActiveIntentsForPlayerId(Long playerId, LocalDateTime now)
+    public List<BookingIntent> getActiveIntentsForPlayerId(Long playerId, Instant now)
             throws BookingIntentDaoException {
         try {
             return repository.findActiveIntentsByPlayerId(playerId, now);

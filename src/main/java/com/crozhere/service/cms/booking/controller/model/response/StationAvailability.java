@@ -8,8 +8,6 @@ import lombok.Data;
 @Builder
 public class StationAvailability {
     private Long stationId;
-    private String stationName;
-    private StationType stationType;
     private boolean isAvailable;
 }
 

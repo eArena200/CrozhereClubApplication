@@ -5,7 +5,7 @@ import com.crozhere.service.cms.club.repository.entity.StationType;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -14,5 +14,5 @@ public class BookingAvailabilityByStationResponse {
     private Long clubId;
     private StationType stationType;
     private List<BookingStationRequest> stations;
-    private List<LocalDateTime> availableTimes;
+    private List<Instant> availableTimes;
 }

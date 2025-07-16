@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,8 +25,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long>, JpaSpec
     """, nativeQuery = true)
     List<Booking> findBookingsForStationForSearchWindow(
             @Param("stationIds") List<Long> stationIds,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime") LocalDateTime endTime
+            @Param("startTime") Instant startTime,
+            @Param("endTime") Instant endTime
     );
 }
 

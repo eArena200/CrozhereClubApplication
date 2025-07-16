@@ -35,9 +35,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -119,8 +118,8 @@ public class BookingServiceImpl implements BookingService {
                                     .sum()
                     )
                     .expiresAt(
-                            LocalDateTime.now()
-                                    .plusMinutes(INTENT_EXPIRATION_INTERVAL_MIN)
+                            Instant.now()
+                                    .plus(INTENT_EXPIRATION_INTERVAL_MIN, ChronoUnit.MINUTES)
                     )
                     .isCancelled(false)
                     .isConfirmed(false)
@@ -198,8 +197,8 @@ public class BookingServiceImpl implements BookingService {
                                     .sum()
                     )
                     .expiresAt(
-                            LocalDateTime.now()
-                                    .plusMinutes(INTENT_EXPIRATION_INTERVAL_MIN)
+                            Instant.now()
+                                    .plus(INTENT_EXPIRATION_INTERVAL_MIN, ChronoUnit.MINUTES)
                     )
                     .isCancelled(false)
                     .isConfirmed(false)
@@ -234,7 +233,7 @@ public class BookingServiceImpl implements BookingService {
 
         try {
             Club club = clubService.getClubById(clubId);
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now();
 
             List<BookingIntent> activeIntents =
                     bookingIntentDao.getActiveIntentsForClubId(clubId, now);
@@ -275,7 +274,7 @@ public class BookingServiceImpl implements BookingService {
             throws BookingServiceException {
 
         try {
-            LocalDateTime now = LocalDateTime.now();
+            Instant now = Instant.now();
             List<BookingIntent> activeIntents =
                     bookingIntentDao.getActiveIntentsForPlayerId(playerId, now);
 
@@ -401,7 +400,7 @@ public class BookingServiceImpl implements BookingService {
                 throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_ALREADY_USED);
             }
 
-            if(intent.getExpiresAt().isBefore(LocalDateTime.now())){
+            if(intent.getExpiresAt().isBefore(Instant.now())){
                 log.info("Booking-Intent confirmation period expired");
                 // TODO: Refund process should start here.
                 throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_EXPIRED);
@@ -814,6 +813,8 @@ public class BookingServiceImpl implements BookingService {
             BookingAvailabilityByTimeRequest request)
             throws BookingServiceException {
         try {
+            log.info("Passed StartTime: {}", request.getStartTime());
+            log.info("Passed EndTime: {}", request.getEndTime());
             validateBookingTimes(request.getStartTime(), request.getEndTime());
             List<StationAvailability> availableStations =
                     bookingManager.getAvailableStationsForTime(
@@ -875,7 +876,7 @@ public class BookingServiceImpl implements BookingService {
                             request.getDurationHrs(),
                             request.getSearchWindow());
 
-            List<LocalDateTime> availableTimes =
+            List<Instant> availableTimes =
                     availableTimeSlots.stream()
                             .map(TimeSlot::getStartTime).toList();
 
@@ -901,15 +902,17 @@ public class BookingServiceImpl implements BookingService {
 
 
 
-    private void validateBookingTimes(LocalDateTime startTime, LocalDateTime endTime)
+    private void validateBookingTimes(Instant startTime, Instant endTime)
             throws InvalidRequestException {
         if (startTime == null || endTime == null) {
             throw new InvalidRequestException("Start time and end time must be provided");
         }
 
-            if (startTime.isBefore(LocalDateTime.now(Clock.systemUTC()))) {
-                throw new InvalidRequestException("Start time must be in the present or future");
-            }
+        log.info("CurrentTime: {}", LocalDateTime.now());
+
+        if (startTime.isBefore(Instant.now())) {
+            throw new InvalidRequestException("Start time must be in the present or future");
+        }
 
         if (!startTime.isBefore(endTime)) {
             throw new InvalidRequestException("Start time must be before end time");
@@ -930,12 +933,14 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
-    private boolean isNotAlignedTo30Minutes(LocalDateTime time) {
-        int minute = time.getMinute();
-        int second = time.getSecond();
-        int nano = time.getNano();
+    private boolean isNotAlignedTo30Minutes(Instant time) {
+        LocalDateTime dateTime = LocalDateTime.ofInstant(time, ZoneOffset.UTC);
 
-        return !( (minute == 0 || minute == 30) && second == 0 && nano == 0 );
+        int minute = dateTime.getMinute();
+        int second = dateTime.getSecond();
+        int nano = dateTime.getNano();
+
+        return !((minute == 0 || minute == 30) && second == 0 && nano == 0);
     }
 
 
@@ -966,10 +971,10 @@ public class BookingServiceImpl implements BookingService {
     private void validateStationAvailability(
             Long clubId,
             StationType stationType,
-            LocalDateTime startTime,
-            LocalDateTime endTime,
+            Instant startTime,
+            Instant endTime,
             List<BookingStationRequest> requestStations
-    ) throws Exception {
+    ) throws BookingServiceException {
         try {
             List<StationAvailability> available =
                     bookingManager.getAvailableStationsForTime(clubId, stationType,
@@ -1041,6 +1046,7 @@ public class BookingServiceImpl implements BookingService {
                                     )
                                     .toList()
                             )
+                            .totalPlayerCount(bookingIntent.getPlayerCount())
                             .isCancelled(bookingIntent.getIsCancelled())
                             .isConfirmed(bookingIntent.isConfirmed())
                             .costDetails(

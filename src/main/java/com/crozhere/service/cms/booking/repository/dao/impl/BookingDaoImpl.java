@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -120,8 +121,8 @@ public class BookingDaoImpl implements BookingDao {
     @Override
     public Page<Booking> getBookingsByClubIdWithFilters(
             Long clubId,
-            LocalDateTime fromDateTime,
-            LocalDateTime toDateTime,
+            Instant fromDateTime,
+            Instant toDateTime,
             Set<StationType> stationTypes,
             Set<BookingStatus> bookingStatuses,
             Set<BookingType> bookingTypes,
@@ -141,7 +142,7 @@ public class BookingDaoImpl implements BookingDao {
 
     @Override
     public List<Booking> getBookingsForStationsAndForSearchWindow(
-            List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
+            List<Station> stations, Instant startTime, Instant endTime)
             throws BookingDAOException {
         try {
             List<Long> stationIds = stations.stream().map(Station::getId).toList();

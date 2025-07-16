@@ -21,7 +21,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,8 +38,8 @@ public class BookingManager {
     public List<StationAvailability> getAvailableStationsForTime(
             Long clubId,
             StationType stationType,
-            LocalDateTime startTime,
-            LocalDateTime endTime
+            Instant startTime,
+            Instant endTime
     ) throws BookingManagerException {
         try {
             List<Station> stations = clubService.getStationsByClubIdAndType(clubId, stationType);
@@ -69,8 +70,6 @@ public class BookingManager {
             return stations.stream()
                     .map(station -> StationAvailability.builder()
                             .stationId(station.getId())
-                            .stationName(station.getStationName())
-                            .stationType(station.getStationType())
                             .isAvailable(!allUnavailable.contains(station.getId()))
                             .build())
                     .toList();
@@ -104,8 +103,8 @@ public class BookingManager {
                     .toList();
             log.info("FILTERED STATIONS: {}", stations);
 
-            LocalDateTime windowStart = searchWindow.getDateTime();
-            LocalDateTime windowEnd = windowStart.plusHours(searchWindow.getWindowHrs() + durationInHrs);
+            Instant windowStart = searchWindow.getDateTime();
+            Instant windowEnd = windowStart.plus(searchWindow.getWindowHrs() + durationInHrs, ChronoUnit.HOURS);
 
             List<Booking> bookings =
                     bookingDao.getBookingsForStationsAndForSearchWindow(stations, windowStart, windowEnd);
@@ -171,8 +170,10 @@ public class BookingManager {
             Integer durationInHours,
             SearchWindow searchWindow
     ) {
-        LocalDateTime windowStart = searchWindow.getDateTime();
-        LocalDateTime windowEnd = windowStart.plusHours(searchWindow.getWindowHrs() + durationInHours);
+        Instant windowStart = searchWindow.getDateTime();
+        Instant windowEnd =
+                windowStart.plus(searchWindow.getWindowHrs() + durationInHours,
+                        ChronoUnit.HOURS);
 
         List<List<TimeSlot>> allFree = busySlotsPerStation.values().stream()
                 .map(busy -> {

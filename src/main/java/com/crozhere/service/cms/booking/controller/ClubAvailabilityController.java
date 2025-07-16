@@ -48,6 +48,7 @@ public class ClubAvailabilityController {
             @RequestBody
             BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest
     ) {
+        log.info("Received BY_TIME request: {}", bookingAvailabilityByTimeRequest.toString());
         BookingAvailabilityByTimeResponse response =
                 bookingService.checkAvailabilityByTime(bookingAvailabilityByTimeRequest);
         return ResponseEntity.ok(response);

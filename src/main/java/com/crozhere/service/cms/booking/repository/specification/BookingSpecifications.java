@@ -7,15 +7,15 @@ import com.crozhere.service.cms.club.repository.entity.StationType;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Set;
 
 public class BookingSpecifications {
 
     public static Specification<Booking> filterBookings(
             Long clubId,
-            LocalDateTime fromDateTime,
-            LocalDateTime toDateTime,
+            Instant fromDateTime,
+            Instant toDateTime,
             Set<StationType> stationTypes,
             Set<BookingStatus> bookingStatuses,
             Set<BookingType> bookingTypes

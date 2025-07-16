@@ -10,7 +10,7 @@ import com.crozhere.service.cms.club.repository.entity.StationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,8 +30,8 @@ public interface BookingDao {
     List<Booking> getBookingsByPlayerId(Long playerId) throws BookingDAOException;
     Page<Booking> getBookingsByClubIdWithFilters(
             Long clubId,
-            LocalDateTime fromDateTime,
-            LocalDateTime toDateTime,
+            Instant fromDateTime,
+            Instant toDateTime,
             Set<StationType> stationTypes,
             Set<BookingStatus> bookingStatuses,
             Set<BookingType> bookingTypes,
@@ -39,6 +39,6 @@ public interface BookingDao {
     ) throws BookingDAOException;
 
     List<Booking> getBookingsForStationsAndForSearchWindow(
-            List<Station> stations, LocalDateTime startTime, LocalDateTime endTime)
+            List<Station> stations, Instant startTime, Instant endTime)
             throws BookingDAOException;
 }

@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Repository
@@ -24,9 +24,9 @@ public interface BookingIntentRepository extends JpaRepository<BookingIntent, Lo
     """, nativeQuery = true)
     List<BookingIntent> findActiveOverlappingIntents(
             @Param("stationIds") List<Long> stationIds,
-            @Param("startTime") LocalDateTime startTime,
-            @Param("endTime")LocalDateTime endTime,
-            @Param("now")LocalDateTime now
+            @Param("startTime") Instant startTime,
+            @Param("endTime")Instant endTime,
+            @Param("now")Instant now
     );
 
     @Query(value = """
@@ -38,7 +38,7 @@ public interface BookingIntentRepository extends JpaRepository<BookingIntent, Lo
     """, nativeQuery = true)
     List<BookingIntent> findActiveIntentsByClubId(
             @Param("clubId") Long clubId,
-            @Param("now") LocalDateTime now
+            @Param("now") Instant now
     );
 
     @Query(value = """
@@ -50,8 +50,8 @@ public interface BookingIntentRepository extends JpaRepository<BookingIntent, Lo
     """, nativeQuery = true)
     List<BookingIntent> findActiveIntentsByPlayerId(
             @Param("playerId") Long playerId,
-            @Param("now") LocalDateTime now
+            @Param("now") Instant now
     );
 
-    List<BookingIntent> findByIsConfirmedFalseAndExpiresAtBefore(LocalDateTime beforeTime);
+    List<BookingIntent> findByIsConfirmedFalseAndExpiresAtBefore(Instant beforeTime);
 }

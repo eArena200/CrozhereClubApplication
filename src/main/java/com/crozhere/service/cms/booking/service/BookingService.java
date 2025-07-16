@@ -71,8 +71,10 @@ public interface BookingService {
 
 
     BookingAvailabilityByTimeResponse checkAvailabilityByTime(
-            BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest) throws BookingServiceException;
+            BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest)
+            throws BookingServiceException;
 
     BookingAvailabilityByStationResponse checkAvailabilityByStations(
-            BookingAvailabilityByStationRequest bookingAvailabilityByStationRequest) throws BookingServiceException;
+            BookingAvailabilityByStationRequest bookingAvailabilityByStationRequest)
+            throws BookingServiceException;
 }

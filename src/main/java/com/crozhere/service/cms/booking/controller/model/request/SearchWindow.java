@@ -1,7 +1,5 @@
 package com.crozhere.service.cms.booking.controller.model.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -10,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @Builder
@@ -18,12 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SearchWindow {
     @NotNull
-    @Schema(
-            description = "StartTime of search time range (ISO 8601 format, no seconds)",
-            example = "2025-07-01T09:00"
-    )
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
-    private LocalDateTime dateTime;
+    private Instant dateTime;
 
     @NotNull
     @Min(1)

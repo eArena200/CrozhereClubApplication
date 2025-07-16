@@ -2,7 +2,8 @@ package com.crozhere.service.cms.booking.util;
 
 import com.crozhere.service.cms.booking.controller.model.request.SearchWindow;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -36,10 +37,13 @@ public class TimeSlotUtil {
     }
 
 
-    public static List<TimeSlot> invert(List<TimeSlot> busy,
-                                        LocalDateTime windowStart, LocalDateTime windowEnd) {
+    public static List<TimeSlot> invert(
+            List<TimeSlot> busy,
+            Instant windowStart,
+            Instant windowEnd
+    ) {
         List<TimeSlot> free = new ArrayList<>();
-        LocalDateTime current = windowStart;
+        Instant current = windowStart;
 
         for (TimeSlot busySlot : busy) {
             if (current.isBefore(busySlot.getStartTime())) {
@@ -69,26 +73,29 @@ public class TimeSlotUtil {
             result = intersectTwo(result, allFree.get(i));
         }
 
-        LocalDateTime validStart = window.getDateTime();
-        LocalDateTime validEnd = validStart.plusHours(window.getWindowHrs());
+        Instant validStart = window.getDateTime();
+        Instant validEnd = validStart.plus(window.getWindowHrs(), ChronoUnit.HOURS);
         long minDuration = durationInHours * 60L;
         int step = 60;
 
         List<TimeSlot> finalSlots = new ArrayList<>();
 
         for (TimeSlot interval : result) {
-            LocalDateTime slotStart = max(interval.getStartTime(), validStart);
-            LocalDateTime latestStart = min(interval.getEndTime().minusMinutes(minDuration), validEnd);
+            Instant slotStart = max(interval.getStartTime(), validStart);
+            Instant latestStart =
+                    min(
+                        interval.getEndTime().minus(minDuration, ChronoUnit.MINUTES),
+                        validEnd);
 
             while (!slotStart.isAfter(latestStart)) {
-                LocalDateTime slotEnd = slotStart.plusMinutes(minDuration);
+                Instant slotEnd = slotStart.plus(minDuration, ChronoUnit.MINUTES);
                 if (!slotEnd.isAfter(interval.getEndTime())) {
                     finalSlots.add(TimeSlot.builder()
                             .startTime(slotStart)
                             .endTime(slotEnd)
                             .build());
                 }
-                slotStart = slotStart.plusMinutes(step);
+                slotStart = slotStart.plus(step, ChronoUnit.MINUTES);
             }
         }
 
@@ -100,8 +107,8 @@ public class TimeSlotUtil {
         int i = 0, j = 0;
 
         while (i < a.size() && j < b.size()) {
-            LocalDateTime start = max(a.get(i).getStartTime(), b.get(j).getStartTime());
-            LocalDateTime end = min(a.get(i).getEndTime(), b.get(j).getEndTime());
+            Instant start = max(a.get(i).getStartTime(), b.get(j).getStartTime());
+            Instant end = min(a.get(i).getEndTime(), b.get(j).getEndTime());
 
             if (start.isBefore(end)) {
                 result.add(TimeSlot.builder().startTime(start).endTime(end).build());
@@ -114,11 +121,11 @@ public class TimeSlotUtil {
         return result;
     }
 
-    private static LocalDateTime max(LocalDateTime a, LocalDateTime b) {
+    private static Instant max(Instant a, Instant b) {
         return a.isAfter(b) ? a : b;
     }
 
-    private static LocalDateTime min(LocalDateTime a, LocalDateTime b) {
+    private static Instant min(Instant a, Instant b) {
         return a.isBefore(b) ? a : b;
     }
 }
