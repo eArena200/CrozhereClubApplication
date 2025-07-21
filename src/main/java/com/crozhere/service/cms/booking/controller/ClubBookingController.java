@@ -3,10 +3,10 @@ package com.crozhere.service.cms.booking.controller;
 import com.crozhere.service.cms.booking.controller.model.request.*;
 import com.crozhere.service.cms.booking.controller.model.response.BookingIntentDetailsResponse;
 import com.crozhere.service.cms.booking.controller.model.response.BookingDetailsResponse;
+import com.crozhere.service.cms.booking.controller.model.response.DashBoardStationStatusResponse;
 import com.crozhere.service.cms.booking.controller.model.response.PaginatedListBookingsResponse;
 import com.crozhere.service.cms.booking.service.BookingService;
-import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
-import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
+import com.crozhere.service.cms.club.repository.entity.StationType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -220,6 +221,48 @@ public class ClubBookingController {
     ) {
         bookingService.cancelClubBooking(clubId, bookingId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "Get dashboard station statuses for a club",
+            description = "Returns current and upcoming booking info for each station in a club"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Station statuses fetched successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/dashboardStatus/{clubId}")
+    public ResponseEntity<Map<Long, DashBoardStationStatusResponse>> getDashboardStationStatus(
+            @Parameter(description = "Club ID", required = true)
+            @PathVariable("clubId") Long clubId
+    ) {
+        Map<Long, DashBoardStationStatusResponse> response =
+                bookingService.getDashboardStationStatusDetailsForClub(clubId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "List upcoming bookings for a club",
+            description = "Returns upcoming confirmed bookings for the club within a given time window (default 12 hours)"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Upcoming bookings fetched successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    @GetMapping("/upcomingBookings/{clubId}")
+    public ResponseEntity<List<BookingDetailsResponse>> getUpcomingBookings(
+            @Parameter(description = "Club ID", required = true)
+            @PathVariable("clubId") Long clubId,
+
+            @Parameter(description = "Time window in hours (e.g., 12)", example = "12")
+            @RequestParam(name = "window", defaultValue = "12") Long windowDurationHr,
+
+            @Parameter(description = "Optional list of station types to filter by")
+            @RequestParam(name = "stationTypes", required = false) List<StationType> stationTypes
+    ) {
+        List<BookingDetailsResponse> bookings =
+                bookingService.getUpcomingBookingsByClubId(clubId, windowDurationHr, stationTypes);
+        return ResponseEntity.ok(bookings);
     }
 
 }

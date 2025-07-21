@@ -10,6 +10,7 @@ import com.crozhere.service.cms.club.repository.entity.RateCard;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.RateService;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
+import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
 import com.crozhere.service.cms.club.service.exception.RateCardServiceException;
 import com.crozhere.service.cms.club.service.exception.RateCardServiceExceptionType;
 import lombok.extern.slf4j.Slf4j;
@@ -42,10 +43,20 @@ public class RateServiceImpl implements RateService {
         this.rateRepository = rateRepository;
     }
 
+    // RATE-CARD METHODS
     @Override
-    public RateCard createRateCard(Long clubId, CreateRateCardRequest request) {
+    public RateCard createRateCard(
+            Long clubAdminId,
+            Long clubId,
+            CreateRateCardRequest request
+    ) {
         try {
             Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} Not found for clubAdminId: {}",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
             RateCard rateCard =
                     RateCard.builder()
                             .club(club)
@@ -63,17 +74,53 @@ public class RateServiceImpl implements RateService {
     }
 
     @Override
-    public RateCard updateRateCard(Long rateCardId, UpdateRateCardRequest request) {
+    public RateCard updateRateCard(
+            Long clubAdminId,
+            Long rateCardId,
+            UpdateRateCardRequest request
+    ) {
         try {
             RateCard rateCard = getRateCard(rateCardId);
+            if(!rateCard.getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for update",
+                        rateCard, clubAdminId);
+                throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
             rateCard.setName(request.getName());
             return rateCardRepository.save(rateCard);
         } catch (RateCardServiceException e) {
             log.error("Exception while getting rate-card {} for update: [{}]", rateCardId ,e.getType());
             throw e;
+        } catch (ClubServiceException e) {
+            log.error("Exception in club-service while updating rate-card: [{}]", e.getType());
+            throw e;
         } catch (Exception e) {
             log.error("Exception while updating rate-card {}, Error: [{}]", rateCardId, e.getMessage());
             throw new RateCardServiceException(RateCardServiceExceptionType.UPDATE_RATE_CARD_FAILED);
+        }
+    }
+
+    @Override
+    public void deleteRateCard(
+            Long clubAdminId,
+            Long rateCardId
+    ) {
+        try {
+            RateCard rateCard = getRateCard(rateCardId);
+            if(!rateCard.getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for delete",
+                        rateCard, clubAdminId);
+                throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
+            rateCardRepository.deleteById(rateCardId);
+        } catch (RateCardServiceException e) {
+            log.error("Exception in getting rateCard {} for delete, Error: [{}]",
+                    rateCardId, e.getType());
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while deleting rate-card {}, Error: [{}]",
+                    rateCardId, e.getMessage(), e);
+            throw new RateCardServiceException(RateCardServiceExceptionType.DELETE_RATE_CARD_FAILED);
         }
     }
 
@@ -96,30 +143,20 @@ public class RateServiceImpl implements RateService {
         }
     }
 
+    // RATE METHODS
     @Override
-    public void deleteRateCard(Long rateCardId) {
-        try {
-            if (!rateCardRepository.existsById(rateCardId)) {
-                log.info("Rate-card not found with Id: {} for delete", rateCardId);
-                throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
-            }
-            rateCardRepository.deleteById(rateCardId);
-        } catch (RateCardServiceException e) {
-            log.error("Exception in getting rateCard {} for delete, Error: [{}]",
-                    rateCardId, e.getType());
-            throw e;
-        } catch (Exception e) {
-            log.error("Exception while deleting rate-card {}, Error: [{}]",
-                    rateCardId, e.getMessage(), e);
-            throw new RateCardServiceException(RateCardServiceExceptionType.DELETE_RATE_CARD_FAILED);
-        }
-    }
-
-    @Override
-    public Rate addRate(Long rateCardId, AddRateRequest request) {
+    public Rate addRate(
+            Long clubAdminId,
+            Long rateCardId,
+            AddRateRequest request
+    ) {
         try {
             RateCard rateCard = getRateCard(rateCardId);
-
+            if(!rateCard.getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for addRate",
+                        rateCard, clubAdminId);
+                throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
             Rate rate = Rate.builder()
                     .rateCard(rateCard)
                     .name(request.getRateName())
@@ -150,32 +187,21 @@ public class RateServiceImpl implements RateService {
         }
     }
 
-
     @Override
-    public Rate getRate(Long rateId) {
-        return rateRepository.findById(rateId)
-                .orElseThrow(() -> {
-                    log.error("Rate not found with rateId: {}", rateId);
-                    return new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
-                });
-    }
-
-    @Override
-    public List<Rate> getRatesForRateCard(Long rateCardId) {
-        try {
-            return rateRepository.findByRateCardId(rateCardId);
-        } catch (Exception e) {
-            log.error("Exception while getting rates for rateCardId: {}", rateCardId);
-            throw new RateCardServiceException(RateCardServiceExceptionType.FETCH_RATES_FAILED);
-        }
-    }
-
-    @Override
-    public Rate updateRate(Long rateId, UpdateRateRequest request) {
+    public Rate updateRate(
+            Long clubAdminId,
+            Long rateId,
+            UpdateRateRequest request
+    ) {
         try {
             Rate rate = getRate(rateId);
-            rate.setName(request.getRateName());
+            if(rate.getRateCard().getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Rate with rateId: {} Not found for clubAdminId: {} for update",
+                        rateId, clubAdminId);
+                throw new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
+            }
 
+            rate.setName(request.getRateName());
             Map<Long, RateCharge> existingChargesMap = rate.getRateCharges().stream()
                     .collect(Collectors.toMap(RateCharge::getId, Function.identity()));
 
@@ -228,10 +254,15 @@ public class RateServiceImpl implements RateService {
     }
 
     @Override
-    public void deleteRate(Long rateId) {
+    public void deleteRate(
+            Long clubAdminId,
+            Long rateId
+    ) {
         try {
-            if (!rateRepository.existsById(rateId)) {
-                log.info("Rate not found with Id: {} for delete", rateId);
+            Rate rate = getRate(rateId);
+            if(rate.getRateCard().getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Rate with rateId: {} Not found for clubAdminId: {} for delete",
+                        rateId, clubAdminId);
                 throw new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
             }
             rateRepository.deleteById(rateId);
@@ -243,6 +274,25 @@ public class RateServiceImpl implements RateService {
             log.error("Exception while deleting rate {}, Error: [{}]",
                     rateId, e.getMessage(), e);
             throw new RateCardServiceException(RateCardServiceExceptionType.DELETE_RATE_FAILED);
+        }
+    }
+
+    @Override
+    public Rate getRate(Long rateId) {
+        return rateRepository.findById(rateId)
+                .orElseThrow(() -> {
+                    log.error("Rate not found with rateId: {}", rateId);
+                    return new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
+                });
+    }
+
+    @Override
+    public List<Rate> getRatesForRateCard(Long rateCardId) {
+        try {
+            return rateRepository.findByRateCardId(rateCardId);
+        } catch (Exception e) {
+            log.error("Exception while getting rates for rateCardId: {}", rateCardId);
+            throw new RateCardServiceException(RateCardServiceExceptionType.FETCH_RATES_FAILED);
         }
     }
 }

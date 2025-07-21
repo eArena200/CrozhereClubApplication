@@ -8,19 +8,24 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 
 @Service
 public class JwtService {
 
+    public static final String ROLE_CLAIM_KEY = "role";
+    public static final String ROLE_BASED_ID = "role_based_id";
+
+
+    private static final Integer TOKEN_EXPIRATION_HR = 10;
     private static final String SECRET_KEY = "a61981291d124d2b82ad68a738c1d36323df5sf8df98bdf9d5a7g9";
 
-    public String generateToken(Long userId, List<String> roles) {
+    public String generateToken(Long userId, Map<String, Object> claims) {
         return Jwts.builder()
                 .setSubject(userId.toString())
-                .claim("roles", roles)
+                .addClaims(claims)
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .setExpiration(Date.from(Instant.now().plus(TOKEN_EXPIRATION_HR, ChronoUnit.HOURS)))
                 .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
                 .compact();
     }

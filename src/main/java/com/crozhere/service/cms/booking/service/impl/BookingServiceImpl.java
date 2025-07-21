@@ -6,6 +6,7 @@ import com.crozhere.service.cms.booking.controller.model.response.BookingIntentS
 import com.crozhere.service.cms.booking.controller.model.response.*;
 import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.entity.StationType;
+import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.user.repository.entity.UserRole;
 import com.crozhere.service.cms.user.service.UserService;
@@ -27,6 +28,7 @@ import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.PlayerService;
+import com.crozhere.service.cms.user.service.exception.PlayerServiceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -232,7 +234,6 @@ public class BookingServiceImpl implements BookingService {
             throws BookingServiceException {
 
         try {
-            Club club = clubService.getClubById(clubId);
             Instant now = Instant.now();
 
             List<BookingIntent> activeIntents =
@@ -242,25 +243,7 @@ public class BookingServiceImpl implements BookingService {
                 return List.of();
             }
 
-            List<Long> playerIds = activeIntents.stream()
-                    .map(BookingIntent::getPlayerId)
-                    .distinct()
-                    .toList();
-
-            Map<Long, Player> playerMap = playerService.getPlayersByIds(playerIds).stream()
-                    .collect(Collectors.toMap(Player::getId, Function.identity()));
-
-            Map<Long, Station> stationMap = clubService.getStationsByClubId(clubId).stream()
-                    .collect(Collectors.toMap(Station::getId, Function.identity()));
-
-            return activeIntents.stream()
-                    .map(intent -> getBookingIntentResponse(
-                            intent,
-                            playerMap.get(intent.getPlayerId()),
-                            club,
-                            stationMap))
-                    .toList();
-
+            return toBookingIntentDetailsResponses(activeIntents);
         } catch (Exception e) {
             log.error("Error fetching active booking intents for clubId: {}", clubId, e);
             throw new BookingServiceException(
@@ -282,27 +265,7 @@ public class BookingServiceImpl implements BookingService {
                 return List.of();
             }
 
-            Player player = playerService.getPlayerById(playerId);
-
-            List<Long> clubIds = activeIntents.stream()
-                    .map(BookingIntent::getClubId)
-                    .distinct()
-                    .toList();
-
-            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
-                    .collect(Collectors.toMap(Club::getId, Function.identity()));
-
-            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
-                    .collect(Collectors.toMap(Station::getId, Function.identity()));
-
-            return activeIntents.stream()
-                    .map(intent -> getBookingIntentResponse(
-                            intent,
-                            player,
-                            clubMap.get(intent.getClubId()),
-                            stationMap))
-                    .toList();
-
+            return toBookingIntentDetailsResponses(activeIntents);
         } catch (Exception e) {
             log.error("Error fetching active booking intents for playerId: {}", playerId, e);
             throw new BookingServiceException(
@@ -807,6 +770,122 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    @Override
+    public Map<Long, DashBoardStationStatusResponse> getDashboardStationStatusDetailsForClub(Long clubId)
+            throws BookingServiceException {
+        try {
+            Instant now = Instant.now();
+
+            Long windowDurationHr = 12L;
+
+            List<Station> stations = clubService.getStationsByClubId(clubId);
+            Set<Long> stationIds = stations.stream()
+                    .map(Station::getId).collect(Collectors.toSet());
+
+            List<Booking> currentBookings = bookingDAO.getCurrentConfirmedBookingsForClub(clubId);
+
+            List<Booking> upcomingBookings = bookingDAO.getUpcomingConfirmedBookingsForClub(
+                    clubId,
+                    windowDurationHr,
+                    null
+            );
+
+            Map<Long, Booking> currentBookingMap = new HashMap<>();
+            for (Booking booking : currentBookings) {
+                for (BookingStation bs : booking.getStations()) {
+                    Long sid = bs.getStationId();
+                    if (!currentBookingMap.containsKey(sid)) {
+                        currentBookingMap.put(sid, booking);
+                    }
+
+                    if(currentBookingMap.size() == stationIds.size()){
+                        break;
+                    }
+                }
+            }
+
+            Map<Long, Booking> nextBookingMap = new HashMap<>();
+            for (Booking booking : upcomingBookings) {
+                for (BookingStation bs : booking.getStations()) {
+                    Long sid = bs.getStationId();
+                    if (!nextBookingMap.containsKey(sid)) {
+                        nextBookingMap.put(sid, booking);
+                    }
+
+                    if(nextBookingMap.size() == stationIds.size()){
+                        break;
+                    }
+                }
+            }
+
+            List<Booking> allBookings = new ArrayList<>();
+            allBookings.addAll(currentBookingMap.values());
+            allBookings.addAll(nextBookingMap.values());
+
+            Map<Long, BookingDetailsResponse> bookingDetailsMap =
+                    toBookingDetailsResponses(allBookings).stream().distinct()
+                            .collect(
+                                    Collectors.toMap(
+                                            BookingDetailsResponse::getBookingId,
+                                            Function.identity()));
+
+
+            Map<Long, DashBoardStationStatusResponse> result = new HashMap<>();
+            for (Station station : stations) {
+                Long stationId = station.getId();
+                Booking current = currentBookingMap.get(stationId);
+                Booking next = nextBookingMap.get(stationId);
+
+                result.put(
+                        stationId,
+                        DashBoardStationStatusResponse.builder()
+                            .currentBooking(current != null ? bookingDetailsMap.get(current.getId()) : null)
+                            .nextBooking(next != null ? bookingDetailsMap.get(next.getId()) : null)
+                            .build()
+                );
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            log.error("Failed to generate dashboard station status for clubId: {}", clubId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.GET_DASHBOARD_STATION_STATUS_BY_CLUB_FAILED);
+        }
+    }
+
+
+    @Override
+    public List<BookingDetailsResponse> getUpcomingBookingsByClubId(
+            Long clubId,
+            Long windowDurationHr,
+            List<StationType> stationTypes
+    ) throws BookingServiceException {
+        try {
+            Set<StationType> stationTypeSet =
+                    stationTypes != null && !stationTypes.isEmpty()
+                            ? new HashSet<>(stationTypes)
+                            : null;
+
+            List<Booking> bookings =
+                    bookingDAO.getUpcomingConfirmedBookingsForClub(clubId, windowDurationHr, stationTypeSet);
+
+            if(bookings.isEmpty()){
+                return List.of();
+            }
+
+            return toBookingDetailsResponses(bookings);
+
+        } catch (BookingDAOException e){
+            log.error("Exception while getting upcoming bookings for club with clubId: {}", clubId, e);
+            throw new BookingServiceException(BookingServiceExceptionType.LIST_UPCOMING_BOOKINGS_BY_CLUB_FAILED);
+        } catch (BookingIntentDaoException e) {
+            log.error("Failed to list booking-intents for clubId: {}", clubId, e);
+            throw new BookingServiceException(
+                    BookingServiceExceptionType.LIST_UPCOMING_BOOKINGS_BY_CLUB_FAILED);
+        }
+    }
+
 
     @Override
     public BookingAvailabilityByTimeResponse checkAvailabilityByTime(
@@ -1003,6 +1082,99 @@ public class BookingServiceImpl implements BookingService {
 
     private BookingType getBookingType(Integer players){
         return players > 1 ? BookingType.GRP : BookingType.IND;
+    }
+
+//    private BookingIntentDetailsResponse toBookingIntentDetailsResponse(
+//            BookingIntent bookingIntent
+//    ){
+//
+//    }
+//
+//    private BookingDetailsResponse toBookingDetailsResponse(
+//            Booking booking
+//    ) {
+//
+//    }
+
+    private List<BookingIntentDetailsResponse> toBookingIntentDetailsResponses(
+            List<BookingIntent> bookingIntents
+    ) throws ClubServiceException, PlayerServiceException {
+        try {
+            List<Long> clubIds = bookingIntents.stream()
+                    .map(BookingIntent::getClubId).distinct().toList();
+
+            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+
+            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+
+            List<Long> playerIds = bookingIntents.stream()
+                    .map(BookingIntent::getPlayerId).distinct().toList();
+
+            Map<Long, Player> playerMap = playerService.getPlayersByIds(playerIds).stream()
+                    .collect(Collectors.toMap(Player::getId, Function.identity()));
+
+            return bookingIntents.stream()
+                    .map(bookingIntent -> getBookingIntentResponse(
+                            bookingIntent,
+                            playerMap.get(bookingIntent.getPlayerId()),
+                            clubMap.get(bookingIntent.getClubId()),
+                            stationMap
+                    ))
+                    .toList();
+        } catch (ClubServiceException e) {
+            log.error("Exception while fetching club-details");
+            throw e;
+        } catch (PlayerServiceException e) {
+            log.error("Exception while fetching player-details");
+            throw e;
+        }
+    }
+
+    private List<BookingDetailsResponse> toBookingDetailsResponses(
+            List<Booking> bookings
+    ) throws BookingIntentDaoException, ClubServiceException, PlayerServiceException {
+        try {
+            List<Long> clubIds = bookings.stream()
+                    .map(Booking::getClubId).distinct().toList();
+
+            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+
+            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+
+            List<Long> intentIds = bookings.stream()
+                    .map(Booking::getBookingIntentId).distinct().toList();
+
+            Map<Long, BookingIntent> intentMap = bookingIntentDao.getIntentsByIds(intentIds).stream()
+                    .collect(Collectors.toMap(BookingIntent::getId, Function.identity()));
+
+            List<Long> playerIds = bookings.stream()
+                    .map(Booking::getPlayerId).distinct().toList();
+
+            Map<Long, Player> playerMap = playerService.getPlayersByIds(playerIds).stream()
+                    .collect(Collectors.toMap(Player::getId, Function.identity()));
+
+            return bookings.stream()
+                    .map(booking -> getBookingResponse(
+                        booking,
+                        intentMap.get(booking.getBookingIntentId()),
+                        playerMap.get(booking.getPlayerId()),
+                        clubMap.get(booking.getClubId()),
+                        stationMap))
+                    .toList();
+        } catch (BookingIntentDaoException e) {
+            log.error("Exception while fetching booking-intent-details for BookingResponse");
+            throw e;
+        } catch (ClubServiceException e) {
+            log.error("Exception while fetching club-details for BookingResponse");
+            throw e;
+        } catch (PlayerServiceException e) {
+            log.error("Exception while fetching player-details for BookingResponse");
+            throw e;
+        }
     }
 
     private BookingIntentDetailsResponse getBookingIntentResponse(

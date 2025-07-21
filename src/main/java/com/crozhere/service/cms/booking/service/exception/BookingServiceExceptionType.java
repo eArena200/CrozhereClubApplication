@@ -11,6 +11,8 @@ public enum BookingServiceExceptionType {
     CANCEL_BOOKING_FAILED("Failed to cancel booking."),
     LIST_BOOKINGS_BY_PLAYER_FAILED("Failed to list bookings by player."),
     LIST_BOOKINGS_BY_CLUB_FAILED("Failed to list bookings by club."),
+    LIST_UPCOMING_BOOKINGS_BY_CLUB_FAILED("Failed to list upcoming bookings by club."),
+    GET_DASHBOARD_STATION_STATUS_BY_CLUB_FAILED("Failed to get Dashboard station status by club"),
     CHECK_AVAILABILITY_BY_TIME_FAILED("Failed to check availability by time."),
     CHECK_AVAILABILITY_BY_STATIONS_FAILED("Failed to check availability by stations."),
 

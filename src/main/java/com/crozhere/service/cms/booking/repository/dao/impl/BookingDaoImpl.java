@@ -1,5 +1,7 @@
 package com.crozhere.service.cms.booking.repository.dao.impl;
 
+import com.crozhere.service.cms.booking.controller.model.response.BookingDetailsResponse;
+import com.crozhere.service.cms.booking.controller.model.response.BookingIntentDetailsResponse;
 import com.crozhere.service.cms.booking.repository.BookingRepository;
 import com.crozhere.service.cms.booking.repository.dao.BookingDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOException;
@@ -17,7 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -129,13 +131,45 @@ public class BookingDaoImpl implements BookingDao {
             Pageable pageable
     ) throws BookingDAOException {
         try {
-            var spec = BookingSpecifications.filterBookings(
+            var spec = BookingSpecifications.listBookingsFilter(
                     clubId, fromDateTime, toDateTime, stationTypes, bookingStatuses, bookingTypes);
 
             return bookingRepository.findAll(spec, pageable);
         } catch (Exception e) {
             log.error("Exception while fetching filtered bookings for clubId: {}", clubId, e);
             throw new BookingDAOException("Error fetching filtered bookings", e);
+        }
+    }
+
+    @Override
+    public List<Booking> getCurrentConfirmedBookingsForClub(
+            Long clubId
+    ) throws BookingDAOException {
+        try {
+            var spec = BookingSpecifications.currentConfirmedBookingsFilter(clubId, Instant.now());
+            return bookingRepository.findAll(spec);
+        } catch (Exception e) {
+            log.error("Exception while fetching current confirmed bookings for clubId: {}", clubId, e);
+            throw new BookingDAOException("Error fetching current bookings for club", e);
+        }
+    }
+
+    @Override
+    public List<Booking> getUpcomingConfirmedBookingsForClub(
+            Long clubId,
+            Long windowDurationHr,
+            Set<StationType> stationTypes
+    ) throws BookingDAOException {
+        try {
+            Instant windowStart = Instant.now();
+            Instant windowEnd = windowStart.plus(windowDurationHr, ChronoUnit.HOURS);
+            var spec = BookingSpecifications.upcomingConfirmedBookingsFilter(
+                    clubId, windowStart, windowEnd, stationTypes);
+
+            return bookingRepository.findAll(spec);
+        } catch (Exception e) {
+            log.error("Exception while fetching upcoming bookings for clubId: {}", clubId, e);
+            throw new BookingDAOException("Error fetching upcoming bookings", e);
         }
     }
 

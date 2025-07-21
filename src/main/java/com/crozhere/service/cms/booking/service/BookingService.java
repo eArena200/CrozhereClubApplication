@@ -1,14 +1,11 @@
 package com.crozhere.service.cms.booking.service;
 
-import com.crozhere.service.cms.booking.controller.model.response.BookingDetailsResponse;
-import com.crozhere.service.cms.booking.controller.model.response.BookingIntentDetailsResponse;
+import com.crozhere.service.cms.booking.controller.model.response.*;
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
 import com.crozhere.service.cms.booking.repository.entity.BookingStatus;
 import com.crozhere.service.cms.booking.repository.entity.BookingType;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.booking.controller.model.request.*;
-import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByStationResponse;
-import com.crozhere.service.cms.booking.controller.model.response.BookingAvailabilityByTimeResponse;
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
@@ -17,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface BookingService {
 
@@ -69,6 +67,14 @@ public interface BookingService {
             Pageable pageable
     ) throws BookingServiceException;
 
+    Map<Long, DashBoardStationStatusResponse> getDashboardStationStatusDetailsForClub(Long clubId)
+            throws BookingServiceException;
+
+    List<BookingDetailsResponse> getUpcomingBookingsByClubId(
+            Long clubId,
+            Long windowDurationHr,
+            List<StationType> stationTypes
+    ) throws BookingServiceException;
 
     BookingAvailabilityByTimeResponse checkAvailabilityByTime(
             BookingAvailabilityByTimeRequest bookingAvailabilityByTimeRequest)

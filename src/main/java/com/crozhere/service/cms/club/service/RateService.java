@@ -10,15 +10,18 @@ import com.crozhere.service.cms.club.repository.entity.RateCard;
 import java.util.List;
 
 public interface RateService {
-    RateCard createRateCard(Long clubId, CreateRateCardRequest request);
-    RateCard updateRateCard(Long rateCardId, UpdateRateCardRequest request);
+    RateCard createRateCard(Long clubAdminId, Long clubId, CreateRateCardRequest request);
+    RateCard updateRateCard(Long clubAdminId, Long rateCardId, UpdateRateCardRequest request);
+    void deleteRateCard(Long clubAdminId, Long rateCardId);
+
     RateCard getRateCard(Long rateCardId);
     List<RateCard> getRateCardsForClubId(Long clubId);
-    void deleteRateCard(Long rateCardId);
 
-    Rate addRate(Long rateCardId, AddRateRequest request);
+
+    Rate addRate(Long clubAdminId, Long rateCardId, AddRateRequest request);
+    Rate updateRate(Long clubAdminId, Long rateId, UpdateRateRequest request);
+    void deleteRate(Long clubAdminId, Long rateId);
+
     Rate getRate(Long rateId);
     List<Rate> getRatesForRateCard(Long rateCardId);
-    Rate updateRate(Long rateId, UpdateRateRequest request);
-    void deleteRate(Long rateId);
 }

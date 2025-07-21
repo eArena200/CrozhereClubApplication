@@ -50,11 +50,11 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public Club createClub(CreateClubRequest createClubRequest)
+    public Club createClub(Long clubAdminId, CreateClubRequest createClubRequest)
             throws ClubServiceException {
         try {
             ClubAdmin clubAdmin =
-                    clubAdminService.getClubAdminById(createClubRequest.getClubAdminId());
+                    clubAdminService.getClubAdminById(clubAdminId);
 
             Club club = Club.builder()
                     .clubAdmin(clubAdmin)
@@ -81,46 +81,37 @@ public class ClubServiceImpl implements ClubService {
             return club;
         } catch (ClubAdminServiceException e){
             log.error("Exception while getting clubAdmin for clubAdminId: {}",
-                    createClubRequest.getClubAdminId());
+                    clubAdminId);
             throw new ClubServiceException(ClubServiceExceptionType.CREATE_CLUB_FAILED);
         } catch (ClubDAOException e){
             log.error("Exception while saving club for clubAdminId: {}",
-                    createClubRequest.getClubAdminId());
+                    clubAdminId);
             throw new ClubServiceException(ClubServiceExceptionType.CREATE_CLUB_FAILED);
         }
     }
 
     @Override
-    public Club getClubById(Long clubId) throws ClubServiceException {
+    public List<Club> getClubsByAdmin(Long clubAdminId)
+            throws ClubServiceException {
         try {
-            return clubDAO.getById(clubId);
-        } catch (DataNotFoundException e) {
-            log.error("club not found for clubId: {}", clubId);
-            throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            return clubDAO.getByAdmin(clubAdminId);
         } catch (ClubDAOException e){
-            log.error("Exception while getting club for clubId: {}", clubId, e);
+            log.error("Exception while getting clubs for clubAdminId: {}", clubAdminId);
             throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
         }
     }
 
     @Override
-    public List<Club> getClubsByIds(List<Long> clubIds) throws ClubServiceException {
-        try {
-            if (clubIds == null || clubIds.isEmpty()) {
-                return List.of();
-            }
-            return clubDAO.getClubsByIds(clubIds);
-        } catch (ClubDAOException e) {
-            log.error("Exception while getting clubs for clubIds: {}", clubIds, e);
-            throw new ClubServiceException(ClubServiceExceptionType.GET_CLUBS_FAILED);
-        }
-    }
-
-    @Override
-    public Club updateClub(Long clubId, UpdateClubRequest updateClubRequest)
+    public Club updateClub(Long clubAdminId, Long clubId, UpdateClubRequest updateClubRequest)
             throws ClubServiceException {
         try {
             Club club = getClubById(clubId);
+
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club not found with clubId: {}, for clubAdminID: {} for update",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
 
             if (StringUtils.hasText(updateClubRequest.getClubName())) {
                 club.setClubName(updateClubRequest.getClubName());
@@ -181,9 +172,15 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public void deleteClub(Long clubId) throws ClubServiceException {
+    public void deleteClub(Long clubAdminId, Long clubId)
+            throws ClubServiceException {
         try {
             Club club = getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club not found with clubId: {}, for clubAdminID: {} for delete",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
             List<Long> stationsIds =
                     stationDAO.getStationsByClubId(clubId)
                             .stream()
@@ -198,25 +195,54 @@ public class ClubServiceImpl implements ClubService {
         }
     }
 
-    @Override
-    public List<Club> getAllClubs() throws ClubServiceException {
-        return List.of();
-    }
+
 
     @Override
-    public List<Club> getClubsByAdmin(Long clubAdminId) throws ClubServiceException {
+    public Club getClubById(Long clubId)
+            throws ClubServiceException {
         try {
-            return clubDAO.getByAdmin(clubAdminId);
+            return clubDAO.getById(clubId);
+        } catch (DataNotFoundException e) {
+            log.error("club not found for clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
         } catch (ClubDAOException e){
-            log.error("Exception while getting clubs for clubAdminId: {}", clubAdminId);
+            log.error("Exception while getting club for clubId: {}", clubId, e);
             throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
         }
     }
 
     @Override
-    public Station addStation(AddStationRequest addStationRequest) throws ClubServiceException {
+    public List<Club> getClubsByIds(List<Long> clubIds)
+            throws ClubServiceException {
+        try {
+            if (clubIds == null || clubIds.isEmpty()) {
+                return List.of();
+            }
+            return clubDAO.getClubsByIds(clubIds);
+        } catch (ClubDAOException e) {
+            log.error("Exception while getting clubs for clubIds: {}", clubIds, e);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_CLUBS_FAILED);
+        }
+    }
+
+    @Override
+    public List<Club> getAllClubs()
+            throws ClubServiceException {
+        return List.of();
+    }
+
+
+
+    @Override
+    public Station addStation(Long clubAdminId, AddStationRequest addStationRequest)
+            throws ClubServiceException {
         try {
             Club club = getClubById(addStationRequest.getClubId());
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club not found with clubId: {}, for clubAdminID: {} to update",
+                        addStationRequest.getClubId(), clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+            }
             Rate rate = rateRepository
                     .findById(addStationRequest.getRateId())
                     .orElseThrow(() -> {
@@ -251,10 +277,18 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public Station updateStation(Long stationId, UpdateStationRequest updateStationRequest)
-            throws ClubServiceException {
+    public Station updateStation(
+            Long clubAdminId,
+            Long stationId,
+            UpdateStationRequest updateStationRequest
+    ) throws ClubServiceException {
         try {
-            Station station = getStation(stationId);
+            Station station = getStationById(stationId);
+            if(station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Station not found with stationId: {}, for clubAdminID: {} for update",
+                        stationId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+            }
 
             if(StringUtils.hasText(updateStationRequest.getStationName())){
                 station.setStationName(updateStationRequest.getStationName());
@@ -297,21 +331,15 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public Station getStation(Long stationId) throws ClubServiceException {
+    public void deleteStation(Long clubAdminId, Long stationId)
+            throws ClubServiceException {
         try {
-            return stationDAO.getById(stationId);
-        } catch (DataNotFoundException e){
-            log.error("station not found for stationId: {}", stationId);
-            throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
-        } catch (StationDAOException e){
-            log.error("Exception while getting station for stationId: {}", stationId);
-            throw new ClubServiceException(ClubServiceExceptionType.GET_STATION_FAILED);
-        }
-    }
-
-    @Override
-    public void deleteStation(Long stationId) throws ClubServiceException {
-        try {
+            Station station = getStationById(stationId);
+            if(station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Station not found with stationId: {}, for clubAdminID: {} for delete",
+                        stationId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+            }
             stationDAO.delete(stationId);
         } catch (StationDAOException e){
             log.error("Exception while deleting station for stationId: {}", stationId);
@@ -320,15 +348,36 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public Station toggleStationStatus(Long stationId) throws ClubServiceException {
+    public Station toggleStationStatus(Long clubAdminId, Long stationId)
+            throws ClubServiceException {
         try {
             Station station = stationDAO.getById(stationId);
+            if(station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Station not found with stationId: {}, for clubAdminID: {} for toggle",
+                        stationId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+            }
             station.setIsActive(!station.getIsActive());
             stationDAO.save(station);
             return station;
         } catch (StationDAOException e){
             log.error("Exception while toggling station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.TOGGLE_STATION_STATUS);
+        }
+    }
+
+
+
+    @Override
+    public Station getStationById(Long stationId) throws ClubServiceException {
+        try {
+            return stationDAO.getById(stationId);
+        } catch (DataNotFoundException e){
+            log.error("station not found for stationId: {}", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+        } catch (StationDAOException e){
+            log.error("Exception while getting station for stationId: {}", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_STATION_FAILED);
         }
     }
 

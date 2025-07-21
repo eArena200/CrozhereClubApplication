@@ -21,6 +21,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.crozhere.service.cms.auth.service.impl.JwtService.ROLE_BASED_ID;
+import static com.crozhere.service.cms.auth.service.impl.JwtService.ROLE_CLAIM_KEY;
+
 @Slf4j
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -57,7 +63,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public VerifyAuthResponse verifyAuth(VerifyAuthRequest request) throws AuthServiceException {
+    public VerifyAuthResponse verifyAuth(VerifyAuthRequest request)
+            throws AuthServiceException {
         try {
             boolean valid = otpService.verifyOTP(request.getPhone(), request.getOtp());
             if (!valid) {
@@ -89,27 +96,20 @@ public class AuthServiceImpl implements AuthService {
             throw e;
         }
 
-        String token;
-        try {
-            token = jwtService.generateToken(
-                        user.getId(),
-                        user.getRoles()
-                                .stream()
-                                .map(userRole -> userRole.getRole().name())
-                                .toList());
-        } catch (Exception e) {
-            throw new AuthServiceException(AuthServiceExceptionType.GENERATE_TOKEN_FAILED);
-        }
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(ROLE_CLAIM_KEY, request.getRole());
+
+        VerifyAuthResponse verifyAuthResponse =
+                VerifyAuthResponse.builder()
+                        .userId(user.getId())
+                        .build();
 
         if (request.getRole().equals(UserRole.PLAYER)) {
             try {
                 Player player = playerService.getPlayerByUserId(user.getId());
-                return VerifyAuthResponse.builder()
-                        .jwt(token)
-                        .userId(user.getId())
-                        .role(UserRole.PLAYER)
-                        .playerId(player.getId())
-                        .build();
+                claims.put(ROLE_BASED_ID, player.getId());
+                verifyAuthResponse.setRole(UserRole.PLAYER);
+                verifyAuthResponse.setRoleBasedId(player.getId());
             } catch (Exception e) {
                 log.warn("User has PLAYER role but player record not found for user ID: {}", user.getId());
                 throw new AuthServiceException(
@@ -120,12 +120,9 @@ public class AuthServiceImpl implements AuthService {
         if (request.getRole().equals(UserRole.CLUB_ADMIN)) {
             try {
                 ClubAdmin clubAdmin = clubAdminService.getClubAdminByUserId(user.getId());
-                return VerifyAuthResponse.builder()
-                        .jwt(token)
-                        .userId(user.getId())
-                        .role(UserRole.CLUB_ADMIN)
-                        .clubAdminId(clubAdmin.getId())
-                        .build();
+                claims.put(ROLE_BASED_ID, clubAdmin.getId());
+                verifyAuthResponse.setRole(UserRole.CLUB_ADMIN);
+                verifyAuthResponse.setRoleBasedId(clubAdmin.getId());
             } catch (Exception e) {
                 log.warn("User has CLUB_ADMIN role but clubAdmin record not found for user ID: {}", user.getId());
                 throw new AuthServiceException(
@@ -133,10 +130,15 @@ public class AuthServiceImpl implements AuthService {
             }
         }
 
-        return VerifyAuthResponse.builder()
-                .jwt(token)
-                .userId(user.getId())
-                .role(UserRole.GUEST)
-                .build();
+        String token;
+        try {
+            token = jwtService.generateToken(user.getId(), claims);
+            verifyAuthResponse.setJwt(token);
+        } catch (Exception e) {
+            log.error("Exception while creating token for userId: {}", user.getId());
+            throw new AuthServiceException(AuthServiceExceptionType.GENERATE_TOKEN_FAILED);
+        }
+
+        return verifyAuthResponse;
     }
 }

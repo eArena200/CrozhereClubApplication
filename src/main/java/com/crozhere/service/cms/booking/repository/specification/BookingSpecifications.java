@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class BookingSpecifications {
 
-    public static Specification<Booking> filterBookings(
+    public static Specification<Booking> listBookingsFilter(
             Long clubId,
             Instant fromDateTime,
             Instant toDateTime,
@@ -38,6 +38,51 @@ public class BookingSpecifications {
             if (bookingTypes != null && !bookingTypes.isEmpty()) {
                 predicate = cb.and(predicate, root.get("bookingType").in(bookingTypes));
             }
+
+            return predicate;
+        };
+    }
+
+    public static Specification<Booking> currentConfirmedBookingsFilter(
+            Long clubId,
+            Instant currentTime
+    ) {
+        return (root, query, cb) -> {
+            Predicate predicate = cb.equal(root.get("clubId"), clubId);
+
+            if (currentTime != null) {
+                predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("startTime"), currentTime));
+            }
+            if (currentTime != null) {
+                predicate = cb.and(predicate, cb.greaterThan(root.get("endTime"), currentTime));
+            }
+
+            predicate = cb.and(predicate, cb.equal(root.get("status"), BookingStatus.CONFIRMED));
+
+            return predicate;
+        };
+    }
+
+    public static Specification<Booking> upcomingConfirmedBookingsFilter(
+            Long clubId,
+            Instant windowStartTime,
+            Instant windowEndTime,
+            Set<StationType> stationTypes
+    ) {
+        return (root, query, cb) -> {
+            Predicate predicate = cb.equal(root.get("clubId"), clubId);
+
+            if (windowStartTime != null) {
+                predicate = cb.and(predicate, cb.greaterThan(root.get("startTime"), windowStartTime));
+            }
+            if (windowEndTime != null) {
+                predicate = cb.and(predicate, cb.lessThanOrEqualTo(root.get("startTime"), windowEndTime));
+            }
+            if (stationTypes != null && !stationTypes.isEmpty()) {
+                predicate = cb.and(predicate, root.get("stationType").in(stationTypes));
+            }
+
+            predicate = cb.and(predicate, cb.equal(root.get("status"), BookingStatus.CONFIRMED));
 
             return predicate;
         };

@@ -9,7 +9,6 @@ import lombok.Data;
 public class VerifyAuthResponse {
     private String jwt;
     private Long userId;
-    private Long playerId;
-    private Long clubAdminId;
+    private Long roleBasedId;
     private UserRole role;
 }

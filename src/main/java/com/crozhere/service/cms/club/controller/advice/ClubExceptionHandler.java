@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.club.controller.advice;
 
-import com.crozhere.service.cms.club.controller.model.response.ErrorResponse;
+import com.crozhere.service.cms.club.controller.model.response.ServiceErrorResponse;
 import com.crozhere.service.cms.club.service.exception.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class ClubExceptionHandler {
 
     @ExceptionHandler(ClubServiceException.class)
-    public ResponseEntity<ErrorResponse> handleClubServiceException(
+    public ResponseEntity<ServiceErrorResponse> handleClubServiceException(
             ClubServiceException ex) {
 
         ClubServiceExceptionType type = ex.getType();
@@ -23,7 +23,7 @@ public class ClubExceptionHandler {
 
         log.error("Handled ClubServiceException [{}]: {}", type.name(), type.getMessage(), ex);
 
-        ErrorResponse error = ErrorResponse.builder()
+        ServiceErrorResponse error = ServiceErrorResponse.builder()
                 .error("ClubServiceException")
                 .type(type.name())
                 .message(type.getMessage())
@@ -34,7 +34,7 @@ public class ClubExceptionHandler {
     }
 
     @ExceptionHandler(RateCardServiceException.class)
-    public ResponseEntity<ErrorResponse> handleRateCardServiceException(
+    public ResponseEntity<ServiceErrorResponse> handleRateCardServiceException(
             RateCardServiceException ex) {
 
         RateCardServiceExceptionType type = ex.getType();
@@ -42,7 +42,7 @@ public class ClubExceptionHandler {
 
         log.error("Handled RateCardServiceException [{}]: {}", type.name(), type.getMessage(), ex);
 
-        ErrorResponse error = ErrorResponse.builder()
+        ServiceErrorResponse error = ServiceErrorResponse.builder()
                 .error("RateCardServiceException")
                 .type(type.name())
                 .message(type.getMessage())

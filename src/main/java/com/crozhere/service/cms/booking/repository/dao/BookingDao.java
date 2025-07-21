@@ -38,6 +38,13 @@ public interface BookingDao {
             Pageable pageable
     ) throws BookingDAOException;
 
+    List<Booking> getCurrentConfirmedBookingsForClub(Long clubId) throws BookingDAOException;
+    List<Booking> getUpcomingConfirmedBookingsForClub(
+            Long clubId,
+            Long windowDurationHr,
+            Set<StationType> stationTypes
+    ) throws BookingDAOException;
+
     List<Booking> getBookingsForStationsAndForSearchWindow(
             List<Station> stations, Instant startTime, Instant endTime)
             throws BookingDAOException;
