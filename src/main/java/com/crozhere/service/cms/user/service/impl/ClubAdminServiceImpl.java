@@ -41,37 +41,6 @@ public class ClubAdminServiceImpl implements ClubAdminService {
     }
 
     @Override
-    public ClubAdmin getClubAdminByUserId(Long userId) throws ClubAdminServiceException {
-        try {
-            return clubAdminDao.findByUserId(userId)
-                    .orElseThrow(DataNotFoundException::new);
-        } catch (DataNotFoundException e) {
-            log.error("ClubAdmin not found for userId: {}", userId);
-            throw new ClubAdminServiceException(
-                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
-        } catch (ClubAdminDAOException e) {
-            log.error("Exception while getting ClubAdmin for userId: {}", userId, e);
-            throw new ClubAdminServiceException(
-                    ClubAdminServiceExceptionType.GET_CLUB_ADMIN_FAILED);
-        }
-    }
-
-    @Override
-    public ClubAdmin getClubAdminById(Long adminId) throws ClubAdminServiceException {
-        try {
-            return clubAdminDao.getById(adminId);
-        } catch (DataNotFoundException e){
-            log.error("ClubAdmin not found with adminId: {}", adminId);
-            throw new ClubAdminServiceException(
-                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
-        } catch (ClubAdminDAOException e){
-            log.error("Exception while getting ClubAdmin with adminId: {}", adminId, e);
-            throw new ClubAdminServiceException(
-                    ClubAdminServiceExceptionType.GET_CLUB_ADMIN_FAILED);
-        }
-    }
-
-    @Override
     public ClubAdmin updateClubAdminDetails(Long adminId, UpdateClubAdminRequest request)
             throws ClubAdminServiceException {
         try {
@@ -106,6 +75,39 @@ public class ClubAdminServiceImpl implements ClubAdminService {
             log.error("Exception while deleting ClubAdmin with adminId: {}", adminId, e);
             throw new ClubAdminServiceException(
                     ClubAdminServiceExceptionType.DELETE_CLUB_ADMIN_FAILED);
+        }
+    }
+
+
+
+    @Override
+    public ClubAdmin getClubAdminByUserId(Long userId) throws ClubAdminServiceException {
+        try {
+            return clubAdminDao.findByUserId(userId)
+                    .orElseThrow(DataNotFoundException::new);
+        } catch (DataNotFoundException e) {
+            log.error("ClubAdmin not found for userId: {}", userId);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
+        } catch (ClubAdminDAOException e) {
+            log.error("Exception while getting ClubAdmin for userId: {}", userId, e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.GET_CLUB_ADMIN_FAILED);
+        }
+    }
+
+    @Override
+    public ClubAdmin getClubAdminById(Long adminId) throws ClubAdminServiceException {
+        try {
+            return clubAdminDao.getById(adminId);
+        } catch (DataNotFoundException e){
+            log.error("ClubAdmin not found with adminId: {}", adminId);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.CLUB_ADMIN_NOT_FOUND);
+        } catch (ClubAdminDAOException e){
+            log.error("Exception while getting ClubAdmin with adminId: {}", adminId, e);
+            throw new ClubAdminServiceException(
+                    ClubAdminServiceExceptionType.GET_CLUB_ADMIN_FAILED);
         }
     }
 }

@@ -1,12 +1,15 @@
 package com.crozhere.service.cms.user.controller;
 
+import com.crozhere.service.cms.common.security.AuthUtil;
 import com.crozhere.service.cms.user.controller.model.request.UpdatePlayerRequest;
 import com.crozhere.service.cms.user.controller.model.response.PlayerResponse;
 import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.PlayerService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,17 +21,23 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Slf4j
 @RestController
-@RequestMapping("/players")
-@Tag(name = "Player Management", description = "APIs for managing player profiles and details")
+@RequestMapping(
+        value = "/user/player",
+        produces = "application/json"
+)
+@Tag(name = "Player APIs", description = "APIs for managing player profiles and details")
 public class PlayerController {
 
     private final PlayerService playerService;
 
     @Autowired
-    public PlayerController(PlayerService playerService){
+    public PlayerController(
+            PlayerService playerService
+    ){
         this.playerService = playerService;
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(
         summary = "Get player by ID",
         description = "Retrieves a specific player's profile by their ID"
@@ -48,15 +57,16 @@ public class PlayerController {
             description = "Internal server error"
         )
     })
-    @GetMapping("/{playerId}")
-    public ResponseEntity<PlayerResponse> getPlayerById(
-            @Parameter(description = "ID of the player to retrieve", required = true)
-            @PathVariable("playerId") Long playerId) {
+    @PreAuthorize("hasRole('PLAYER')")
+    @GetMapping("/getDetails")
+    public ResponseEntity<PlayerResponse> getPlayerById() {
+        Long playerId = AuthUtil.getRoleBasedId();
         Player player = playerService.getPlayerById(playerId);
         return ResponseEntity.ok(getPlayerResponse(player));
     }
 
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(
         summary = "Update player details",
         description = "Updates the profile information for an existing player"
@@ -80,12 +90,16 @@ public class PlayerController {
             description = "Internal server error"
         )
     })
-    @PutMapping("/{playerId}")
+    @PreAuthorize("hasRole('PLAYER')")
+    @PutMapping(
+            value = "/updateDetails",
+            consumes = "application/json"
+    )
     public ResponseEntity<PlayerResponse> updatePlayerDetails(
-            @Parameter(description = "ID of the player to update", required = true)
-            @PathVariable("playerId") Long playerId,
             @Parameter(description = "Updated player details", required = true)
-            @RequestBody UpdatePlayerRequest updatePlayerRequest) {
+            @RequestBody UpdatePlayerRequest updatePlayerRequest
+    ) {
+        Long playerId = AuthUtil.getRoleBasedId();
         Player player = playerService.updatePlayerDetails(playerId, updatePlayerRequest);
         return ResponseEntity.ok(getPlayerResponse(player));
     }

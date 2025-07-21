@@ -1,14 +1,16 @@
 package com.crozhere.service.cms.user.controller;
 
+import com.crozhere.service.cms.common.security.AuthUtil;
 import com.crozhere.service.cms.user.controller.model.request.UpdateClubAdminRequest;
 import com.crozhere.service.cms.user.controller.model.response.ClubAdminResponse;
 import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.user.service.ClubAdminService;
-import com.crozhere.service.cms.user.service.exception.ClubAdminServiceException;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -20,8 +22,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Slf4j
 @RestController
-@RequestMapping("/club-admins")
-@Tag(name = "Club Admin Management", description = "APIs for managing club administrators and their details")
+@RequestMapping(
+        value = "/user/club-admin",
+        produces = "application/json"
+)
+@Tag(name = "ClubAdmin APIs", description = "APIs for managing club admins and their details")
 public class ClubAdminController {
 
     private final ClubAdminService clubAdminService;
@@ -31,6 +36,7 @@ public class ClubAdminController {
         this.clubAdminService = clubAdminService;
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(
         summary = "Get club admin by ID",
         description = "Retrieves a specific club admin's profile by their ID"
@@ -50,25 +56,17 @@ public class ClubAdminController {
             description = "Internal server error"
         )
     })
-    @GetMapping("/{clubAdminId}")
-    public ResponseEntity<ClubAdminResponse> getClubAdminById(
-            @Parameter(description = "ID of the club admin to retrieve", required = true)
-            @PathVariable("clubAdminId") Long clubAdminId) {
-        try {
-            ClubAdmin clubAdmin = clubAdminService.getClubAdminById(clubAdminId);
-            return ResponseEntity
-                    .status(HttpStatus.OK)
-                    .body(getClubAdminResponse(clubAdmin));
-
-        } catch (ClubAdminServiceException e) {
-            log.error("Exception in GetClubAdminById request for clubAdminId: {}", clubAdminId);
-            return ResponseEntity
-                    .status(HttpStatus.NOT_FOUND)
-                    .build();
-        }
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @GetMapping("/getDetails")
+    public ResponseEntity<ClubAdminResponse> getClubAdminById() {
+        Long clubAdminId = AuthUtil.getRoleBasedId();
+        ClubAdmin clubAdmin = clubAdminService.getClubAdminById(clubAdminId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(getClubAdminResponse(clubAdmin));
     }
 
-
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(
         summary = "Update club admin details",
         description = "Updates the profile information for an existing club admin"
@@ -92,25 +90,21 @@ public class ClubAdminController {
             description = "Internal server error"
         )
     })
-    @PutMapping("/{clubAdminId}")
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @PutMapping(
+            value = "/updateDetails",
+            consumes = "application/json"
+    )
     public ResponseEntity<ClubAdminResponse> updateClubAdminDetails(
-            @Parameter(description = "ID of the club admin to update", required = true)
-            @PathVariable("clubAdminId") Long clubAdminId,
             @Parameter(description = "Updated club admin details", required = true)
-            @RequestBody UpdateClubAdminRequest updateClubAdminRequest) {
-        try {
-            ClubAdmin clubAdmin =
-                    clubAdminService.updateClubAdminDetails(clubAdminId, updateClubAdminRequest);
-            return ResponseEntity.
-                    status(HttpStatus.OK)
-                    .body(getClubAdminResponse(clubAdmin));
-
-        } catch (ClubAdminServiceException e) {
-            log.error("Exception in UpdateClubAdminDetails request for clubAdminId: {}", clubAdminId);
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+            @RequestBody UpdateClubAdminRequest updateClubAdminRequest
+    ) {
+        Long clubAdminId = AuthUtil.getRoleBasedId();
+        ClubAdmin clubAdmin =
+                clubAdminService.updateClubAdminDetails(clubAdminId, updateClubAdminRequest);
+        return ResponseEntity.
+                status(HttpStatus.OK)
+                .body(getClubAdminResponse(clubAdmin));
     }
 
     private ClubAdminResponse getClubAdminResponse(ClubAdmin clubAdmin){

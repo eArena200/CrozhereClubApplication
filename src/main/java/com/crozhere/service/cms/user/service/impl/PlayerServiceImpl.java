@@ -43,47 +43,6 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public Player getPlayerByUserId(Long userId) throws PlayerServiceException {
-        try {
-            return playerDao.findByUserId(userId).orElseThrow(DataNotFoundException::new);
-        } catch (DataNotFoundException e){
-            log.error("No player found for userId: {}", userId);
-            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
-        } catch (PlayerDAOException e){
-            log.error("Exception while getting player for userId: {}", userId);
-            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
-        }
-    }
-
-    @Override
-    public Player getPlayerById(Long playerId) throws PlayerServiceException {
-        try {
-            return playerDao.getById(playerId);
-        } catch (DataNotFoundException e){
-            log.error("No player found for playerId: {}", playerId);
-            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
-        } catch (PlayerDAOException e){
-            log.error("Exception while getting Player with playerId: {}", playerId);
-            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
-        }
-    }
-
-    @Override
-    public List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerServiceException {
-        try {
-            return playerDao.getPlayersByIds(playerIds);
-        } catch (PlayerDAOException e){
-            log.error("Exception while getting players for playerIds: {}", playerIds, e);
-            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYERS_FAILED);
-        }
-    }
-
-    @Override
-    public List<Player> getPlayersForPlayerIds(List<Long> playerIds) throws PlayerServiceException {
-        return List.of();
-    }
-
-    @Override
     public Player updatePlayerDetails(Long playerId, UpdatePlayerRequest updatePlayerRequest)
             throws PlayerServiceException {
         try {
@@ -123,4 +82,40 @@ public class PlayerServiceImpl implements PlayerService {
         }
     }
 
+
+    @Override
+    public Player getPlayerByUserId(Long userId) throws PlayerServiceException {
+        try {
+            return playerDao.findByUserId(userId).orElseThrow(DataNotFoundException::new);
+        } catch (DataNotFoundException e){
+            log.error("No player found for userId: {}", userId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
+        } catch (PlayerDAOException e){
+            log.error("Exception while getting player for userId: {}", userId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
+        }
+    }
+
+    @Override
+    public Player getPlayerById(Long playerId) throws PlayerServiceException {
+        try {
+            return playerDao.getById(playerId);
+        } catch (DataNotFoundException e){
+            log.error("No player found for playerId: {}", playerId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.PLAYER_NOT_FOUND);
+        } catch (PlayerDAOException e){
+            log.error("Exception while getting Player with playerId: {}", playerId);
+            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYER_FAILED);
+        }
+    }
+
+    @Override
+    public List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerServiceException {
+        try {
+            return playerDao.getPlayersByIds(playerIds);
+        } catch (PlayerDAOException e){
+            log.error("Exception while getting players for playerIds: {}", playerIds, e);
+            throw new PlayerServiceException(PlayerServiceExceptionType.GET_PLAYERS_FAILED);
+        }
+    }
 }

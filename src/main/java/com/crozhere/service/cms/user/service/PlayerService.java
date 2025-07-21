@@ -9,11 +9,12 @@ import java.util.List;
 
 public interface PlayerService {
     Player createPlayerForUser(User user) throws PlayerServiceException;
-    Player getPlayerByUserId(Long userId) throws PlayerServiceException;
-    Player getPlayerById(Long playerId) throws PlayerServiceException;
-    List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerServiceException;
-    List<Player> getPlayersForPlayerIds(List<Long> playerIds) throws PlayerServiceException;
     Player updatePlayerDetails(Long playerId, UpdatePlayerRequest updatePlayerRequest)
             throws PlayerServiceException;
     void deletePlayer(Long playerId) throws PlayerServiceException;
+
+    Player getPlayerByUserId(Long userId) throws PlayerServiceException;
+
+    Player getPlayerById(Long playerId) throws PlayerServiceException;
+    List<Player> getPlayersByIds(List<Long> playerIds) throws PlayerServiceException;
 }
