@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.booking.controller.advice;
 
-import com.crozhere.service.cms.booking.controller.model.response.ErrorResponse;
+import com.crozhere.service.cms.booking.controller.model.response.ServiceErrorResponse;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceExceptionType;
 import com.crozhere.service.cms.booking.service.exception.InvalidRequestException;
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class BookingServiceExceptionHandler {
 
     @ExceptionHandler(BookingServiceException.class)
-    public ResponseEntity<ErrorResponse> handleBookingServiceException(
+    public ResponseEntity<ServiceErrorResponse> handleBookingServiceException(
             BookingServiceException ex) {
 
         BookingServiceExceptionType type = ex.getType();
@@ -27,7 +27,7 @@ public class BookingServiceExceptionHandler {
         log.error("Handled BookingServiceException [{}]: {}", type.name(),
                 type.getMessage(), ex);
 
-        ErrorResponse error = ErrorResponse.builder()
+        ServiceErrorResponse error = ServiceErrorResponse.builder()
                 .error("BookingServiceException")
                 .type(type.name())
                 .message(type.getMessage())
@@ -38,12 +38,12 @@ public class BookingServiceExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+    public ResponseEntity<ServiceErrorResponse> handleMethodArgumentNotValidException(
             InvalidRequestException ex) {
 
         log.error("Handled MethodArgumentNotValidException: {}", ex.getMessage());
 
-        ErrorResponse error = ErrorResponse.builder()
+        ServiceErrorResponse error = ServiceErrorResponse.builder()
                 .error("InvalidRequestException")
                 .type("INVALID_REQUEST")
                 .message(ex.getMessage())
@@ -54,12 +54,12 @@ public class BookingServiceExceptionHandler {
     }
 
     @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidRequestException(
+    public ResponseEntity<ServiceErrorResponse> handleInvalidRequestException(
             InvalidRequestException ex) {
 
         log.error("Handled InvalidRequestException: {}", ex.getMessage());
 
-        ErrorResponse error = ErrorResponse.builder()
+        ServiceErrorResponse error = ServiceErrorResponse.builder()
                 .error("InvalidRequestException")
                 .type("INVALID_REQUEST")
                 .message(ex.getMessage())

@@ -7,6 +7,7 @@ import com.crozhere.service.cms.booking.controller.model.response.*;
 import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
+import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
 import com.crozhere.service.cms.user.repository.entity.User;
 import com.crozhere.service.cms.user.repository.entity.UserRole;
 import com.crozhere.service.cms.user.service.UserService;
@@ -60,12 +61,20 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingIntentDetailsResponse createBookingIntentForClub(CreateClubBookingIntentRequest request)
-            throws InvalidRequestException, BookingServiceException {
+    public BookingIntentDetailsResponse createBookingIntentForClub(
+            Long clubAdminId,
+            CreateClubBookingIntentRequest request
+    ) throws InvalidRequestException, BookingServiceException {
         try {
             if (!StringUtils.hasText(request.getPlayerPhoneNumber())) {
                 log.info("Player phone number is required for booking");
                 throw new InvalidRequestException("PhoneNumber is required");
+            }
+            Club club = clubService.getClubById(request.getClubId());
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found for clubAdminId: {}",
+                        request.getClubId(), clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
             }
 
             User user = userService.getOrCreateUserByPhoneNumber(
@@ -79,7 +88,7 @@ public class BookingServiceImpl implements BookingService {
 
             validateBookingTimes(request.getStartTime(), request.getEndTime());
 
-            Club club = clubService.getClubById(request.getClubId());
+
             Map<Long, Station> stationMap =
                     clubService.getStationsByClubIdAndType(
                             request.getClubId(), request.getStationType())
@@ -142,18 +151,16 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingIntentDetailsResponse createBookingIntentForPlayer(CreatePlayerBookingIntentRequest request)
-            throws InvalidRequestException, BookingServiceException {
+    public BookingIntentDetailsResponse createBookingIntentForPlayer(
+            Long playerId,
+            CreatePlayerBookingIntentRequest request
+    ) throws InvalidRequestException, BookingServiceException {
         try {
-            if (request.getPlayerId() == null) {
-                log.info("PlayerId is required for booking");
-                throw new InvalidRequestException("PhoneNumber is required");
-            }
-
-            Player player = playerService.getPlayerById(request.getPlayerId());
+            Player player = playerService.getPlayerById(playerId);
             if(player == null){
                 log.error("Cannot proceed player booking without a player");
-                throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED);
             }
 
             validateBookingTimes(request.getStartTime(), request.getEndTime());
@@ -220,7 +227,9 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingIntent getBookingIntentById(Long bookingIntentId) throws BookingServiceException {
+    public BookingIntent getBookingIntentById(
+            Long bookingIntentId
+    ) throws BookingServiceException {
         try {
             return bookingIntentDao.getById(bookingIntentId);
         } catch (BookingIntentDaoException e){
@@ -230,12 +239,18 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingIntentDetailsResponse> getActiveIntentsForClub(Long clubId)
-            throws BookingServiceException {
-
+    public List<BookingIntentDetailsResponse> getActiveIntentsForClub(
+            Long clubAdminId,
+            Long clubId
+    ) throws BookingServiceException {
         try {
+            Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found for clubAdminId: {} for activeIntents",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
             Instant now = Instant.now();
-
             List<BookingIntent> activeIntents =
                     bookingIntentDao.getActiveIntentsForClubId(clubId, now);
 
@@ -244,6 +259,9 @@ public class BookingServiceImpl implements BookingService {
             }
 
             return toBookingIntentDetailsResponses(activeIntents);
+        } catch (ClubServiceException e) {
+            log.error("Error fetching active booking intents for clubId: {}", clubId, e);
+            throw e;
         } catch (Exception e) {
             log.error("Error fetching active booking intents for clubId: {}", clubId, e);
             throw new BookingServiceException(
@@ -253,8 +271,9 @@ public class BookingServiceImpl implements BookingService {
 
 
     @Override
-    public List<BookingIntentDetailsResponse> getActiveIntentsForPlayer(Long playerId)
-            throws BookingServiceException {
+    public List<BookingIntentDetailsResponse> getActiveIntentsForPlayer(
+            Long playerId
+    ) throws BookingServiceException {
 
         try {
             Instant now = Instant.now();
@@ -276,12 +295,22 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public void cancelClubBookingIntent(Long clubId, Long intentId)
-            throws BookingServiceException {
+    public void cancelClubBookingIntent(
+            Long clubAdminId,
+            Long clubId,
+            Long intentId
+    ) throws BookingServiceException {
         try {
             BookingIntent intent = bookingIntentDao.findById(intentId)
                     .orElseThrow(() -> new BookingServiceException(
                             BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND));
+
+            Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found for clubAdminId: {} for cancelIntent",
+                        clubId, clubAdminId);
+                throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND);
+            }
 
             if (!intent.getClubId().equals(clubId)
                     || !BookingIntentMode.OFFLINE.equals(intent.getIntentMode())) {
@@ -311,8 +340,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public void cancelPlayerBookingIntent(Long playerId, Long intentId)
-            throws BookingServiceException {
+    public void cancelPlayerBookingIntent(
+            Long playerId,
+            Long intentId
+    ) throws BookingServiceException {
         try {
             BookingIntent intent = bookingIntentDao.findById(intentId)
                     .orElseThrow(() -> new BookingServiceException(
@@ -347,8 +378,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public BookingDetailsResponse confirmBookingIntent(ConfirmBookingIntentRequest request)
-            throws InvalidRequestException, BookingServiceException {
+    public BookingDetailsResponse confirmBookingIntent(
+            ConfirmBookingIntentRequest request
+    ) throws InvalidRequestException, BookingServiceException {
         try {
             BookingIntent intent =
                     bookingIntentDao.getById(request.getBookingIntentId());
@@ -422,8 +454,11 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDetailsResponse getClubBookingByIntentId(Long clubId, Long intentId)
-        throws BookingServiceException {
+    public BookingDetailsResponse getClubBookingByIntentId(
+            Long clubAdminId,
+            Long clubId,
+            Long intentId
+    ) throws BookingServiceException {
         try {
             BookingIntent intent = bookingIntentDao.getById(intentId);
             if(!intent.getClubId().equals(clubId)
@@ -431,9 +466,18 @@ public class BookingServiceImpl implements BookingService {
                 throw new BookingServiceException(
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
+
+            Club club = clubService.getClubById(intent.getClubId());
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found for " +
+                                "clubAdminId: {} for getBookingByIntent",
+                        clubId, clubAdminId);
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+
             Booking booking = bookingDAO.getByIntentId(intentId);
             Player player = playerService.getPlayerById(intent.getPlayerId());
-            Club club = clubService.getClubById(intent.getClubId());
             Map<Long, Station> stationMap =
                 clubService.getStationsByClubId(intent.getClubId())
                     .stream()
@@ -458,8 +502,10 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDetailsResponse getPlayerBookingByIntentId(Long playerId, Long intentId)
-            throws BookingServiceException {
+    public BookingDetailsResponse getPlayerBookingByIntentId(
+            Long playerId,
+            Long intentId
+    ) throws BookingServiceException {
         try {
             BookingIntent intent = bookingIntentDao.getById(intentId);
             if(!intent.getPlayerId().equals(playerId)
@@ -494,8 +540,11 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDetailsResponse getClubBookingById(Long clubId, Long bookingId)
-            throws BookingServiceException {
+    public BookingDetailsResponse getClubBookingById(
+            Long clubAdminId,
+            Long clubId,
+            Long bookingId
+    ) throws BookingServiceException {
         try {
             Booking booking = bookingDAO.getById(bookingId);
             if(!booking.getClubId().equals(clubId)){
@@ -503,6 +552,14 @@ public class BookingServiceImpl implements BookingService {
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
             Club club = clubService.getClubById(booking.getClubId());
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found " +
+                                "for clubAdminId: {} for getClubBookingById",
+                        clubId, clubAdminId);
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+
             Player player = playerService.getPlayerById(booking.getPlayerId());
             Map<Long, Station> stationMap =
                     clubService.getStationsByClubId(booking.getClubId())
@@ -531,8 +588,10 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingDetailsResponse getPlayerBookingById(Long playerId, Long bookingId)
-            throws BookingServiceException {
+    public BookingDetailsResponse getPlayerBookingById(
+            Long playerId,
+            Long bookingId
+    ) throws BookingServiceException {
         try {
             Booking booking = bookingDAO.getById(bookingId);
             if(!booking.getPlayerId().equals(playerId)){
@@ -569,8 +628,11 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public void cancelClubBooking(Long clubId, Long bookingId)
-            throws BookingServiceException {
+    public void cancelClubBooking(
+            Long clubAdminId,
+            Long clubId,
+            Long bookingId
+    ) throws BookingServiceException {
         try {
             Booking booking = bookingDAO.getById(bookingId);
             BookingIntent bookingIntent =
@@ -580,6 +642,16 @@ public class BookingServiceImpl implements BookingService {
                 throw new BookingServiceException(
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
+
+            Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found " +
+                                "for clubAdminId: {} for cancelBooking",
+                        clubId, clubAdminId);
+                throw new BookingServiceException(
+                        BookingServiceExceptionType.BOOKING_NOT_FOUND);
+            }
+
             booking.setStatus(BookingStatus.CANCELLED);
             bookingDAO.update(bookingId, booking);
 
@@ -600,8 +672,10 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
-    public void cancelPlayerBooking(Long playerId, Long bookingId)
-            throws BookingServiceException {
+    public void cancelPlayerBooking(
+            Long playerId,
+            Long bookingId
+    ) throws BookingServiceException {
         try {
             Booking booking = bookingDAO.getById(bookingId);
             BookingIntent bookingIntent =
@@ -630,8 +704,9 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDetailsResponse> listBookingByPlayerId(Long playerId)
-            throws BookingServiceException {
+    public List<BookingDetailsResponse> listBookingByPlayerId(
+            Long playerId
+    ) throws BookingServiceException {
         try {
             List<Booking> bookings = bookingDAO.getBookingsByPlayerId(playerId);
 
@@ -686,11 +761,21 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public Page<BookingDetailsResponse> listBookingByClubIdWithFilters(
+            Long clubAdminId,
             Long clubId,
             ClubBookingsListFilterRequest filterRequest,
             Pageable pageable
     ) throws BookingServiceException {
         try {
+            Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found " +
+                                "for clubAdminId: {} for listBookingsByClub",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(
+                        ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
+
             Set<StationType> stationTypeSet =
                     filterRequest.getStationTypes() != null
                             ? new HashSet<>(filterRequest.getStationTypes())
@@ -720,7 +805,6 @@ public class BookingServiceImpl implements BookingService {
                 return Page.empty(pageable);
             }
 
-            Club club = clubService.getClubById(clubId);
             List<Long> playerIds = bookings.stream()
                     .map(Booking::getPlayerId)
                     .distinct()
@@ -771,13 +855,21 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Map<Long, DashBoardStationStatusResponse> getDashboardStationStatusDetailsForClub(Long clubId)
-            throws BookingServiceException {
+    public Map<Long, DashBoardStationStatusResponse> getDashboardStationStatusDetailsForClub(
+            Long clubAdminId,
+            Long clubId
+    ) throws BookingServiceException {
         try {
-            Instant now = Instant.now();
-
             Long windowDurationHr = 12L;
 
+            Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found " +
+                                "for clubAdminId: {} for dashboardStationStatus",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(
+                        ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
             List<Station> stations = clubService.getStationsByClubId(clubId);
             Set<Long> stationIds = stations.stream()
                     .map(Station::getId).collect(Collectors.toSet());
@@ -857,18 +949,29 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDetailsResponse> getUpcomingBookingsByClubId(
+            Long clubAdminId,
             Long clubId,
             Long windowDurationHr,
             List<StationType> stationTypes
     ) throws BookingServiceException {
         try {
+            Club club = clubService.getClubById(clubId);
+            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+                log.info("Club with clubId: {} not found " +
+                                "for clubAdminId: {} for getUpcomingBookings",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(
+                        ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
+
             Set<StationType> stationTypeSet =
                     stationTypes != null && !stationTypes.isEmpty()
                             ? new HashSet<>(stationTypes)
                             : null;
 
             List<Booking> bookings =
-                    bookingDAO.getUpcomingConfirmedBookingsForClub(clubId, windowDurationHr, stationTypeSet);
+                    bookingDAO.getUpcomingConfirmedBookingsForClub(
+                            clubId, windowDurationHr, stationTypeSet);
 
             if(bookings.isEmpty()){
                 return List.of();
@@ -889,8 +992,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingAvailabilityByTimeResponse checkAvailabilityByTime(
-            BookingAvailabilityByTimeRequest request)
-            throws BookingServiceException {
+            BookingAvailabilityByTimeRequest request
+    ) throws BookingServiceException {
         try {
             log.info("Passed StartTime: {}", request.getStartTime());
             log.info("Passed EndTime: {}", request.getEndTime());
@@ -923,8 +1026,8 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public BookingAvailabilityByStationResponse checkAvailabilityByStations(
-            BookingAvailabilityByStationRequest request)
-            throws BookingServiceException {
+            BookingAvailabilityByStationRequest request
+    ) throws BookingServiceException {
         try {
             Map<Long, Station> stationMap =
                     clubService.getStationsByClubIdAndType(
@@ -1083,18 +1186,6 @@ public class BookingServiceImpl implements BookingService {
     private BookingType getBookingType(Integer players){
         return players > 1 ? BookingType.GRP : BookingType.IND;
     }
-
-//    private BookingIntentDetailsResponse toBookingIntentDetailsResponse(
-//            BookingIntent bookingIntent
-//    ){
-//
-//    }
-//
-//    private BookingDetailsResponse toBookingDetailsResponse(
-//            Booking booking
-//    ) {
-//
-//    }
 
     private List<BookingIntentDetailsResponse> toBookingIntentDetailsResponses(
             List<BookingIntent> bookingIntents
