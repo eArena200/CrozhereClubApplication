@@ -8,8 +8,11 @@ import com.crozhere.service.cms.auth.service.OTPService;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.sns.SnsClient;
+import software.amazon.awssdk.services.sns.model.PublishRequest;
+import software.amazon.awssdk.services.sns.model.PublishResponse;
+import software.amazon.awssdk.services.sns.model.SnsException;
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -19,13 +22,15 @@ import java.util.Random;
 public class OTPServiceImpl implements OTPService {
 
     private final OtpDao otpDao;
+    private final SnsClient snsClient;
 
+    private static final String IND_PREFIX = "+91";
     private static final int OTP_EXPIRY_MINUTES = 5;
 
     @Autowired
-    public OTPServiceImpl(
-            OtpDao otpDao){
+    public OTPServiceImpl(OtpDao otpDao, SnsClient snsClient) {
         this.otpDao = otpDao;
+        this.snsClient = snsClient;
     }
 
     @Override
@@ -40,8 +45,7 @@ public class OTPServiceImpl implements OTPService {
     }
 
     @Override
-    public Boolean verifyOTP(String phone, String otp)
-            throws OTPServiceException {
+    public Boolean verifyOTP(String phone, String otp) throws OTPServiceException {
         try {
             OTP otpData = otpDao.getByPhone(phone);
 
@@ -61,11 +65,11 @@ public class OTPServiceImpl implements OTPService {
             }
 
             return match;
-        } catch (DataNotFoundException dataNotFoundException){
-            log.info("No otp found for phone: {}", phone);
+        } catch (DataNotFoundException e) {
+            log.info("No OTP found for phone: {}", phone);
             throw new OTPServiceException("VerifyOTPException");
-        } catch (OtpDAOException otpdaoException){
-            log.error("Exception while getting otp for phone: {}", phone);
+        } catch (OtpDAOException e) {
+            log.error("Exception while getting OTP for phone: {}", phone, e);
             throw new OTPServiceException("VerifyOTPException");
         }
     }
@@ -100,14 +104,23 @@ public class OTPServiceImpl implements OTPService {
         }
     }
 
-    private String generateOtpCode(){
+    private String generateOtpCode() {
         return String.valueOf(new Random().nextInt(900000) + 100000);
     }
 
-
     private void sendOtpToUser(String phone, String otp) {
-        // TODO: Integrate SMS/Email provider
-        log.info("Sending OTP {} to phone {}", otp, phone);
-    }
+        String message = "Your Crozhere OTP is: " + otp;
+        try {
+            PublishRequest request = PublishRequest.builder()
+                    .message(message)
+                    .phoneNumber(IND_PREFIX + phone)
+                    .build();
 
+            PublishResponse result = snsClient.publish(request);
+            log.info("Sent OTP {} to {} via SNS (MessageId: {})", otp, phone, result.messageId());
+        } catch (SnsException e) {
+            log.error("Failed to send OTP via SNS to {}: {}", phone, e.awsErrorDetails().errorMessage());
+            throw new OTPServiceException("OtpSendFailure", e);
+        }
+    }
 }
