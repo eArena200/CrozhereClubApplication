@@ -60,7 +60,9 @@ public class PlayerController {
     @PreAuthorize("hasRole('PLAYER')")
     @GetMapping("/getDetails")
     public ResponseEntity<PlayerResponse> getPlayerById() {
+        log.info("Calling authUtil");
         Long playerId = AuthUtil.getRoleBasedId();
+        log.info("Recieved playerId: {}", playerId);
         Player player = playerService.getPlayerById(playerId);
         return ResponseEntity.ok(getPlayerResponse(player));
     }

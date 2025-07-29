@@ -184,7 +184,7 @@ public class ClubManagementController {
                     content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
             )
     })
-    @PreAuthorize("hasRole('CLUB_ADMIN'")
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
     @PostMapping("/addStation")
     public ResponseEntity<StationResponse> addStation(
             @Parameter(description = "AddStationRequest", required = true)

@@ -241,7 +241,7 @@ public class ClubServiceImpl implements ClubService {
             if(!club.getClubAdmin().getId().equals(clubAdminId)){
                 log.info("Club not found with clubId: {}, for clubAdminID: {} to update",
                         addStationRequest.getClubId(), clubAdminId);
-                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
             }
             Rate rate = rateRepository
                     .findById(addStationRequest.getRateId())
@@ -284,7 +284,7 @@ public class ClubServiceImpl implements ClubService {
     ) throws ClubServiceException {
         try {
             Station station = getStationById(stationId);
-            if(station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!station.getClub().getClubAdmin().getId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for update",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
@@ -335,7 +335,7 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Station station = getStationById(stationId);
-            if(station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!station.getClub().getClubAdmin().getId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for delete",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
@@ -352,7 +352,7 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Station station = stationDAO.getById(stationId);
-            if(station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!station.getClub().getClubAdmin().getId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for toggle",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);

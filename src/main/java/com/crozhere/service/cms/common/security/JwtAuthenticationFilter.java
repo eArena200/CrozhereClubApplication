@@ -24,16 +24,21 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
-
-import static com.crozhere.service.cms.auth.service.impl.JwtService.ROLE_BASED_ID;
-import static com.crozhere.service.cms.auth.service.impl.JwtService.ROLE_CLAIM_KEY;
-
 @Component
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtService jwtService;
+
+    private static final List<String> PUBLIC_PATHS = List.of(
+            "/auth/",
+            "/swagger-ui/",
+            "/api-docs/",
+            "/clubs/",
+            "/booking/availability/"
+    );
+
 
     @Override
     protected void doFilterInternal(
@@ -42,13 +47,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        String path = request.getRequestURI();
+        if (isPublicPath(path)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authHeader.substring(7);
+        String token = extractToken(request);
+        log.info("Received TOKEN: {}", token);
         try {
             Claims claims = jwtService.parseToken(token);
 
@@ -66,17 +72,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
         } catch (ExpiredJwtException e) {
-            writeErrorResponse(response, "Token has expired", HttpServletResponse.SC_UNAUTHORIZED, request);
+            writeErrorResponse(response, "Token has expired",
+                    HttpServletResponse.SC_UNAUTHORIZED, request);
             return;
         } catch (MalformedJwtException e) {
-            writeErrorResponse(response, "Malformed token", HttpServletResponse.SC_UNAUTHORIZED, request);
+            writeErrorResponse(response, "Malformed token",
+                    HttpServletResponse.SC_UNAUTHORIZED, request);
             return;
         } catch (SignatureException | IllegalArgumentException e) {
-            writeErrorResponse(response, "Invalid token", HttpServletResponse.SC_UNAUTHORIZED, request);
+            log.error("ERROR in JWT FILTER: {}", e.getMessage());
+            writeErrorResponse(response, "Invalid token",
+                    HttpServletResponse.SC_UNAUTHORIZED, request);
             return;
         } catch (Exception e) {
             log.error("Unexpected JWTFilter error: {}", e.getMessage(), e);
-            writeErrorResponse(response, "Authentication failed", HttpServletResponse.SC_INTERNAL_SERVER_ERROR, request);
+            writeErrorResponse(response, "Authentication failed",
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR, request);
             return;
         }
 
@@ -84,7 +95,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
 
-    private void writeErrorResponse(HttpServletResponse response, String message, int status, HttpServletRequest request) throws IOException {
+    private boolean isPublicPath(String path) {
+        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+    }
+
+    private String extractToken(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void writeErrorResponse(
+            HttpServletResponse response,
+            String message,
+            int status,
+            HttpServletRequest request
+    ) throws IOException {
         response.setContentType("application/json");
         response.setStatus(status);
 

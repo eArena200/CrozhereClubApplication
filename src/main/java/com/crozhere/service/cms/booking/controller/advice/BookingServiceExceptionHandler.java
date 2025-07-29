@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @RestControllerAdvice(basePackages = "com.crozhere.service.cms.booking")
-public class BookingServiceExceptionHandler {
+public class    BookingServiceExceptionHandler {
 
     @ExceptionHandler(BookingServiceException.class)
     public ResponseEntity<ServiceErrorResponse> handleBookingServiceException(

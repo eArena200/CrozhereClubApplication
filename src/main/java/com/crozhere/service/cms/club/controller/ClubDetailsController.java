@@ -106,7 +106,7 @@ public class ClubDetailsController {
                     description = "ClubId for which stations needs to be retrieved",
                     required = true
             )
-            @RequestParam(value = "clubId") Long clubId
+            @PathVariable(value = "clubId") Long clubId
     ){
         List<StationResponse> stationsResponse =
                 clubService.getStationsByClubId(clubId)

@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 @Slf4j
 public class SecurityConfig {
 
@@ -31,7 +31,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/error",
                                 "/auth/**",
-                                "/clubs/**"
+                                "/clubs/**",
+                                "/booking/availability/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

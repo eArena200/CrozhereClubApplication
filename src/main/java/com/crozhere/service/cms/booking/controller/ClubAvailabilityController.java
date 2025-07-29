@@ -22,8 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/club/availability")
-@Tag(name = "Club Availability", description = "APIs for clubs to check station availability by time or station")
+@RequestMapping("/booking/availability")
+@Tag(name = "Booking Availability", description = "APIs to check station availability by time or station")
 public class ClubAvailabilityController {
 
     private final BookingService bookingService;
