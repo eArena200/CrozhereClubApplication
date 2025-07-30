@@ -6,13 +6,12 @@ import com.crozhere.service.cms.auth.repository.dao.exception.OtpDAOException;
 import com.crozhere.service.cms.auth.repository.entity.OTP;
 import com.crozhere.service.cms.auth.service.OTPService;
 import com.crozhere.service.cms.auth.service.exception.OTPServiceException;
+import com.twilio.Twilio;
+import com.twilio.rest.api.v2010.account.Message;
+import com.twilio.type.PhoneNumber;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.sns.SnsClient;
-import software.amazon.awssdk.services.sns.model.PublishRequest;
-import software.amazon.awssdk.services.sns.model.PublishResponse;
-import software.amazon.awssdk.services.sns.model.SnsException;
 
 import java.time.LocalDateTime;
 import java.util.Random;
@@ -22,15 +21,21 @@ import java.util.Random;
 public class OTPServiceImpl implements OTPService {
 
     private final OtpDao otpDao;
-    private final SnsClient snsClient;
+
+    @Value("${twilio.account.sid}")
+    private String accountSid;
+
+    @Value("${twilio.auth.token}")
+    private String authToken;
+
+    @Value("${twilio.phone.number}")
+    private String fromPhoneNumber;
 
     private static final String IND_PREFIX = "+91";
     private static final int OTP_EXPIRY_MINUTES = 5;
 
-    @Autowired
-    public OTPServiceImpl(OtpDao otpDao, SnsClient snsClient) {
+    public OTPServiceImpl(OtpDao otpDao) {
         this.otpDao = otpDao;
-        this.snsClient = snsClient;
     }
 
     @Override
@@ -109,17 +114,22 @@ public class OTPServiceImpl implements OTPService {
     }
 
     private void sendOtpToUser(String phone, String otp) {
+        String toPhoneNumber = IND_PREFIX + phone;
         String message = "Your Crozhere OTP is: " + otp;
-        try {
-            PublishRequest request = PublishRequest.builder()
-                    .message(message)
-                    .phoneNumber(IND_PREFIX + phone)
-                    .build();
 
-            PublishResponse result = snsClient.publish(request);
-            log.info("Sent OTP {} to {} via SNS (MessageId: {})", otp, phone, result.messageId());
-        } catch (SnsException e) {
-            log.error("Failed to send OTP via SNS to {}: {}", phone, e.awsErrorDetails().errorMessage());
+        try {
+            Twilio.init(accountSid, authToken);
+
+            Message twilioMessage = Message.creator(
+                    new PhoneNumber(toPhoneNumber),
+                    new PhoneNumber(fromPhoneNumber),
+                    message
+            ).create();
+
+            log.info("Sent OTP {} to {} via Twilio (SID: {})", otp, toPhoneNumber, twilioMessage.getSid());
+
+        } catch (Exception e) {
+            log.error("Failed to send OTP via Twilio to {}: {}", toPhoneNumber, e.getMessage());
             throw new OTPServiceException("OtpSendFailure", e);
         }
     }

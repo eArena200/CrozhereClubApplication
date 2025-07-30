@@ -119,6 +119,14 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Twilio dependency-->
+		<dependency>
+			<groupId>com.twilio.sdk</groupId>
+			<artifactId>twilio</artifactId>
+			<version>8.31.1</version>
+		</dependency>
+
+
 		<!-- OpenAPI Docs -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
