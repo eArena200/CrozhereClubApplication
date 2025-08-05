@@ -7,8 +7,6 @@ import com.crozhere.service.cms.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -86,18 +84,6 @@ public class AuthController {
             @Parameter(description = "Authentication verification request containing phone number and verification code", required = true)
             @Valid @RequestBody VerifyAuthRequest verifyAuthRequest) {
         VerifyAuthResponse response = authService.verifyAuth(verifyAuthRequest);
-
-        ResponseCookie jwtCookie = ResponseCookie.from("token", response.getJwt())
-                .httpOnly(true)
-                .secure(false)
-                .path("/")
-                .maxAge(60 * 60 * 12)
-                .sameSite("Lax")
-                .build();
-
-        response.setJwt(null);
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(response);
+        return ResponseEntity.ok(response);
     }
 }
