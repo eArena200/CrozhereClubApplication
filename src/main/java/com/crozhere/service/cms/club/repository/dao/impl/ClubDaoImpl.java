@@ -107,7 +107,7 @@ public class ClubDaoImpl implements ClubDao {
     @Override
     public List<Club> getByAdmin(Long clubAdminId) throws ClubDAOException {
         try {
-            return clubRepository.findByClubAdmin_Id(clubAdminId);
+            return clubRepository.findByClubAdminId(clubAdminId);
         } catch (Exception e) {
             log.error("Failed to get clubs for clubAdminId: {}", clubAdminId, e);
             throw new ClubDAOException("Error getting clubs by admin", e);

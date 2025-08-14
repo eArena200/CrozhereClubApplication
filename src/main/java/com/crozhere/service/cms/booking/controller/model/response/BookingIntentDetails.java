@@ -25,5 +25,5 @@ public class BookingIntentDetails {
     private Boolean isCancelled;
     private Boolean isConfirmed;
 
-    private BookingIntentCostDetails costDetails;
+    private BookingAmountDetails costDetails;
 }

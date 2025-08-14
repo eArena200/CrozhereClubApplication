@@ -1,14 +1,11 @@
 package com.crozhere.service.cms.club.repository.entity;
 
-import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,57 +19,60 @@ public class Club {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
     @JoinColumn(name = "club_admin_id", nullable = false)
-    private ClubAdmin clubAdmin;
+    private Long clubAdminId;
 
     @Column(name = "club_name", unique = true, nullable = false)
     private String clubName;
 
-    @Column(name = "addr_street", nullable = false)
-    private String street;
+    @Column(name = "club_description")
+    private String clubDescription;
 
-    @Column(name = "addr_city", nullable = false)
-    private String city;
+    @Embedded
+    private ClubAddress clubAddress;
 
-    @Column(name = "addr_state", nullable = false)
-    private String state;
+    @Embedded
+    private ClubContact clubContact;
 
-    @Column(name = "addr_pincode", nullable = false)
-    private String pincode;
+    @Embedded
+    private ClubOperatingHours clubOperatingHours;
 
-    @Column(name = "addr_geo_lat")
-    private Double latitude;
+    @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @Builder.Default
+    private List<Station> stations = new ArrayList<>();
 
-    @Column(name = "addr_geo_lon")
-    private Double longitude;
-
-    @Column(name = "open_hour", nullable = false)
-    private LocalTime openTime;
-
-    @Column(name = "close_hour", nullable = false)
-    private LocalTime closeTime;
-
-    @Column(name = "p_contact", nullable = false)
-    private String primaryContact;
-
-    @Column(name = "s_contact")
-    private String secondaryContact;
+    @OneToMany(mappedBy = "club", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @Builder.Default
+    private List<RateCard> rateCards = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
+
+        if(this.stations == null){
+            this.stations = new ArrayList<>();
+        }
+
+        if(this.rateCards == null){
+            this.rateCards = new ArrayList<>();
+        }
+
+        if(this.clubDescription == null){
+            this.clubDescription = "Club's Tag Line";
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 }

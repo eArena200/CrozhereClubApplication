@@ -5,10 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookingIntentCostDetails {
-    private Double totalCost;
+public class BookingAmountItemDetails {
+    private Double cost;
+    private String category;
+    private List<BookingAmountChargeItemDetails> details;
 }

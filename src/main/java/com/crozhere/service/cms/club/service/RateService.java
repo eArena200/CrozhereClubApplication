@@ -24,4 +24,5 @@ public interface RateService {
 
     Rate getRate(Long rateId);
     List<Rate> getRatesForRateCard(Long rateCardId);
+    List<Rate> getRatesByRateIds(List<Long> rateIds);
 }

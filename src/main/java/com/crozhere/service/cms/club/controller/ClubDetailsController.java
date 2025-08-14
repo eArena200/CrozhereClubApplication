@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.club.controller;
 
-import com.crozhere.service.cms.club.controller.model.ClubAddress;
+import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
 import com.crozhere.service.cms.club.controller.model.GeoLocation;
 import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.response.*;
@@ -313,22 +313,22 @@ public class ClubDetailsController {
         return ClubDetailsResponse.builder()
                 .clubId((club.getId()))
                 .clubName(club.getClubName())
-                .clubAddress(ClubAddress.builder()
-                        .streetAddress(club.getStreet())
-                        .city(club.getCity())
-                        .state(club.getState())
-                        .pinCode(club.getPincode())
+                .clubAddressDetails(ClubAddressDetails.builder()
+                        .streetAddress(club.getClubAddress().getStreet())
+                        .city(club.getClubAddress().getCity())
+                        .state(club.getClubAddress().getState())
+                        .pinCode(club.getClubAddress().getPincode())
                         .geoLocation(GeoLocation.builder()
-                                .latitude(club.getLatitude())
-                                .longitude(club.getLongitude())
+                                .latitude(club.getClubAddress().getLatitude())
+                                .longitude(club.getClubAddress().getLongitude())
                                 .build())
                         .build())
                 .operatingHours(OperatingHours.builder()
-                        .openTime(convertLocalTimeToString(club.getOpenTime()))
-                        .closeTime(convertLocalTimeToString(club.getCloseTime()))
+                        .openTime(convertLocalTimeToString(club.getClubOperatingHours().getOpenTime()))
+                        .closeTime(convertLocalTimeToString(club.getClubOperatingHours().getCloseTime()))
                         .build())
-                .primaryContact(club.getPrimaryContact())
-                .secondaryContact(club.getSecondaryContact())
+                .primaryContact(club.getClubContact().getPrimaryContact())
+                .secondaryContact(club.getClubContact().getSecondaryContact())
                 .build();
     }
 
@@ -346,6 +346,7 @@ public class ClubDetailsController {
                 .rateName(station.getRate().getName())
                 .capacity(station.getCapacity())
                 .isActive(station.getIsActive())
+                .isLive(station.getIsLive())
                 .build();
     }
 

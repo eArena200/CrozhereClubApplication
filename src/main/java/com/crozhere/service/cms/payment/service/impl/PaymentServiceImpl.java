@@ -38,6 +38,12 @@ public class PaymentServiceImpl implements PaymentService {
             BookingIntent bookingIntent =
                     bookingService.getBookingIntentById(request.getIntentId());
 
+            Double bookingAmount = bookingIntent.getBookingAmount().getTotalAmount();
+            if(!bookingAmount.equals(request.getAmount())){
+                log.info("Intent amount not equal to request amount");
+                throw new PaymentServiceException(PaymentServiceExceptionType.INVALID_REQUEST);
+            }
+
             if(PaymentMode.CASH.equals(request.getPaymentMode())){
                 Payment payment = Payment.builder()
                         .intentId(request.getIntentId())

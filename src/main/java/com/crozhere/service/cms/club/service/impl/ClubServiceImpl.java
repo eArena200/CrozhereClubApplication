@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.club.service.impl;
 
-import com.crozhere.service.cms.club.controller.model.ClubAddress;
+import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
 import com.crozhere.service.cms.club.controller.model.GeoLocation;
 import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.request.AddStationRequest;
@@ -57,26 +57,27 @@ public class ClubServiceImpl implements ClubService {
                     clubAdminService.getClubAdminById(clubAdminId);
 
             Club club = Club.builder()
-                    .clubAdmin(clubAdmin)
+                    .clubAdminId(clubAdmin.getId())
                     .clubName(createClubRequest.getClubName())
-                    .street(createClubRequest.getClubAddress().getStreetAddress())
-                    .city(createClubRequest.getClubAddress().getCity())
-                    .state(createClubRequest.getClubAddress().getState())
-                    .pincode(createClubRequest.getClubAddress().getPinCode())
-                    .openTime(convertStringToLocalTime(
+                    .clubAddress(ClubAddress.builder()
+                            .street(createClubRequest.getClubAddressDetails().getStreetAddress())
+                            .city(createClubRequest.getClubAddressDetails().getCity())
+                            .state(createClubRequest.getClubAddressDetails().getState())
+                            .pincode(createClubRequest.getClubAddressDetails().getPinCode())
+                            .longitude(createClubRequest.getClubAddressDetails().getGeoLocation().getLatitude())
+                            .latitude(createClubRequest.getClubAddressDetails().getGeoLocation().getLatitude())
+                            .build())
+                    .clubOperatingHours(ClubOperatingHours.builder()
+                            .openTime(convertStringToLocalTime(
                                     createClubRequest.getOperatingHours().getOpenTime()))
-                    .closeTime(convertStringToLocalTime(
+                            .closeTime(convertStringToLocalTime(
                                     createClubRequest.getOperatingHours().getCloseTime()))
-                    .primaryContact(createClubRequest.getPrimaryContact())
-                    .secondaryContact(createClubRequest.getSecondaryContact())
+                            .build())
+                    .clubContact(ClubContact.builder()
+                            .primaryContact(createClubRequest.getPrimaryContact())
+                            .secondaryContact(createClubRequest.getSecondaryContact())
+                            .build())
                     .build();
-
-            GeoLocation geoLocation = createClubRequest.getClubAddress().getGeoLocation();
-            if(geoLocation != null){
-                club.setLatitude(geoLocation.getLatitude());
-                club.setLongitude(geoLocation.getLongitude());
-            }
-
             clubDAO.save(club);
             return club;
         } catch (ClubAdminServiceException e){
@@ -107,7 +108,7 @@ public class ClubServiceImpl implements ClubService {
         try {
             Club club = getClubById(clubId);
 
-            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+            if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club not found with clubId: {}, for clubAdminID: {} for update",
                         clubId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
@@ -117,27 +118,27 @@ public class ClubServiceImpl implements ClubService {
                 club.setClubName(updateClubRequest.getClubName());
             }
 
-            ClubAddress address = updateClubRequest.getClubAddress();
+            ClubAddressDetails address = updateClubRequest.getClubAddressDetails();
             if (address != null) {
                 if (StringUtils.hasText(address.getStreetAddress())) {
-                    club.setStreet(address.getStreetAddress());
+                    club.getClubAddress().setStreet(address.getStreetAddress());
                 }
                 if (StringUtils.hasText(address.getCity())) {
-                    club.setCity(address.getCity());
+                    club.getClubAddress().setCity(address.getCity());
                 }
                 if (StringUtils.hasText(address.getState())) {
-                    club.setState(address.getState());
+                    club.getClubAddress().setState(address.getState());
                 }
                 if (StringUtils.hasText(address.getPinCode())) {
-                    club.setPincode(address.getPinCode());
+                    club.getClubAddress().setPincode(address.getPinCode());
                 }
 
                 if (address.getGeoLocation() != null) {
                     if (address.getGeoLocation().getLatitude() != null) {
-                        club.setLatitude(address.getGeoLocation().getLatitude());
+                        club.getClubAddress().setLatitude(address.getGeoLocation().getLatitude());
                     }
                     if (address.getGeoLocation().getLongitude() != null) {
-                        club.setLongitude(address.getGeoLocation().getLongitude());
+                        club.getClubAddress().setLongitude(address.getGeoLocation().getLongitude());
                     }
                 }
             }
@@ -145,21 +146,21 @@ public class ClubServiceImpl implements ClubService {
             OperatingHours operatingHours = updateClubRequest.getOperatingHours();
             if (operatingHours != null){
                 if(StringUtils.hasText(operatingHours.getOpenTime())){
-                    club.setOpenTime(convertStringToLocalTime(
+                    club.getClubOperatingHours().setOpenTime(convertStringToLocalTime(
                             operatingHours.getOpenTime()));
                 }
 
                 if(StringUtils.hasText(operatingHours.getCloseTime())){
-                    club.setCloseTime(convertStringToLocalTime(
+                    club.getClubOperatingHours().setCloseTime(convertStringToLocalTime(
                             operatingHours.getCloseTime()));
                 }
             }
 
             if (StringUtils.hasText(updateClubRequest.getPrimaryContact())) {
-                club.setPrimaryContact(updateClubRequest.getPrimaryContact());
+                club.getClubContact().setPrimaryContact(updateClubRequest.getPrimaryContact());
             }
             if (StringUtils.hasText(updateClubRequest.getSecondaryContact())) {
-                club.setSecondaryContact(updateClubRequest.getSecondaryContact());
+                club.getClubContact().setSecondaryContact(updateClubRequest.getSecondaryContact());
             }
 
             clubDAO.update(clubId, club);
@@ -176,7 +177,7 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Club club = getClubById(clubId);
-            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+            if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club not found with clubId: {}, for clubAdminID: {} for delete",
                         clubId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
@@ -238,7 +239,7 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Club club = getClubById(addStationRequest.getClubId());
-            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+            if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club not found with clubId: {}, for clubAdminID: {} to update",
                         addStationRequest.getClubId(), clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
@@ -260,7 +261,8 @@ public class ClubServiceImpl implements ClubService {
                             addStationRequest.getOperatingHours().getCloseTime()))
                     .rate(rate)
                     .capacity(addStationRequest.getCapacity())
-                    .isActive(false)
+                    .isActive(true)
+                    .isLive(false)
                     .build();
 
             stationDAO.save(station);
@@ -284,7 +286,7 @@ public class ClubServiceImpl implements ClubService {
     ) throws ClubServiceException {
         try {
             Station station = getStationById(stationId);
-            if(!station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!station.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for update",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
@@ -335,12 +337,13 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Station station = getStationById(stationId);
-            if(!station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!station.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for delete",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
             }
-            stationDAO.delete(stationId);
+            station.setIsActive(false);
+            stationDAO.save(station);
         } catch (StationDAOException e){
             log.error("Exception while deleting station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.DELETE_STATION_FAILED, e);
@@ -352,12 +355,12 @@ public class ClubServiceImpl implements ClubService {
             throws ClubServiceException {
         try {
             Station station = stationDAO.getById(stationId);
-            if(!station.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!station.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for toggle",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
             }
-            station.setIsActive(!station.getIsActive());
+            station.setIsLive(!station.getIsLive());
             stationDAO.save(station);
             return station;
         } catch (StationDAOException e){

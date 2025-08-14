@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.club.controller.model.request;
 
-import com.crozhere.service.cms.club.controller.model.ClubAddress;
+import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
 import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import lombok.Builder;
 import lombok.Data;
@@ -14,7 +14,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CreateClubRequest {
     private String clubName;
-    private ClubAddress clubAddress;
+    private ClubAddressDetails clubAddressDetails;
     private OperatingHours operatingHours;
     private String primaryContact;
     private String secondaryContact;

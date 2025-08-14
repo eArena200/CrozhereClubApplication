@@ -1,6 +1,6 @@
 package com.crozhere.service.cms.club.controller;
 
-import com.crozhere.service.cms.club.controller.model.ClubAddress;
+import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
 import com.crozhere.service.cms.club.controller.model.GeoLocation;
 import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.request.*;
@@ -373,7 +373,7 @@ public class ClubManagementController {
     @PostMapping("/createRateCard/{clubId}")
     public ResponseEntity<RateCardResponse> createRateCard(
             @Parameter(
-                    name = "ClubId",
+                    name = "clubId",
                     description = "Id of the club for which Rate-card is created",
                     required = true
             )
@@ -423,7 +423,7 @@ public class ClubManagementController {
     @PutMapping("/updateRateCard/{rateCardId}")
     public ResponseEntity<RateCardDetailsResponse> updateRateCard(
             @Parameter(
-                    name = "RateCardId",
+                    name = "rateCardId",
                     description = "Id of the rate-card to be updated",
                     required = true
             )
@@ -463,7 +463,7 @@ public class ClubManagementController {
     @DeleteMapping("/removeRateCard/{rateCardId}")
     public ResponseEntity<Void> deleteRateCard(
             @Parameter(
-                    name="RateCardId",
+                    name="rateCardId",
                     description = "Id of the rate-card to remove",
                     required = true
             )
@@ -511,7 +511,7 @@ public class ClubManagementController {
     )
     public ResponseEntity<RateResponse> addRate(
             @Parameter(
-                    name = "RateCardId",
+                    name = "rateCardId",
                     description = "Id of rate-card to which the rate will be added",
                     required = true
             )
@@ -559,7 +559,7 @@ public class ClubManagementController {
     @PutMapping("/updateRate/{rateId}")
     public ResponseEntity<RateResponse> updateRate(
             @Parameter(
-                    name = "RateId",
+                    name = "rateId",
                     description = "Id of rate to be updated",
                     required = true
             )
@@ -601,7 +601,7 @@ public class ClubManagementController {
     @DeleteMapping("/removeRate/{rateId}")
     public ResponseEntity<Void> deleteRate(
             @Parameter(
-                    name = "RateId",
+                    name = "rateId",
                     description = "Id of rate to be deleted",
                     required = true)
             @PathVariable(value = "rateId") Long rateId
@@ -617,7 +617,7 @@ public class ClubManagementController {
         return ClubResponse.builder()
                 .clubId(club.getId())
                 .clubName(club.getClubName())
-                .clubAdminId(club.getClubAdmin().getId())
+                .clubAdminId(club.getClubAdminId())
                 .build();
     }
 
@@ -625,22 +625,22 @@ public class ClubManagementController {
         return ClubDetailsResponse.builder()
                 .clubId((club.getId()))
                 .clubName(club.getClubName())
-                .clubAddress(ClubAddress.builder()
-                        .streetAddress(club.getStreet())
-                        .city(club.getCity())
-                        .state(club.getState())
-                        .pinCode(club.getPincode())
+                .clubAddressDetails(ClubAddressDetails.builder()
+                        .streetAddress(club.getClubAddress().getStreet())
+                        .city(club.getClubAddress().getCity())
+                        .state(club.getClubAddress().getState())
+                        .pinCode(club.getClubAddress().getPincode())
                         .geoLocation(GeoLocation.builder()
-                                .latitude(club.getLatitude())
-                                .longitude(club.getLongitude())
+                                .latitude(club.getClubAddress().getLatitude())
+                                .longitude(club.getClubAddress().getLongitude())
                                 .build())
                         .build())
                 .operatingHours(OperatingHours.builder()
-                        .openTime(convertLocalTimeToString(club.getOpenTime()))
-                        .closeTime(convertLocalTimeToString(club.getCloseTime()))
+                        .openTime(convertLocalTimeToString(club.getClubOperatingHours().getOpenTime()))
+                        .closeTime(convertLocalTimeToString(club.getClubOperatingHours().getCloseTime()))
                         .build())
-                .primaryContact(club.getPrimaryContact())
-                .secondaryContact(club.getSecondaryContact())
+                .primaryContact(club.getClubContact().getPrimaryContact())
+                .secondaryContact(club.getClubContact().getSecondaryContact())
                 .build();
     }
 
@@ -657,6 +657,7 @@ public class ClubManagementController {
                 .rateId(station.getRate().getId())
                 .rateName(station.getRate().getName())
                 .capacity(station.getCapacity())
+                .isLive(station.getIsLive())
                 .isActive(station.getIsActive())
                 .build();
     }

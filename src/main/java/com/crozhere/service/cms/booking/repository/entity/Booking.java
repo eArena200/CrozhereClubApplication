@@ -22,8 +22,13 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "booking_intent_id", nullable = false)
-    private Long bookingIntentId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_intent_id", nullable = false)
+    private BookingIntent bookingIntent;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_amount_id", insertable = false, updatable = false)
+    private BookingAmount bookingAmount;
 
     @Column(name = "player_id", nullable = false)
     private Long playerId;

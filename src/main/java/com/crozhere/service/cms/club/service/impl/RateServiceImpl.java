@@ -52,7 +52,7 @@ public class RateServiceImpl implements RateService {
     ) {
         try {
             Club club = clubService.getClubById(clubId);
-            if(!club.getClubAdmin().getId().equals(clubAdminId)){
+            if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} Not found for clubAdminId: {}",
                         clubId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
@@ -81,7 +81,7 @@ public class RateServiceImpl implements RateService {
     ) {
         try {
             RateCard rateCard = getRateCard(rateCardId);
-            if(!rateCard.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for update",
                         rateCard, clubAdminId);
                 throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
@@ -107,7 +107,7 @@ public class RateServiceImpl implements RateService {
     ) {
         try {
             RateCard rateCard = getRateCard(rateCardId);
-            if(!rateCard.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for delete",
                         rateCard, clubAdminId);
                 throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
@@ -152,7 +152,7 @@ public class RateServiceImpl implements RateService {
     ) {
         try {
             RateCard rateCard = getRateCard(rateCardId);
-            if(!rateCard.getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for addRate",
                         rateCard, clubAdminId);
                 throw new RateCardServiceException(RateCardServiceExceptionType.RATE_CARD_NOT_FOUND);
@@ -195,7 +195,7 @@ public class RateServiceImpl implements RateService {
     ) {
         try {
             Rate rate = getRate(rateId);
-            if(rate.getRateCard().getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(rate.getRateCard().getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Rate with rateId: {} Not found for clubAdminId: {} for update",
                         rateId, clubAdminId);
                 throw new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
@@ -260,7 +260,7 @@ public class RateServiceImpl implements RateService {
     ) {
         try {
             Rate rate = getRate(rateId);
-            if(rate.getRateCard().getClub().getClubAdmin().getId().equals(clubAdminId)){
+            if(rate.getRateCard().getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Rate with rateId: {} Not found for clubAdminId: {} for delete",
                         rateId, clubAdminId);
                 throw new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
@@ -292,6 +292,18 @@ public class RateServiceImpl implements RateService {
             return rateRepository.findByRateCardId(rateCardId);
         } catch (Exception e) {
             log.error("Exception while getting rates for rateCardId: {}", rateCardId);
+            throw new RateCardServiceException(RateCardServiceExceptionType.FETCH_RATES_FAILED);
+        }
+    }
+
+    @Override
+    public List<Rate> getRatesByRateIds(List<Long> rateIds) {
+        try {
+            List<Rate> rates = rateRepository.findAllById(rateIds);
+            log.info("Loaded Rates: {}", rates);
+            return rates;
+        } catch (Exception e) {
+            log.error("Exception while getting rates");
             throw new RateCardServiceException(RateCardServiceExceptionType.FETCH_RATES_FAILED);
         }
     }

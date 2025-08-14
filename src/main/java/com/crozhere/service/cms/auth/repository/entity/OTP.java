@@ -32,5 +32,6 @@ public class OTP {
     private LocalDateTime expiresAt;
 
     @Column(name = "used", nullable = false)
+    @Builder.Default
     private boolean used = false;
 }

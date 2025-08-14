@@ -2,10 +2,7 @@ package com.crozhere.service.cms.booking.repository.entity;
 
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.List;
@@ -46,9 +43,6 @@ public class BookingIntent {
     @Column(name = "player_count", nullable = false)
     private Integer playerCount;
 
-    @Column(name = "total_cost", nullable = false)
-    private Double totalCost;
-
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
@@ -56,11 +50,16 @@ public class BookingIntent {
     private Boolean isCancelled;
 
     @Column(name = "is_confirmed", nullable = false)
-    private boolean isConfirmed = false;
+    @Builder.Default
+    private Boolean isConfirmed = false;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "mode", nullable = false)
     private BookingIntentMode intentMode;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "booking_amount_id")
+    private BookingAmount bookingAmount;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

@@ -23,5 +23,5 @@ public class BookingDetails {
     private List<BookingStationDetails> stations;
 
     private BookingStatus bookingStatus;
-    private BookingCostDetails costDetails;
+    private BookingAmountDetails costDetails;
 }

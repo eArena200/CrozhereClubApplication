@@ -3,7 +3,7 @@ package com.crozhere.service.cms.club.repository.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +22,7 @@ public class Rate {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rate_card_id", nullable = false)
+    @ToString.Exclude
     private RateCard rateCard;
 
     @Column(name = "name", nullable = false)
@@ -31,22 +32,32 @@ public class Rate {
     private String description;
 
     @OneToMany(mappedBy = "rate", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @Builder.Default
     private List<RateCharge> rateCharges = new ArrayList<>();
 
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
+
+        if(this.rateCharges == null){
+            this.rateCharges = new ArrayList<>();
+        }
+
+        if(this.description == null){
+            this.description = "Rate Details";
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 }
