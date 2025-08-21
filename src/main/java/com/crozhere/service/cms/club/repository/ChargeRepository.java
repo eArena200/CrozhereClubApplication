@@ -5,10 +5,10 @@ import com.crozhere.service.cms.club.repository.entity.ChargeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface ChargeRepository extends JpaRepository<RateCharge, Long> {
-    List<RateCharge> findByRateIdAndChargeType(Long rateId, ChargeType chargeType);
-    List<RateCharge> findByRateId(Long rateId);
+    Set<RateCharge> findByRateIdAndChargeType(Long rateId, ChargeType chargeType);
+    Set<RateCharge> findByRateId(Long rateId);
 }

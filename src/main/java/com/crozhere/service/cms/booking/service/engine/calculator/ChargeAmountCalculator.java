@@ -2,6 +2,8 @@ package com.crozhere.service.cms.booking.service.engine.calculator;
 
 import com.crozhere.service.cms.booking.repository.entity.*;
 import com.crozhere.service.cms.booking.service.engine.BookingContext;
+import com.crozhere.service.cms.club.controller.model.response.RateChargeResponse;
+import com.crozhere.service.cms.club.controller.model.response.RateResponse;
 import com.crozhere.service.cms.club.repository.entity.ChargeType;
 import com.crozhere.service.cms.club.repository.entity.Rate;
 import com.crozhere.service.cms.club.repository.entity.RateCharge;
@@ -9,10 +11,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+
+import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertLocalTimeToString;
+import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertStringToLocalTime;
 
 @Slf4j
 @Component
@@ -31,7 +35,7 @@ public class ChargeAmountCalculator implements AmountCalculator {
         BookingIntent intent = context.getBookingIntent();
         Map<Long, Long> stationToRateMap = context.getStationToRateMap();
         log.info("STATION_TO_RATE_MAP: {}", stationToRateMap.toString());
-        Map<Long, Rate> rateMap = context.getRateMap();
+        Map<Long, RateResponse> rateMap = context.getRateMap();
         log.info("RATE_MAP: {}", rateMap.toString());
 
         Instant curr = intent.getStartTime();
@@ -41,14 +45,12 @@ public class ChargeAmountCalculator implements AmountCalculator {
             Instant next = curr.plus(30, ChronoUnit.MINUTES);
 
             for (BookingIntentStation station : intent.getStations()) {
-                Rate rate = rateMap.get(stationToRateMap.get(station.getStationId()));
+                RateResponse rate = rateMap.get(stationToRateMap.get(station.getStationId()));
                 if (rate == null || rate.getRateCharges() == null
                         || rate.getRateCharges().isEmpty()) continue;
 
-//                log.info("STATION_ID: {} with Rate: {}", station.getStationId(), rate.getRateCharges());
-
-                for (RateCharge charge : rate.getRateCharges()) {
-                    if (charge.isRateChargeApplicable(curr, station.getPlayerCount())) {
+                for (RateChargeResponse charge : rate.getRateCharges()) {
+                    if (isRateChargeApplicable(charge, curr, station.getPlayerCount())) {
                         TempBookingAmount temp =
                                 computeTempAmount(
                                         charge,
@@ -92,10 +94,10 @@ public class ChargeAmountCalculator implements AmountCalculator {
     }
 
     private TempBookingAmount computeTempAmount(
-            RateCharge rateCharge,
+            RateChargeResponse rateCharge,
             Long durationInMinutes, Integer playerCount
     ){
-        double rawQty = switch (rateCharge.getUnit()){
+        double rawQty = switch (rateCharge.getChargeUnit()){
             case PER_HOUR -> (durationInMinutes/60.0);
             case PER_PLAYER_HOUR -> {
                 if(ChargeType.ADDON.equals(rateCharge.getChargeType())){
@@ -106,13 +108,13 @@ public class ChargeAmountCalculator implements AmountCalculator {
             }
         };
         Double roundedQty = Math.ceil(rawQty*2.0)/2.0;
-        QuantityUnit quantityUnit = switch (rateCharge.getUnit()) {
+        QuantityUnit quantityUnit = switch (rateCharge.getChargeUnit()) {
             case PER_HOUR -> QuantityUnit.HOUR;
             case PER_PLAYER_HOUR -> QuantityUnit.PLAYER_HOUR;
         };
 
         Double rateValue = rateCharge.getAmount();
-        RateUnit rateUnit = switch (rateCharge.getUnit()) {
+        RateUnit rateUnit = switch (rateCharge.getChargeUnit()) {
             case PER_HOUR -> RateUnit.PER_HOUR;
             case PER_PLAYER_HOUR -> RateUnit.PER_PLAYER_HOUR;
         };
@@ -125,6 +127,43 @@ public class ChargeAmountCalculator implements AmountCalculator {
                 .rateUnit(rateUnit)
                 .amount(amount)
                 .build();
+    }
+
+    private Boolean isRateChargeApplicable(
+            RateChargeResponse rateCharge,
+            Instant currentInstant,
+            Integer playerCount
+    ) {
+        if (playerCount < rateCharge.getMinPlayers()
+                || playerCount > rateCharge.getMaxPlayers()) {
+            return false;
+        }
+
+        LocalTime startTime = convertStringToLocalTime(rateCharge.getStartTime());
+        LocalTime endTime = convertStringToLocalTime(rateCharge.getEndTime());
+        if (startTime == null || endTime == null) {
+            return true;
+        }
+
+        ZonedDateTime utcDateTime = currentInstant.atZone(ZoneOffset.UTC);
+        LocalTime currentTime = utcDateTime.toLocalTime();
+        DayOfWeek currentDay = utcDateTime.getDayOfWeek();
+
+        Set<DayOfWeek> daysOfWeek = rateCharge.getDaysOfWeek();
+
+        if (daysOfWeek != null
+                && !daysOfWeek.isEmpty()
+                && !daysOfWeek.contains(currentDay)) {
+            return false;
+        }
+
+        if (startTime.isBefore(endTime)) {
+            return !currentTime.isBefore(startTime)
+                    && currentTime.isBefore(endTime);
+        } else {
+            return !currentTime.isBefore(startTime)
+                    || currentTime.isBefore(endTime);
+        }
     }
 
     @lombok.Data

@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class UpdateClubRequest {
     private String clubName;
+    private String clubDescription;
     private Long clubAdminId;
     private ClubAddressDetails clubAddressDetails;
     private OperatingHours operatingHours;

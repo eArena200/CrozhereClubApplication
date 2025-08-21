@@ -13,5 +13,6 @@ import java.util.List;
 @AllArgsConstructor
 public class UpdateRateRequest {
     private String rateName;
+    private String rateDescription;
     private List<UpdateChargeRequest> updateChargeRequests;
 }

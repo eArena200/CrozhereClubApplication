@@ -7,11 +7,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.*;
+import java.util.Set;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChargeResponse {
+public class RateChargeResponse {
     private Long chargeId;
     private Long rateId;
     private ChargeType chargeType;
@@ -21,4 +24,5 @@ public class ChargeResponse {
     private String endTime;
     private Integer minPlayers;
     private Integer maxPlayers;
+    private Set<DayOfWeek> daysOfWeek;
 }

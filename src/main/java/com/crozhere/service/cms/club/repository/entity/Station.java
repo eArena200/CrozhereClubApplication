@@ -18,14 +18,16 @@ public class Station {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "club_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Club club;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rate_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Rate rate;
 
     @Column(name = "station_name", nullable = false)
@@ -47,11 +49,13 @@ public class Station {
     @Column(name = "station_capacity")
     private Integer capacity;
 
-    @Column(name = "is_live", nullable = false)
-    private Boolean isLive;
-
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive;
+    @Builder.Default
+    private Boolean isActive = false;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -63,26 +67,26 @@ public class Station {
     protected void onCreate() {
         this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
-
-        if (this.capacity == null || this.capacity < 1) {
-            this.capacity = 1;
-        }
-
-        if (this.isLive == null) {
-            this.isLive = false;
-        }
-
-        if (this.isActive == null) {
-            this.isActive = true;
-        }
-
-        if(this.stationDescription == null){
-            this.stationDescription = "Specifications";
-        }
+        defaultFill();
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = Instant.now();
+        defaultFill();
+    }
+
+    private void defaultFill(){
+        if (this.capacity == null || this.capacity < 1) {
+            this.capacity = 1;
+        }
+
+        if (this.isActive == null) {
+            this.isActive = false;
+        }
+
+        if (this.isDeleted == null) {
+            this.isDeleted = false;
+        }
     }
 }

@@ -12,4 +12,5 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class UpdateRateCardRequest {
     private String name;
+    private String description;
 }

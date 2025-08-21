@@ -4,9 +4,10 @@ import com.crozhere.service.cms.club.repository.entity.Rate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface RateRepository extends JpaRepository<Rate, Long> {
-    List<Rate> findByRateCardId(Long rateCardId);
+    Set<Rate> findByRateCardId(Long rateCardId);
+    Set<Rate> findByRateCardIdIn(Set<Long> rateCardIds);
 }

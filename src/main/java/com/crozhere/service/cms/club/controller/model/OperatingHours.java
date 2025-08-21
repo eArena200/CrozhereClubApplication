@@ -20,7 +20,7 @@ public class OperatingHours {
     private static final DateTimeFormatter timeFormatter
             = DateTimeFormatter.ofPattern("HH:mm");
 
-    public static String convertLocalTimeToString(LocalTime localTime){
+    public static String convertLocalTimeToString(LocalTime localTime) {
         if(localTime != null){
             return localTime.format(timeFormatter);
         }

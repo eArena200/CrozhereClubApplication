@@ -3,6 +3,7 @@ package com.crozhere.service.cms.booking.repository.dao;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
+import com.crozhere.service.cms.club.controller.model.response.StationResponse;
 import com.crozhere.service.cms.club.repository.entity.Station;
 
 import java.time.Instant;
@@ -26,7 +27,7 @@ public interface BookingIntentDao {
     void deleteById(Long intentId) throws BookingIntentDaoException;
 
     List<BookingIntent> getActiveIntentsForStationsAndForSearchWindow(
-            List<Station> stations, Instant startTime, Instant endTime)
+            List<StationResponse> stations, Instant startTime, Instant endTime)
             throws BookingIntentDaoException;
 
     List<BookingIntent> getExpiredUnconfirmedIntents(Instant beforeTime)

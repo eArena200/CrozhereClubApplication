@@ -16,6 +16,5 @@ public class StationResponse {
     private Integer capacity;
     private Long rateId;
     private String rateName;
-    private Boolean isLive;
     private Boolean isActive;
 }

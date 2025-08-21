@@ -5,7 +5,8 @@ import com.crozhere.service.cms.booking.repository.dao.exception.BookingDAOExcep
 import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.repository.entity.BookingStatus;
 import com.crozhere.service.cms.booking.repository.entity.BookingType;
-import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.controller.model.response.StationResponse;
+import com.crozhere.service.cms.club.repository.StationRepository;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +47,6 @@ public interface BookingDao {
     ) throws BookingDAOException;
 
     List<Booking> getBookingsForStationsAndForSearchWindow(
-            List<Station> stations, Instant startTime, Instant endTime)
+            List<StationResponse> stations, Instant startTime, Instant endTime)
             throws BookingDAOException;
 }

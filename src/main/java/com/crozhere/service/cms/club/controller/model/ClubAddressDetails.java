@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class ClubAddressDetails {
     private String streetAddress;
+    private String area;
     private String city;
     private String state;
     private String pinCode;

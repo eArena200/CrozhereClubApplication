@@ -10,6 +10,7 @@ import com.crozhere.service.cms.booking.repository.entity.Booking;
 import com.crozhere.service.cms.booking.repository.entity.BookingStatus;
 import com.crozhere.service.cms.booking.repository.entity.BookingType;
 import com.crozhere.service.cms.booking.repository.specification.BookingSpecifications;
+import com.crozhere.service.cms.club.controller.model.response.StationResponse;
 import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import lombok.RequiredArgsConstructor;
@@ -176,10 +177,10 @@ public class BookingDaoImpl implements BookingDao {
 
     @Override
     public List<Booking> getBookingsForStationsAndForSearchWindow(
-            List<Station> stations, Instant startTime, Instant endTime)
+            List<StationResponse> stations, Instant startTime, Instant endTime)
             throws BookingDAOException {
         try {
-            List<Long> stationIds = stations.stream().map(Station::getId).toList();
+            List<Long> stationIds = stations.stream().map(StationResponse::getStationId).toList();
             return bookingRepository.findBookingsForStationForSearchWindow(stationIds, startTime, endTime);
         } catch (Exception e) {
             log.error("Failed to fetch overlapping bookings", e);

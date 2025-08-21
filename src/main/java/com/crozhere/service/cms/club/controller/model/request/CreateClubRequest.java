@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CreateClubRequest {
     private String clubName;
+    private String clubDescription;
     private ClubAddressDetails clubAddressDetails;
     private OperatingHours operatingHours;
     private String primaryContact;

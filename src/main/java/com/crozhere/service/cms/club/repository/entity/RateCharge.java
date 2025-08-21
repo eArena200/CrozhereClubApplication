@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
 
 @Data
 @Builder
@@ -23,6 +21,7 @@ public class RateCharge {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rate_id", nullable = false)
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Rate rate;
 
     @Enumerated(EnumType.STRING)
@@ -30,23 +29,17 @@ public class RateCharge {
     private ChargeType chargeType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "unit", nullable = false)
+    @Column(name = "charge_unit", nullable = false)
     private ChargeUnit unit;
 
-    @Column(name = "amount", nullable = false)
+    @Column(name = "charge_name", nullable = false)
+    private String name;
+
+    @Column(name = "charge_amount", nullable = false)
     private Double amount;
 
-    @Column(name = "start_time")
-    private LocalTime startTime;
-
-    @Column(name = "end_time")
-    private LocalTime endTime;
-
-    @Column(name = "min_players")
-    private Integer minPlayers;
-
-    @Column(name = "max_players")
-    private Integer maxPlayers;
+    @Embedded
+    private RateChargeConstraint rateChargeConstraint;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -63,24 +56,6 @@ public class RateCharge {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = Instant.now();
-    }
-
-    public Boolean isRateChargeApplicable(Instant currentInstant, Integer playerCount) {
-        if (playerCount < this.minPlayers || playerCount > this.maxPlayers) {
-            return false;
-        }
-
-        if (startTime == null || endTime == null) {
-            return true;
-        }
-
-        LocalTime currentTime = LocalTime.ofInstant(currentInstant, ZoneOffset.UTC);
-
-        if (startTime.isBefore(endTime)) {
-            return !currentTime.isBefore(startTime) && currentTime.isBefore(endTime);
-        } else {
-            return !currentTime.isBefore(startTime) || currentTime.isBefore(endTime);
-        }
     }
 
 }

@@ -5,7 +5,7 @@ import com.crozhere.service.cms.booking.repository.dao.BookingIntentDao;
 import com.crozhere.service.cms.booking.repository.dao.exception.BookingIntentDaoException;
 import com.crozhere.service.cms.booking.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.booking.repository.entity.BookingIntent;
-import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.controller.model.response.StationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -86,10 +86,10 @@ public class BookingIntentDaoImpl implements BookingIntentDao {
 
     @Override
     public List<BookingIntent> getActiveIntentsForStationsAndForSearchWindow(
-            List<Station> stations, Instant startTime, Instant endTime
+            List<StationResponse> stations, Instant startTime, Instant endTime
     ) throws BookingIntentDaoException {
         try {
-            List<Long> stationIds = stations.stream().map(Station::getId).toList();
+            List<Long> stationIds = stations.stream().map(StationResponse::getStationId).toList();
             return repository.findActiveOverlappingIntents(stationIds, startTime, endTime, Instant.now());
         } catch (Exception e) {
             log.error("Error fetching active booking intents", e);

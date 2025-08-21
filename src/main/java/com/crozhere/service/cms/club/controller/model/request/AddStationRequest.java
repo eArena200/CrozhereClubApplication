@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 public class AddStationRequest {
     private Long clubId;
     private String stationName;
+    private String stationDescription;
     private StationType stationType;
     private OperatingHours operatingHours;
     private Integer capacity;

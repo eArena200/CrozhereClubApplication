@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class RateCardResponse {
     private Long rateCardId;
     private Long clubId;
-    private String name;
+    private String rateCardName;
+    private String rateCardDescription;
 }

@@ -1,13 +1,8 @@
 package com.crozhere.service.cms.club.controller;
 
-import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
-import com.crozhere.service.cms.club.controller.model.GeoLocation;
-import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.request.*;
 import com.crozhere.service.cms.club.controller.model.response.*;
-import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.service.ClubService;
-import com.crozhere.service.cms.club.service.RateService;
 import com.crozhere.service.cms.common.security.AuthUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,8 +22,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertLocalTimeToString;
-
 @Slf4j
 @RestController
 @RequestMapping(
@@ -39,15 +32,12 @@ import static com.crozhere.service.cms.club.controller.model.OperatingHours.conv
 public class ClubManagementController {
 
     private final ClubService clubService;
-    private final RateService rateService;
 
     @Autowired
     public ClubManagementController(
-            ClubService clubService,
-            RateService rateService
+            ClubService clubService
     ){
         this.clubService = clubService;
-        this.rateService = rateService;
     }
 
     // CLUB APIs
@@ -80,8 +70,8 @@ public class ClubManagementController {
             @RequestBody CreateClubRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Club club = clubService.createClub(clubAdminId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(getClubResponse(club));
+        ClubResponse response = clubService.createClub(clubAdminId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
 
@@ -90,7 +80,7 @@ public class ClubManagementController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Club updated",
                     content = @Content(
-                            schema = @Schema(implementation = ClubDetailsResponse.class))
+                            schema = @Schema(implementation = ClubResponse.class))
             ),
             @ApiResponse(responseCode = "404", description = "Club not found",
                     content = @Content(
@@ -110,9 +100,9 @@ public class ClubManagementController {
             value = "/updateClub/{clubId}",
             consumes = "application/json"
     )
-    public ResponseEntity<ClubDetailsResponse> updateClub(
+    public ResponseEntity<ClubResponse> updateClub(
             @Parameter(
-                    name = "ClubId",
+                    name = "clubId",
                     description = "Id of club to be updated",
                     required = true
             )
@@ -122,8 +112,9 @@ public class ClubManagementController {
             @RequestBody UpdateClubRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Club club = clubService.updateClub(clubAdminId, clubId, request);
-        return ResponseEntity.ok(getClubDetailsResponse(club));
+        ClubResponse response =
+                clubService.updateClubDetails(clubAdminId, clubId, request);
+        return ResponseEntity.ok(response);
     }
 
     @SecurityRequirement(name = "bearerAuth")
@@ -149,11 +140,8 @@ public class ClubManagementController {
     @GetMapping(value = "/getClubsForAdmin")
     public ResponseEntity<List<ClubResponse>> getClubsForAdminId(){
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        List<Club> clubs = clubService.getClubsByAdmin(clubAdminId);
-        List<ClubResponse> clubsResponse = clubs.stream()
-                .map(this::getClubResponse)
-                .toList();
-        return ResponseEntity.status(HttpStatus.OK).body(clubsResponse);
+        List<ClubResponse> response = clubService.getClubsByAdminId(clubAdminId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     // STATION APIs
@@ -191,10 +179,10 @@ public class ClubManagementController {
             @RequestBody AddStationRequest addStationRequest
     ){
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Station station = clubService.addStation(clubAdminId, addStationRequest);
+        StationResponse response = clubService.addStation(clubAdminId, addStationRequest);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(getStationResponse(station));
+                .body(response);
     }
 
     @SecurityRequirement(name = "bearerAuth")
@@ -236,7 +224,7 @@ public class ClubManagementController {
     )
     public ResponseEntity<StationResponse> updateStation(
             @Parameter(
-                    name = "StationId",
+                    name = "stationId",
                     description = "Id of station to be updated",
                     required = true
             )
@@ -246,11 +234,11 @@ public class ClubManagementController {
             @RequestBody UpdateStationRequest updateStationRequest
     ){
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Station station =
-                clubService.updateStation(clubAdminId, stationId, updateStationRequest);
+        StationResponse response =
+                clubService.updateStationDetails(clubAdminId, stationId, updateStationRequest);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getStationResponse(station));
+                .body(response);
     }
 
 
@@ -288,18 +276,18 @@ public class ClubManagementController {
     )
     public ResponseEntity<StationResponse> toggleStationStatus(
             @Parameter(
-                    name = "StationId",
+                    name = "stationId",
                     description = "Id of the station to be toggled",
                     required = true
             )
             @PathVariable(value = "stationId") Long stationId
     ){
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Station station =
+        StationResponse response =
                 clubService.toggleStationStatus(clubAdminId, stationId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getStationResponse(station));
+                .body(response);
     }
 
     @SecurityRequirement(name = "bearerAuth")
@@ -327,14 +315,14 @@ public class ClubManagementController {
     @DeleteMapping(value = "deleteStation/{stationId}")
     public ResponseEntity<Void> deleteStation(
             @Parameter(
-                    name = "StationId",
+                    name = "stationId",
                     description = "ID of the station to delete",
                     required = true
             )
             @PathVariable("stationId") Long stationId
     ){
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        clubService.deleteStation(clubAdminId, stationId);
+        clubService.softDeleteStation(clubAdminId, stationId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
@@ -383,11 +371,11 @@ public class ClubManagementController {
             @RequestBody CreateRateCardRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        RateCard rateCard =
-                rateService.createRateCard(clubAdminId, clubId, request);
+        RateCardResponse response =
+                clubService.createRateCard(clubAdminId, clubId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(getRateCardResponse(rateCard));
+                .body(response);
     }
 
 
@@ -421,7 +409,7 @@ public class ClubManagementController {
     })
     @PreAuthorize("hasRole('CLUB_ADMIN')")
     @PutMapping("/updateRateCard/{rateCardId}")
-    public ResponseEntity<RateCardDetailsResponse> updateRateCard(
+    public ResponseEntity<RateCardResponse> updateRateCard(
             @Parameter(
                     name = "rateCardId",
                     description = "Id of the rate-card to be updated",
@@ -433,11 +421,11 @@ public class ClubManagementController {
             @RequestBody UpdateRateCardRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        RateCard rateCard =
-                rateService.updateRateCard(clubAdminId, rateCardId, request);
+        RateCardResponse response =
+                clubService.updateRateCardDetails(clubAdminId, rateCardId, request);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getRateCardDetailsResponse(rateCard));
+                .body(response);
     }
 
     @Operation(
@@ -470,7 +458,7 @@ public class ClubManagementController {
             @PathVariable(value = "rateCardId") Long rateCardId
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        rateService.deleteRateCard(clubAdminId, rateCardId);
+        clubService.softDeleteRateCard(clubAdminId, rateCardId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
@@ -521,10 +509,10 @@ public class ClubManagementController {
             @RequestBody AddRateRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Rate rate = rateService.addRate(clubAdminId, rateCardId, request);
+        RateResponse response = clubService.addRate(clubAdminId, rateCardId, request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(getRateResponse(rate));
+                .body(response);
     }
 
 
@@ -569,10 +557,10 @@ public class ClubManagementController {
             @RequestBody UpdateRateRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        Rate rate = rateService.updateRate(clubAdminId, rateId, request);
+        RateResponse response = clubService.updateRate(clubAdminId, rateId, request);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getRateResponse(rate));
+                .body(response);
     }
 
 
@@ -607,104 +595,9 @@ public class ClubManagementController {
             @PathVariable(value = "rateId") Long rateId
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
-        rateService.deleteRate(clubAdminId, rateId);
+        clubService.softDeleteRate(clubAdminId, rateId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
-                .build();
-    }
-
-    private ClubResponse getClubResponse(Club club) {
-        return ClubResponse.builder()
-                .clubId(club.getId())
-                .clubName(club.getClubName())
-                .clubAdminId(club.getClubAdminId())
-                .build();
-    }
-
-    private ClubDetailsResponse getClubDetailsResponse(Club club) {
-        return ClubDetailsResponse.builder()
-                .clubId((club.getId()))
-                .clubName(club.getClubName())
-                .clubAddressDetails(ClubAddressDetails.builder()
-                        .streetAddress(club.getClubAddress().getStreet())
-                        .city(club.getClubAddress().getCity())
-                        .state(club.getClubAddress().getState())
-                        .pinCode(club.getClubAddress().getPincode())
-                        .geoLocation(GeoLocation.builder()
-                                .latitude(club.getClubAddress().getLatitude())
-                                .longitude(club.getClubAddress().getLongitude())
-                                .build())
-                        .build())
-                .operatingHours(OperatingHours.builder()
-                        .openTime(convertLocalTimeToString(club.getClubOperatingHours().getOpenTime()))
-                        .closeTime(convertLocalTimeToString(club.getClubOperatingHours().getCloseTime()))
-                        .build())
-                .primaryContact(club.getClubContact().getPrimaryContact())
-                .secondaryContact(club.getClubContact().getSecondaryContact())
-                .build();
-    }
-
-    private StationResponse getStationResponse(Station station) {
-        return StationResponse.builder()
-                .stationId(station.getId())
-                .clubId(station.getClub().getId())
-                .stationName(station.getStationName())
-                .stationType(station.getStationType())
-                .operatingHours(OperatingHours.builder()
-                        .openTime(convertLocalTimeToString(station.getOpenTime()))
-                        .closeTime(convertLocalTimeToString(station.getCloseTime()))
-                        .build())
-                .rateId(station.getRate().getId())
-                .rateName(station.getRate().getName())
-                .capacity(station.getCapacity())
-                .isLive(station.getIsLive())
-                .isActive(station.getIsActive())
-                .build();
-    }
-
-    private RateCardResponse getRateCardResponse(RateCard rateCard) {
-        return RateCardResponse.builder()
-                .rateCardId(rateCard.getId())
-                .clubId(rateCard.getClub().getId())
-                .name(rateCard.getName())
-                .build();
-    }
-
-    private RateCardDetailsResponse getRateCardDetailsResponse(RateCard rateCard) {
-        return RateCardDetailsResponse.builder()
-                .rateCardId(rateCard.getId())
-                .clubId(rateCard.getClub().getId())
-                .name(rateCard.getName())
-                .rateList(rateCard.getRates()
-                        .stream()
-                        .map(this::getRateResponse)
-                        .toList())
-                .build();
-    }
-
-    private RateResponse getRateResponse(Rate rate){
-        return RateResponse.builder()
-                .rateId(rate.getId())
-                .rateCardId(rate.getRateCard().getId())
-                .name(rate.getName())
-                .charges(rate.getRateCharges()
-                        .stream()
-                        .map(this::getChargeResponse)
-                        .toList())
-                .build();
-    }
-
-    private ChargeResponse getChargeResponse(RateCharge rateCharge){
-        return ChargeResponse.builder()
-                .chargeId(rateCharge.getId())
-                .rateId(rateCharge.getRate().getId())
-                .chargeType(rateCharge.getChargeType())
-                .chargeUnit(rateCharge.getUnit())
-                .amount(rateCharge.getAmount())
-                .minPlayers(rateCharge.getMinPlayers())
-                .maxPlayers(rateCharge.getMaxPlayers())
-                .startTime(convertLocalTimeToString(rateCharge.getStartTime()))
-                .endTime(convertLocalTimeToString(rateCharge.getEndTime()))
                 .build();
     }
 }

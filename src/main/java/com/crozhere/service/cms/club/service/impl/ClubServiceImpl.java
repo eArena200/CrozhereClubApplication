@@ -3,15 +3,10 @@ package com.crozhere.service.cms.club.service.impl;
 import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
 import com.crozhere.service.cms.club.controller.model.GeoLocation;
 import com.crozhere.service.cms.club.controller.model.OperatingHours;
-import com.crozhere.service.cms.club.controller.model.request.AddStationRequest;
-import com.crozhere.service.cms.club.controller.model.request.CreateClubRequest;
-import com.crozhere.service.cms.club.controller.model.request.UpdateClubRequest;
-import com.crozhere.service.cms.club.controller.model.request.UpdateStationRequest;
-import com.crozhere.service.cms.club.repository.RateRepository;
-import com.crozhere.service.cms.club.repository.dao.StationDao;
+import com.crozhere.service.cms.club.controller.model.request.*;
+import com.crozhere.service.cms.club.controller.model.response.*;
 import com.crozhere.service.cms.club.repository.dao.exception.ClubDAOException;
 import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
-import com.crozhere.service.cms.club.repository.dao.exception.StationDAOException;
 import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.repository.dao.ClubDao;
 import com.crozhere.service.cms.user.service.ClubAdminService;
@@ -20,12 +15,17 @@ import com.crozhere.service.cms.club.service.exception.*;
 import com.crozhere.service.cms.user.repository.entity.ClubAdmin;
 import com.crozhere.service.cms.user.service.exception.ClubAdminServiceException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertLocalTimeToString;
 import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertStringToLocalTime;
 
 @Slf4j
@@ -33,24 +33,20 @@ import static com.crozhere.service.cms.club.controller.model.OperatingHours.conv
 public class ClubServiceImpl implements ClubService {
 
     private final ClubDao clubDAO;
-    private final StationDao stationDAO;
-    private final RateRepository rateRepository;
-
     private final ClubAdminService clubAdminService;
 
     public ClubServiceImpl(
-            @Qualifier("ClubSqlDao") ClubDao clubDAO,
-            @Qualifier("StationSqlDao") StationDao stationDAO,
-            ClubAdminService clubAdminService,
-            RateRepository rateRepository){
+            ClubDao clubDAO,
+            ClubAdminService clubAdminService
+    ){
         this.clubDAO = clubDAO;
-        this.stationDAO = stationDAO;
         this.clubAdminService = clubAdminService;
-        this.rateRepository = rateRepository;
     }
 
+    // CLUB LEVEL METHODS
     @Override
-    public Club createClub(Long clubAdminId, CreateClubRequest createClubRequest)
+    @Transactional
+    public ClubResponse createClub(Long clubAdminId, CreateClubRequest createClubRequest)
             throws ClubServiceException {
         try {
             ClubAdmin clubAdmin =
@@ -59,8 +55,10 @@ public class ClubServiceImpl implements ClubService {
             Club club = Club.builder()
                     .clubAdminId(clubAdmin.getId())
                     .clubName(createClubRequest.getClubName())
+                    .clubDescription(createClubRequest.getClubDescription())
                     .clubAddress(ClubAddress.builder()
                             .street(createClubRequest.getClubAddressDetails().getStreetAddress())
+                            .area(createClubRequest.getClubAddressDetails().getArea())
                             .city(createClubRequest.getClubAddressDetails().getCity())
                             .state(createClubRequest.getClubAddressDetails().getState())
                             .pincode(createClubRequest.getClubAddressDetails().getPinCode())
@@ -78,8 +76,10 @@ public class ClubServiceImpl implements ClubService {
                             .secondaryContact(createClubRequest.getSecondaryContact())
                             .build())
                     .build();
-            clubDAO.save(club);
-            return club;
+
+            clubDAO.saveClub(club);
+            return buildClubResponse(club);
+
         } catch (ClubAdminServiceException e){
             log.error("Exception while getting clubAdmin for clubAdminId: {}",
                     clubAdminId);
@@ -92,21 +92,11 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public List<Club> getClubsByAdmin(Long clubAdminId)
+    @Transactional
+    public ClubResponse updateClubDetails(Long clubAdminId, Long clubId, UpdateClubRequest updateClubRequest)
             throws ClubServiceException {
         try {
-            return clubDAO.getByAdmin(clubAdminId);
-        } catch (ClubDAOException e){
-            log.error("Exception while getting clubs for clubAdminId: {}", clubAdminId);
-            throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
-        }
-    }
-
-    @Override
-    public Club updateClub(Long clubAdminId, Long clubId, UpdateClubRequest updateClubRequest)
-            throws ClubServiceException {
-        try {
-            Club club = getClubById(clubId);
+            Club club = clubDAO.getClubById(clubId);
 
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club not found with clubId: {}, for clubAdminID: {} for update",
@@ -118,10 +108,17 @@ public class ClubServiceImpl implements ClubService {
                 club.setClubName(updateClubRequest.getClubName());
             }
 
+            if (StringUtils.hasText(updateClubRequest.getClubDescription())) {
+                club.setClubDescription(updateClubRequest.getClubDescription());
+            }
+
             ClubAddressDetails address = updateClubRequest.getClubAddressDetails();
             if (address != null) {
                 if (StringUtils.hasText(address.getStreetAddress())) {
                     club.getClubAddress().setStreet(address.getStreetAddress());
+                }
+                if (StringUtils.hasText(address.getArea())) {
+                    club.getClubAddress().setArea(address.getArea());
                 }
                 if (StringUtils.hasText(address.getCity())) {
                     club.getClubAddress().setCity(address.getCity());
@@ -163,8 +160,8 @@ public class ClubServiceImpl implements ClubService {
                 club.getClubContact().setSecondaryContact(updateClubRequest.getSecondaryContact());
             }
 
-            clubDAO.update(clubId, club);
-            return club;
+            clubDAO.updateClub(clubId, club);
+            return buildClubResponse(club);
 
         } catch (ClubDAOException e) {
             log.error("Exception while updating club for clubId: {}", clubId, e);
@@ -172,24 +169,40 @@ public class ClubServiceImpl implements ClubService {
         }
     }
 
+
     @Override
+    @Transactional
+    public void softDeleteClub(Long clubAdminId, Long clubId)
+            throws ClubServiceException {
+        try {
+            Club club = clubDAO.getClubById(clubId);
+            if(!club.getClubAdminId().equals(clubAdminId)){
+                log.info("Club not found with clubId: {}, for clubAdminID: {} for soft-delete",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
+            clubDAO.softDeleteClub(clubId);
+        } catch (DataNotFoundException e){
+            log.error("Club not found for soft-deletion with clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+        } catch (ClubDAOException e){
+            log.error("Exception while soft-deleting club for clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_CLUB_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
     public void deleteClub(Long clubAdminId, Long clubId)
             throws ClubServiceException {
         try {
-            Club club = getClubById(clubId);
+            Club club = clubDAO.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club not found with clubId: {}, for clubAdminID: {} for delete",
                         clubId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
             }
-            List<Long> stationsIds =
-                    stationDAO.getStationsByClubId(clubId)
-                            .stream()
-                            .map(Station::getId)
-                            .toList();
-
-            stationDAO.deleteAllById(stationsIds);
-            clubDAO.delete(clubId);
+            clubDAO.deleteClub(clubId);
         } catch (ClubDAOException e){
             log.error("Exception while deleting club for clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.DELETE_CLUB_FAILED);
@@ -197,63 +210,93 @@ public class ClubServiceImpl implements ClubService {
     }
 
 
-
     @Override
-    public Club getClubById(Long clubId)
+    public ClubResponse getClubById(Long clubId)
             throws ClubServiceException {
         try {
-            return clubDAO.getById(clubId);
+            Club club = clubDAO.getClubById(clubId);
+            return buildClubResponse(club);
         } catch (DataNotFoundException e) {
-            log.error("club not found for clubId: {}", clubId);
+            log.error("Club not found with clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
-        } catch (ClubDAOException e){
-            log.error("Exception while getting club for clubId: {}", clubId, e);
+        } catch (ClubDAOException e) {
+            log.error("Exception while getting club for clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
         }
     }
 
     @Override
-    public List<Club> getClubsByIds(List<Long> clubIds)
+    public ClubDetailsResponse getDetailedClubById(Long clubId)
+            throws ClubServiceException {
+        try {
+            Club club = clubDAO.getDetailedClubById(clubId);
+            return buildClubDetailedResponse(club);
+        } catch (DataNotFoundException e) {
+            log.error("Club not found with clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+        } catch (ClubDAOException e) {
+            log.error("Exception while getting club for clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
+        }
+    }
+
+    @Override
+    public List<ClubResponse> getClubsByAdminId(Long clubAdminId)
+            throws ClubServiceException {
+        try {
+            List<Club> clubs = clubDAO.getClubsByAdminId(clubAdminId);
+            return clubs.stream()
+                    .map(this::buildClubResponse)
+                    .toList();
+        } catch (ClubDAOException e){
+            log.error("Exception while getting clubs for clubAdminId: {}", clubAdminId);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_CLUB_FAILED);
+        }
+    }
+
+    @Override
+    public List<ClubResponse> getClubsByIds(List<Long> clubIds)
             throws ClubServiceException {
         try {
             if (clubIds == null || clubIds.isEmpty()) {
                 return List.of();
             }
-            return clubDAO.getClubsByIds(clubIds);
+
+            return clubDAO.getClubsByIds(clubIds).stream()
+                    .map(this::buildClubResponse)
+                    .toList();
         } catch (ClubDAOException e) {
             log.error("Exception while getting clubs for clubIds: {}", clubIds, e);
             throw new ClubServiceException(ClubServiceExceptionType.GET_CLUBS_FAILED);
         }
     }
 
+    // STATION LEVEL METHODS
     @Override
-    public List<Club> getAllClubs()
-            throws ClubServiceException {
-        return List.of();
-    }
-
-
-
-    @Override
-    public Station addStation(Long clubAdminId, AddStationRequest addStationRequest)
+    @Transactional
+    public StationResponse addStation(Long clubAdminId, AddStationRequest addStationRequest)
             throws ClubServiceException {
         try {
-            Club club = getClubById(addStationRequest.getClubId());
+            Long clubId = addStationRequest.getClubId();
+            Club club = clubDAO.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
-                log.info("Club not found with clubId: {}, for clubAdminID: {} to update",
-                        addStationRequest.getClubId(), clubAdminId);
+                log.info("Club not found with clubId: {}, for clubAdminId: {} to update",
+                        clubId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
             }
-            Rate rate = rateRepository
-                    .findById(addStationRequest.getRateId())
-                    .orElseThrow(() -> {
-                        log.info("Rate not found with Id: {}", addStationRequest.getRateId());
-                        return new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
-                    });
+
+            Long rateId = addStationRequest.getRateId();
+            Rate rate = clubDAO.getRateById(rateId);
+            if(!rate.getRateCard().getClub().getId().equals(clubAdminId)){
+                log.info("Rate not found with rateId: {}, for clubAdminId: {} to update",
+                        rateId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+            }
 
             Station station = Station.builder()
                     .club(club)
                     .stationName(addStationRequest.getStationName())
+                    .stationDescription(addStationRequest.getStationDescription())
                     .stationType(addStationRequest.getStationType())
                     .openTime(convertStringToLocalTime(
                             addStationRequest.getOperatingHours().getOpenTime()))
@@ -261,31 +304,34 @@ public class ClubServiceImpl implements ClubService {
                             addStationRequest.getOperatingHours().getCloseTime()))
                     .rate(rate)
                     .capacity(addStationRequest.getCapacity())
-                    .isActive(true)
-                    .isLive(false)
                     .build();
 
-            stationDAO.save(station);
-            return station;
-        } catch (RateCardServiceException e) {
-            log.error("Exception while getting rate for rateId for new addition: {}",
-                    addStationRequest.getRateId());
+            club.getStations().add(station);
+            clubDAO.updateClub(club.getId(), club);
+
+            return buildStationResponse(station);
+        } catch (DataNotFoundException e) {
+            log.error("Required data not found for station creation, {}", e.getMessage());
+            throw new ClubServiceException(ClubServiceExceptionType.ADD_STATION_FAILED);
+        } catch (ClubServiceException e) {
+            log.error("Exception while getting club for station");
             throw e;
-        } catch (StationDAOException e) {
-            log.error("Exception while saving station for clubId: {}",
-                    addStationRequest.getClubId());
+        } catch (ClubDAOException e) {
+            log.error("Exception while adding station for clubId: {}, Error: {}",
+                    addStationRequest.getClubId(), e.getMessage());
             throw new ClubServiceException(ClubServiceExceptionType.ADD_STATION_FAILED);
         }
     }
 
     @Override
-    public Station updateStation(
+    @Transactional
+    public StationResponse updateStationDetails(
             Long clubAdminId,
             Long stationId,
             UpdateStationRequest updateStationRequest
     ) throws ClubServiceException {
         try {
-            Station station = getStationById(stationId);
+            Station station = clubDAO.getStationById(stationId);
             if(!station.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for update",
                         stationId, clubAdminId);
@@ -294,6 +340,10 @@ public class ClubServiceImpl implements ClubService {
 
             if(StringUtils.hasText(updateStationRequest.getStationName())){
                 station.setStationName(updateStationRequest.getStationName());
+            }
+
+            if(StringUtils.hasText(updateStationRequest.getStationDescription())){
+                station.setStationDescription(updateStationRequest.getStationDescription());
             }
 
             OperatingHours operatingHours = updateStationRequest.getOperatingHours();
@@ -312,113 +362,690 @@ public class ClubServiceImpl implements ClubService {
             }
 
             if( updateStationRequest.getRateId() != null) {
-                Rate rate = rateRepository
-                        .findById(updateStationRequest.getRateId())
-                        .orElseThrow(() -> {
-                            log.info("Rate not found with Id for update: {}", updateStationRequest.getRateId());
-                            return new RateCardServiceException(RateCardServiceExceptionType.RATE_NOT_FOUND);
-                        });
+                Rate rate = clubDAO.getRateById(updateStationRequest.getRateId());
                 station.setRate(rate);
             }
 
-            stationDAO.update(stationId, station);
-            return station;
-        } catch (RateCardServiceException e){
-            log.error("Exception while getting rate for rateId for update: {}", updateStationRequest.getRateId());
+            clubDAO.updateStation(stationId, station);
+            return buildStationResponse(station);
+        } catch (DataNotFoundException e){
+            log.error("Required data not found for station update, {}", e.getMessage());
             throw new ClubServiceException(ClubServiceExceptionType.UPDATE_STATION_FAILED);
-        } catch (StationDAOException e){
+        } catch (ClubServiceException e){
+            log.error("Exception while updating station: {}", stationId);
+            throw e;
+        } catch (ClubDAOException e){
             log.error("Exception while updating station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.UPDATE_STATION_FAILED);
         }
     }
 
     @Override
+    @Transactional
+    public StationResponse toggleStationStatus(Long clubAdminId, Long stationId)
+            throws ClubServiceException {
+        try {
+            Station station = clubDAO.getStationById(stationId);
+            if(!station.getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Station not found with stationId: {}, for clubAdminID: {} for toggle",
+                        stationId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+            }
+            Boolean currentStatus = station.getIsActive();
+            station.setIsActive(!currentStatus);
+            clubDAO.updateStation(stationId, station);
+            return buildStationResponse(station);
+        } catch (DataNotFoundException e){
+            log.error("Station not found for toggle with stationId: {}", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+        } catch (ClubDAOException e){
+            log.error("Exception while toggling station for stationId: {}", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.TOGGLE_STATION_STATUS_FAILED);
+        }
+    }
+
+
+    @Override
+    @Transactional
+    public void softDeleteStation(Long clubAdminId, Long stationId)
+            throws ClubServiceException {
+        try {
+            Station station = clubDAO.getStationById(stationId);
+            if(!station.getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Station not found with stationId: {}, for clubAdminID: {} for soft-delete",
+                        stationId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
+            }
+            clubDAO.softDeleteStation(stationId);
+        } catch (DataNotFoundException e){
+            log.error("Station not found with stationId: {} for soft-delete", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_STATION_FAILED, e);
+        } catch (ClubDAOException e){
+            log.error("Exception while soft-deleting station for stationId: {}", stationId);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_STATION_FAILED, e);
+        }
+    }
+
+    @Override
+    @Transactional
     public void deleteStation(Long clubAdminId, Long stationId)
             throws ClubServiceException {
         try {
-            Station station = getStationById(stationId);
+            Station station = clubDAO.getStationById(stationId);
             if(!station.getClub().getClubAdminId().equals(clubAdminId)){
                 log.info("Station not found with stationId: {}, for clubAdminID: {} for delete",
                         stationId, clubAdminId);
                 throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
             }
-            station.setIsActive(false);
-            stationDAO.save(station);
-        } catch (StationDAOException e){
+            clubDAO.deleteStation(stationId);
+        } catch (ClubDAOException e){
             log.error("Exception while deleting station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.DELETE_STATION_FAILED, e);
         }
     }
 
     @Override
-    public Station toggleStationStatus(Long clubAdminId, Long stationId)
+    public StationResponse getStationById(Long stationId)
             throws ClubServiceException {
         try {
-            Station station = stationDAO.getById(stationId);
-            if(!station.getClub().getClubAdminId().equals(clubAdminId)){
-                log.info("Station not found with stationId: {}, for clubAdminID: {} for toggle",
-                        stationId, clubAdminId);
-                throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
-            }
-            station.setIsLive(!station.getIsLive());
-            stationDAO.save(station);
-            return station;
-        } catch (StationDAOException e){
-            log.error("Exception while toggling station for stationId: {}", stationId);
-            throw new ClubServiceException(ClubServiceExceptionType.TOGGLE_STATION_STATUS);
-        }
-    }
-
-
-
-    @Override
-    public Station getStationById(Long stationId) throws ClubServiceException {
-        try {
-            return stationDAO.getById(stationId);
+            return buildStationResponse(clubDAO.getStationById(stationId));
         } catch (DataNotFoundException e){
             log.error("station not found for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.STATION_NOT_FOUND);
-        } catch (StationDAOException e){
+        } catch (ClubDAOException e){
             log.error("Exception while getting station for stationId: {}", stationId);
             throw new ClubServiceException(ClubServiceExceptionType.GET_STATION_FAILED);
         }
     }
 
     @Override
-    public List<Station> getStationsByClubId(Long clubId) throws ClubServiceException {
+    public List<StationResponse> getStationsByIds(List<Long> stationIds)
+            throws ClubServiceException {
         try {
-            return stationDAO.getStationsByClubId(clubId);
-        } catch (StationDAOException e){
+            return buildStationsResponse(clubDAO.getStationsByIds(stationIds));
+        } catch (ClubDAOException e){
+            log.error("Exception while getting stations for stationIds: {}", stationIds);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_STATION_FAILED);
+        }
+    }
+
+    @Override
+    public List<StationResponse> getStationsByClubId(Long clubId)
+            throws ClubServiceException {
+        try {
+            return buildStationsResponse(clubDAO.getStationsByClubId(clubId));
+        } catch (ClubDAOException e){
             log.error("Exception while getting stations for clubId: {}", clubId);
             throw new ClubServiceException(ClubServiceExceptionType.GET_STATIONS_BY_CLUB_FAILED);
         }
     }
 
     @Override
-    public List<Station> getStationsByClubIds(List<Long> clubIds)
+    public List<StationResponse> getStationsByClubIds(List<Long> clubIds)
             throws ClubServiceException {
         try {
             if (clubIds == null || clubIds.isEmpty()) {
                 return List.of();
             }
-            return stationDAO.getStationsByClubIds(clubIds);
-        } catch (StationDAOException e) {
+            return buildStationsResponse(clubDAO.getStationsByClubIds(clubIds));
+        } catch (ClubDAOException e) {
             log.error("Exception while getting stations for clubIds: {}", clubIds, e);
             throw new ClubServiceException(ClubServiceExceptionType.GET_STATIONS_BY_CLUBS_FAILED);
         }
     }
 
     @Override
-    public List<Station> getStationsByClubIdAndType(Long clubId, StationType stationType)
+    public List<StationResponse> getStationsByClubIdAndType(Long clubId, StationType stationType)
+            throws ClubServiceException {
+        return getStationsByClubId(clubId).stream()
+                .filter(station ->
+                        station.getStationType().equals(stationType))
+                .toList();
+    }
+
+    // RATE_CARD LEVEL METHODS
+    @Override
+    @Transactional
+    public RateCardResponse createRateCard(Long clubAdminId, Long clubId, CreateRateCardRequest request)
             throws ClubServiceException {
         try {
-            return getStationsByClubId(clubId).stream()
-                    .filter(station ->
-                            station.getStationType().equals(stationType))
-                    .toList();
-        } catch (Exception e){
-            log.error("Exception while getting stations for clubId {} and type {}", clubId, stationType);
-            throw new ClubServiceException(ClubServiceExceptionType.GET_STATIONS_BY_TYPE_FAILED);
+            Club club = clubDAO.getClubById(clubId);
+            if(!club.getClubAdminId().equals(clubAdminId)){
+                log.info("Club with clubId: {} Not found for clubAdminId: {}",
+                        clubId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+            }
+            RateCard rateCard =
+                    RateCard.builder()
+                            .club(club)
+                            .name(request.getName())
+                            .description(request.getDescription())
+                            .build();
+
+            club.getRateCards().add(rateCard);
+            clubDAO.updateClub(clubId, club);
+            return buildRateCardResponse(rateCard);
+        } catch (DataNotFoundException e) {
+            log.info("Club not found for clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.CLUB_NOT_FOUND);
+        } catch (ClubServiceException e) {
+            log.error("Exception in club-service while creating rate-card: [{}]", e.getType());
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while creating rate-card: [{}]", e.getMessage());
+            throw new ClubServiceException(ClubServiceExceptionType.CREATE_RATE_CARD_FAILED);
         }
+    }
+
+    @Override
+    @Transactional
+    public RateCardResponse updateRateCardDetails(
+            Long clubAdminId, Long rateCardId, UpdateRateCardRequest request)
+            throws ClubServiceException {
+        try {
+            RateCard rateCard = clubDAO.getRateCardById(rateCardId);
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for update",
+                        rateCard, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
+
+            if(StringUtils.hasText(request.getName())){
+                rateCard.setName(request.getName());
+            }
+
+            if(StringUtils.hasText(request.getDescription())){
+                rateCard.setDescription(request.getDescription());
+            }
+
+            clubDAO.updateRateCard(rateCardId, rateCard);
+            return buildRateCardResponse(rateCard);
+        } catch (DataNotFoundException e) {
+            log.error("Rate card not found for update with id: {}", rateCardId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+        } catch (ClubServiceException e) {
+            log.error("Exception while updating rate-card: [{}]", e.getType());
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while updating rate-card {}, Error: [{}]", rateCardId, e.getMessage());
+            throw new ClubServiceException(ClubServiceExceptionType.UPDATE_RATE_CARD_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteRateCard(Long clubAdminId, Long rateCardId)
+            throws ClubServiceException {
+        try {
+            RateCard rateCard = clubDAO.getRateCardById(rateCardId);
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for soft-delete",
+                        rateCard, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
+
+            clubDAO.softDeleteRateCard(rateCardId);
+        } catch (DataNotFoundException e) {
+            log.error("Rate_card not found with id for soft-delete: {}", rateCardId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+        } catch (ClubDAOException e) {
+            log.error("Exception while deleting rate-card {}, Error: [{}]",
+                    rateCardId, e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_RATE_CARD_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteRateCard(Long clubAdminId, Long rateCardId)
+            throws ClubServiceException {
+        try {
+            RateCard rateCard = clubDAO.getRateCardById(rateCardId);
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for delete",
+                        rateCard, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
+
+            clubDAO.deleteRateCard(rateCardId);
+        } catch (DataNotFoundException e) {
+            log.error("Rate_card not found with id: {}", rateCardId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+        } catch (ClubServiceException e) {
+            log.error("Exception in getting rateCard {} for delete, Error: [{}]",
+                    rateCardId, e.getType());
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while deleting rate-card {}, Error: [{}]",
+                    rateCardId, e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_RATE_CARD_FAILED);
+        }
+    }
+
+    @Override
+    public RateCardDetailsResponse getRateCardDetailsById(Long rateCardId) {
+        try {
+            return buildRateCardDetailedResponse(clubDAO.getDetailedRateCardById(rateCardId));
+        } catch (DataNotFoundException e){
+            log.error("Rate_card not found with Id: {}", rateCardId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+        } catch (Exception e){
+            log.error("Exception while getting rate-card with Id: {} ", rateCardId, e);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_RATE_CARD_FAILED);
+        }
+    }
+
+    @Override
+    public List<RateCardResponse> getRateCardsForClubId(Long clubId)
+            throws ClubServiceException {
+        try {
+            return clubDAO.getRateCardsByClubId(clubId).stream()
+                    .map(this::buildRateCardResponse)
+                    .toList();
+        } catch (Exception e) {
+            log.error("Exception while getting rate-cards for clubId: {}", clubId);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_RATE_CARD_FAILED);
+        }
+    }
+
+
+    // RATE LEVEL METHODS
+    @Override
+    @Transactional
+    public RateResponse addRate(Long clubAdminId, Long rateCardId, AddRateRequest request)
+            throws ClubServiceException {
+        try {
+            RateCard rateCard = clubDAO.getRateCardById(rateCardId);
+            if(!rateCard.getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate-card with rateCardId: {} Not found for clubAdminId: {} for addRate",
+                        rateCard, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+            }
+            Rate rate = Rate.builder()
+                    .rateCard(rateCard)
+                    .name(request.getRateName())
+                    .description(request.getDescription())
+                    .build();
+
+            List<RateCharge> rateCharges = request.getCreateChargeRequests().stream()
+                    .map(c -> RateCharge.builder()
+                            .rate(rate)
+                            .chargeType(c.getChargeType())
+                            .name(c.getChargeName())
+                            .unit(c.getChargeUnit())
+                            .amount(c.getAmount())
+                            .rateChargeConstraint(
+                                    RateChargeConstraint.builder()
+                                            .startTime(convertStringToLocalTime(c.getStartTime()))
+                                            .endTime(convertStringToLocalTime(c.getEndTime()))
+                                            .minPlayers(c.getMinPlayers())
+                                            .maxPlayers(c.getMaxPlayers())
+                                            .applicableDays(c.getDayOfWeeks())
+                                            .build())
+                            .build())
+                    .toList();
+
+            rate.getRateCharges().addAll(rateCharges);
+            rateCard.getRates().add(rate);
+
+            clubDAO.updateRateCard(rateCardId, rateCard);
+            return buildRateResponse(rate);
+        } catch (DataNotFoundException e) {
+            log.info("RateCard not found with Id: {}", rateCardId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_CARD_NOT_FOUND);
+        } catch (ClubServiceException e) {
+            log.info("Exception while getting rate-card for rate addition, Error: [{}]", e.getType());
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while adding rate, Error: {}", e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.ADD_RATE_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public RateResponse updateRate(Long clubAdminId, Long rateId, UpdateRateRequest request)
+            throws ClubServiceException {
+        try {
+            Rate rate = clubDAO.getRateById(rateId);
+            if(!rate.getRateCard().getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate with rateId: {} Not found for clubAdminId: {} for update",
+                        rateId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+            }
+
+            if(StringUtils.hasText(request.getRateName())) {
+                rate.setName(request.getRateName());
+            }
+            if(StringUtils.hasText(request.getRateDescription())) {
+                rate.setDescription(request.getRateDescription());
+            }
+
+            Map<Long, RateCharge> existingChargesMap = rate.getRateCharges().stream()
+                    .collect(Collectors.toMap(RateCharge::getId, Function.identity()));
+
+            List<RateCharge> updatedRateCharges = new ArrayList<>();
+
+            for (UpdateChargeRequest chargeReq : request.getUpdateChargeRequests()) {
+                if (chargeReq.getChargeId() != null) {
+                    RateCharge existingRateCharge = existingChargesMap.get(chargeReq.getChargeId());
+                    if (existingRateCharge != null) {
+                        existingRateCharge.setChargeType(chargeReq.getChargeType());
+                        existingRateCharge.setName(chargeReq.getChargeName());
+                        existingRateCharge.setName(chargeReq.getChargeName());
+                        existingRateCharge.setUnit(chargeReq.getChargeUnit());
+                        existingRateCharge.setAmount(chargeReq.getAmount());
+                        existingRateCharge.getRateChargeConstraint()
+                                .setStartTime(convertStringToLocalTime(chargeReq.getStartTime()));
+                        existingRateCharge.getRateChargeConstraint()
+                                .setEndTime(convertStringToLocalTime(chargeReq.getEndTime()));
+                        existingRateCharge.getRateChargeConstraint()
+                                .setMinPlayers(chargeReq.getMinPlayers());
+                        existingRateCharge.getRateChargeConstraint()
+                                .setMaxPlayers(chargeReq.getMaxPlayers());
+                        existingRateCharge.getRateChargeConstraint()
+                                .setApplicableDays(chargeReq.getDayOfWeeks());
+                        updatedRateCharges.add(existingRateCharge);
+                        existingChargesMap.remove(chargeReq.getChargeId());
+                    }
+                } else {
+                    RateCharge newRateCharge = RateCharge.builder()
+                            .rate(rate)
+                            .chargeType(chargeReq.getChargeType())
+                            .name(chargeReq.getChargeName())
+                            .unit(chargeReq.getChargeUnit())
+                            .amount(chargeReq.getAmount())
+                            .rateChargeConstraint(
+                                    RateChargeConstraint.builder()
+                                            .startTime(convertStringToLocalTime(chargeReq.getStartTime()))
+                                            .endTime(convertStringToLocalTime(chargeReq.getEndTime()))
+                                            .minPlayers(chargeReq.getMinPlayers())
+                                            .maxPlayers(chargeReq.getMaxPlayers())
+                                            .applicableDays(chargeReq.getDayOfWeeks())
+                                            .build())
+                            .build();
+                    updatedRateCharges.add(newRateCharge);
+                }
+            }
+
+
+
+            log.info("Before:");
+            for(RateCharge rc: rate.getRateCharges()){
+                log.info(rc.toString());
+            }
+
+            rate.getRateCharges().clear();
+            rate.getRateCharges().addAll(existingChargesMap.values());
+            for (RateCharge rateCharge : updatedRateCharges) {
+                rateCharge.setRate(rate);
+                rate.getRateCharges().add(rateCharge);
+            }
+            log.info("After:");
+            for(RateCharge rc: rate.getRateCharges()){
+                log.info(rc.toString());
+            }
+            clubDAO.updateRate(rateId, rate);
+            return buildRateResponse(rate);
+        } catch (DataNotFoundException e) {
+            log.error("Rate not found for update with id: {}", rateId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+        } catch (ClubServiceException e) {
+            log.error("Exception while getting rate with rateId {} for update, Error:[{}] ",
+                    rateId, e.getType(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while updating rate with rateId {}, Error: [{}]",
+                    rateId, e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.UPDATE_RATE_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void softDeleteRate(Long clubAdminId, Long rateId)
+            throws ClubServiceException {
+        try {
+            Rate rate = clubDAO.getRateById(rateId);
+            if(rate.getRateCard().getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate with rateId: {} Not found for clubAdminId: {} for soft-delete",
+                        rateId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+            }
+
+            clubDAO.softDeleteRate(rateId);
+        } catch (DataNotFoundException e) {
+            log.error("Rate not found for soft-delete with id: {}", rateId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+        } catch (ClubDAOException e) {
+            log.error("Exception while deleting rate {}, Error: [{}]",
+                    rateId, e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_RATE_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteRate(Long clubAdminId, Long rateId)
+            throws ClubServiceException {
+        try {
+            Rate rate = clubDAO.getRateById(rateId);
+            if(rate.getRateCard().getClub().getClubAdminId().equals(clubAdminId)){
+                log.info("Rate with rateId: {} Not found for clubAdminId: {} for delete",
+                        rateId, clubAdminId);
+                throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+            }
+
+            clubDAO.deleteRate(rateId);
+        } catch (ClubDAOException e) {
+            log.error("Exception while deleting rate {}, Error: [{}]",
+                    rateId, e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.DELETE_RATE_FAILED);
+        }
+    }
+
+    @Override
+    public RateResponse getRateById(Long rateId) throws ClubServiceException {
+        try {
+            return buildRateResponse(clubDAO.getRateById(rateId));
+        } catch (DataNotFoundException e){
+            log.error("Rate not found with id: {}", rateId);
+            throw new ClubServiceException(ClubServiceExceptionType.RATE_NOT_FOUND);
+        } catch (Exception e){
+            log.error("Exception while getting rate with rateId {}, Error: [{}]",
+                    rateId, e.getMessage(), e);
+            throw new ClubServiceException(ClubServiceExceptionType.GET_RATE_FAILED);
+        }
+    }
+
+    @Override
+    public List<RateResponse> getRatesForRateCard(Long rateCardId)
+            throws ClubServiceException {
+        try {
+            return clubDAO.getRatesByRateCardId(rateCardId).stream()
+                    .map(this::buildRateResponse)
+                    .toList();
+        } catch (Exception e) {
+            log.error("Exception while getting rates for rateCardId: {}", rateCardId);
+            throw new ClubServiceException(ClubServiceExceptionType.FETCH_RATES_FAILED);
+        }
+    }
+
+    @Override
+    public List<RateResponse> getRatesByRateIds(List<Long> rateIds)
+            throws ClubServiceException {
+        try {
+            return clubDAO.getRatesByRateIds(rateIds).stream()
+                    .map(this::buildRateResponse)
+                    .toList();
+        } catch (Exception e) {
+            log.error("Exception while getting rates");
+            throw new ClubServiceException(ClubServiceExceptionType.FETCH_RATES_FAILED);
+        }
+    }
+
+    private ClubResponse buildClubResponse(Club club){
+        return ClubResponse.builder()
+                .clubId(club.getId())
+                .clubAdminId(club.getClubAdminId())
+                .clubName(club.getClubName())
+                .clubDescription(club.getClubDescription())
+                .clubAddress(
+                        ClubAddressDetails.builder()
+                                .streetAddress(club.getClubAddress().getStreet())
+                                .area(club.getClubAddress().getArea())
+                                .city(club.getClubAddress().getCity())
+                                .state(club.getClubAddress().getState())
+                                .pinCode(club.getClubAddress().getPincode())
+                                .geoLocation(
+                                        GeoLocation.builder()
+                                                .latitude(club.getClubAddress().getLatitude())
+                                                .longitude(club.getClubAddress().getLongitude())
+                                                .build())
+                                .build())
+                .operatingHours(
+                        OperatingHours.builder()
+                                .openTime(convertLocalTimeToString(
+                                        club.getClubOperatingHours().getOpenTime()))
+                                .closeTime(convertLocalTimeToString(
+                                        club.getClubOperatingHours().getCloseTime()))
+                                .build())
+                .primaryContact(club.getClubContact().getPrimaryContact())
+                .secondaryContact(club.getClubContact().getSecondaryContact())
+                .build();
+    }
+
+    private ClubDetailsResponse buildClubDetailedResponse(Club club){
+        return ClubDetailsResponse.builder()
+                .clubId(club.getId())
+                .clubAdminId(club.getClubAdminId())
+                .clubName(club.getClubName())
+                .clubDescription(club.getClubDescription())
+                .clubAddress(
+                        ClubAddressDetails.builder()
+                                .streetAddress(club.getClubAddress().getStreet())
+                                .area(club.getClubAddress().getArea())
+                                .city(club.getClubAddress().getCity())
+                                .state(club.getClubAddress().getState())
+                                .pinCode(club.getClubAddress().getPincode())
+                                .geoLocation(
+                                        GeoLocation.builder()
+                                                .latitude(club.getClubAddress().getLatitude())
+                                                .longitude(club.getClubAddress().getLongitude())
+                                                .build())
+                                .build())
+                .operatingHours(
+                        OperatingHours.builder()
+                                .openTime(convertLocalTimeToString(
+                                        club.getClubOperatingHours().getOpenTime()))
+                                .closeTime(convertLocalTimeToString(
+                                        club.getClubOperatingHours().getCloseTime()))
+                                .build())
+                .primaryContact(club.getClubContact().getPrimaryContact())
+                .secondaryContact(club.getClubContact().getSecondaryContact())
+                .stations(club.getStations().stream()
+                        .map(this::buildStationResponse)
+                        .toList())
+                .rateCards(club.getRateCards().stream()
+                        .map(this::buildRateCardDetailedResponse)
+                        .toList())
+                .build();
+    }
+
+    private StationResponse buildStationResponse(Station station) {
+        return StationResponse.builder()
+                .stationId(station.getId())
+                .clubId(station.getClub().getId())
+                .stationName(station.getStationName())
+                .stationType(station.getStationType())
+                .operatingHours(
+                        OperatingHours.builder()
+                                .openTime(convertLocalTimeToString(station.getOpenTime()))
+                                .closeTime(convertLocalTimeToString(station.getCloseTime()))
+                                .build())
+                .capacity(station.getCapacity())
+                .isActive(station.getIsActive())
+                .rateId(station.getRate().getId())
+                .rateName(station.getRate().getName())
+                .build();
+    }
+
+    private List<StationResponse> buildStationsResponse(List<Station> stations) {
+        Map<Long, Rate> rateMap =
+                clubDAO.getRatesByRateIds(
+                        stations.stream()
+                                .map(station -> station.getRate().getId())
+                                .toList())
+                        .stream()
+                        .collect(Collectors.toMap(Rate::getId, Function.identity()));
+
+        return stations.stream()
+                .map(station ->
+                        StationResponse.builder()
+                                .stationId(station.getId())
+                                .clubId(station.getClub().getId())
+                                .stationName(station.getStationName())
+                                .stationType(station.getStationType())
+                                .operatingHours(
+                                        OperatingHours.builder()
+                                                .openTime(convertLocalTimeToString(station.getOpenTime()))
+                                                .closeTime(convertLocalTimeToString(station.getCloseTime()))
+                                                .build())
+                                .capacity(station.getCapacity())
+                                .isActive(station.getIsActive())
+                                .rateId(station.getRate().getId())
+                                .rateName(rateMap.get(station.getRate().getId()).getName())
+                                .build())
+                .toList();
+    }
+
+    private RateCardResponse buildRateCardResponse(RateCard rateCard) {
+        return RateCardResponse.builder()
+                .rateCardId(rateCard.getId())
+                .clubId(rateCard.getClub().getId())
+                .rateCardName(rateCard.getName())
+                .rateCardDescription(rateCard.getDescription())
+                .build();
+    }
+
+    private RateCardDetailsResponse buildRateCardDetailedResponse(RateCard rateCard) {
+        return RateCardDetailsResponse.builder()
+                .rateCardId(rateCard.getId())
+                .clubId(rateCard.getClub().getId())
+                .rateCardName(rateCard.getName())
+                .rateCardDescription(rateCard.getDescription())
+                .rateList(rateCard.getRates().stream()
+                        .map(this::buildRateResponse)
+                        .toList())
+                .build();
+    }
+
+    private RateResponse buildRateResponse(Rate rate) {
+        return RateResponse.builder()
+                .rateId(rate.getId())
+                .rateCardId(rate.getRateCard().getId())
+                .rateName(rate.getName())
+                .rateDescription(rate.getDescription())
+                .rateCharges(rate.getRateCharges().stream()
+                        .map(this::buildChargeResponse)
+                        .toList())
+                .build();
+    }
+
+    private RateChargeResponse buildChargeResponse(RateCharge rateCharge) {
+        return RateChargeResponse.builder()
+                .chargeId(rateCharge.getId())
+                .rateId(rateCharge.getRate().getId())
+                .chargeType(rateCharge.getChargeType())
+                .chargeUnit(rateCharge.getUnit())
+                .amount(rateCharge.getAmount())
+                .startTime(convertLocalTimeToString(
+                        rateCharge.getRateChargeConstraint().getStartTime()))
+                .endTime(convertLocalTimeToString(
+                        rateCharge.getRateChargeConstraint().getEndTime()))
+                .minPlayers(rateCharge.getRateChargeConstraint().getMinPlayers())
+                .maxPlayers(rateCharge.getRateChargeConstraint().getMaxPlayers())
+                .daysOfWeek(rateCharge.getRateChargeConstraint().getApplicableDays())
+                .build();
     }
 }

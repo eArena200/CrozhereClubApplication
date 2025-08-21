@@ -11,4 +11,5 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class CreateRateCardRequest {
     private String name;
+    private String description;
 }

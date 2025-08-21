@@ -6,10 +6,10 @@ import com.crozhere.service.cms.booking.controller.model.response.BookingIntentS
 import com.crozhere.service.cms.booking.controller.model.response.*;
 import com.crozhere.service.cms.booking.service.engine.BookingAmountEngine;
 import com.crozhere.service.cms.booking.service.engine.BookingContext;
-import com.crozhere.service.cms.club.repository.entity.Club;
-import com.crozhere.service.cms.club.repository.entity.Rate;
+import com.crozhere.service.cms.club.controller.model.response.ClubResponse;
+import com.crozhere.service.cms.club.controller.model.response.RateResponse;
+import com.crozhere.service.cms.club.controller.model.response.StationResponse;
 import com.crozhere.service.cms.club.repository.entity.StationType;
-import com.crozhere.service.cms.club.service.RateService;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
 import com.crozhere.service.cms.user.repository.entity.User;
@@ -29,7 +29,6 @@ import com.crozhere.service.cms.booking.service.exception.InvalidRequestExceptio
 import com.crozhere.service.cms.booking.util.TimeSlot;
 import com.crozhere.service.cms.booking.repository.dao.BookingDao;
 import com.crozhere.service.cms.booking.service.exception.BookingServiceException;
-import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.user.repository.entity.Player;
 import com.crozhere.service.cms.user.service.PlayerService;
@@ -59,7 +58,6 @@ public class BookingServiceImpl implements BookingService {
     private final BookingAmountEngine bookingAmountEngine;
 
     private final ClubService clubService;
-    private final RateService rateService;
     private final PlayerService playerService;
     private final UserService userService;
 
@@ -76,7 +74,7 @@ public class BookingServiceImpl implements BookingService {
                 log.info("Player phone number is required for booking");
                 throw new InvalidRequestException("PhoneNumber is required");
             }
-            Club club = clubService.getClubById(request.getClubId());
+            ClubResponse club = clubService.getClubById(request.getClubId());
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found for clubAdminId: {}",
                         request.getClubId(), clubAdminId);
@@ -94,12 +92,12 @@ public class BookingServiceImpl implements BookingService {
 
             validateBookingTimes(request.getStartTime(), request.getEndTime());
 
-            Map<Long, Station> stationMap =
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubIdAndType(
                             request.getClubId(), request.getStationType())
                             .stream()
                             .collect(Collectors.toMap(
-                                Station::getId,
+                                StationResponse::getStationId,
                                 Function.identity()
                             ));
             validateStations(stationMap , request.getStations());
@@ -116,16 +114,16 @@ public class BookingServiceImpl implements BookingService {
                     .stream()
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
-                            entry -> entry.getValue().getRate().getId() // rateId
+                            entry -> entry.getValue().getRateId()
                     ));
 
-            Map<Long, Rate> rateMap =
-                    rateService.getRatesByRateIds(
+            Map<Long, RateResponse> rateMap =
+                    clubService.getRatesByRateIds(
                             stationToRateMap.values().stream()
                                     .distinct()
                                     .toList())
                     .stream()
-                    .collect(Collectors.toMap(Rate::getId, Function.identity()));
+                    .collect(Collectors.toMap(RateResponse::getRateId, Function.identity()));
 
             List<BookingIntentStation> bookingIntentStations = request.getStations()
                     .stream()
@@ -192,13 +190,13 @@ public class BookingServiceImpl implements BookingService {
 
             validateBookingTimes(request.getStartTime(), request.getEndTime());
 
-            Club club = clubService.getClubById(request.getClubId());
-            Map<Long, Station> stationMap =
+            ClubResponse club = clubService.getClubById(request.getClubId());
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubIdAndType(
                                     request.getClubId(), request.getStationType())
                             .stream()
                             .collect(Collectors.toMap(
-                                    Station::getId,
+                                    StationResponse::getStationId,
                                     Function.identity()
                             ));
 
@@ -216,16 +214,16 @@ public class BookingServiceImpl implements BookingService {
                     .stream()
                     .collect(Collectors.toMap(
                             Map.Entry::getKey,
-                            entry -> entry.getValue().getRate().getId() // rateId
+                            entry -> entry.getValue().getRateId()
                     ));
 
-            Map<Long, Rate> rateMap =
-                    rateService.getRatesByRateIds(
+            Map<Long, RateResponse> rateMap =
+                    clubService.getRatesByRateIds(
                                     stationToRateMap.values().stream()
                                             .distinct()
                                             .toList())
                             .stream()
-                            .collect(Collectors.toMap(Rate::getId, Function.identity()));
+                            .collect(Collectors.toMap(RateResponse::getRateId, Function.identity()));
 
             List<BookingIntentStation> bookingIntentStations = request.getStations()
                     .stream()
@@ -295,7 +293,7 @@ public class BookingServiceImpl implements BookingService {
             Long clubId
     ) throws BookingServiceException {
         try {
-            Club club = clubService.getClubById(clubId);
+            ClubResponse club = clubService.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found for clubAdminId: {} for activeIntents",
                         clubId, clubAdminId);
@@ -356,7 +354,7 @@ public class BookingServiceImpl implements BookingService {
                     .orElseThrow(() -> new BookingServiceException(
                             BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND));
 
-            Club club = clubService.getClubById(clubId);
+            ClubResponse club = clubService.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found for clubAdminId: {} for cancelIntent",
                         clubId, clubAdminId);
@@ -478,12 +476,12 @@ public class BookingServiceImpl implements BookingService {
 
             bookingDAO.save(booking);
             Player player = playerService.getPlayerById(booking.getPlayerId());
-            Club club = clubService.getClubById(booking.getClubId());
-            Map<Long, Station> stationMap =
+            ClubResponse club = clubService.getClubById(booking.getClubId());
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubId(intent.getClubId())
                             .stream()
                             .collect(Collectors.toMap(
-                                    Station::getId,
+                                    StationResponse::getStationId,
                                     Function.identity()));
             return getBookingResponse(booking, intent, player, club, stationMap);
         } catch (DataNotFoundException e){
@@ -519,7 +517,7 @@ public class BookingServiceImpl implements BookingService {
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
 
-            Club club = clubService.getClubById(intent.getClubId());
+            ClubResponse club = clubService.getClubById(intent.getClubId());
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found for " +
                                 "clubAdminId: {} for getBookingByIntent",
@@ -530,11 +528,11 @@ public class BookingServiceImpl implements BookingService {
 
             Booking booking = bookingDAO.getByIntentId(intentId);
             Player player = playerService.getPlayerById(intent.getPlayerId());
-            Map<Long, Station> stationMap =
+            Map<Long, StationResponse> stationMap =
                 clubService.getStationsByClubId(intent.getClubId())
                     .stream()
                     .collect(Collectors.toMap(
-                        Station::getId,
+                        StationResponse::getStationId,
                         Function.identity()));
 
             return getBookingResponse(booking, intent, player, club, stationMap);
@@ -567,12 +565,12 @@ public class BookingServiceImpl implements BookingService {
             }
             Booking booking = bookingDAO.getByIntentId(intentId);
             Player player = playerService.getPlayerById(intent.getPlayerId());
-            Club club = clubService.getClubById(intent.getClubId());
-            Map<Long, Station> stationMap =
+            ClubResponse club = clubService.getClubById(intent.getClubId());
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubId(intent.getClubId())
                             .stream()
                             .collect(Collectors.toMap(
-                                    Station::getId,
+                                    StationResponse::getStationId,
                                     Function.identity()));
 
             return getBookingResponse(booking, intent, player, club, stationMap);
@@ -603,7 +601,7 @@ public class BookingServiceImpl implements BookingService {
                 throw new BookingServiceException(
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
-            Club club = clubService.getClubById(booking.getClubId());
+            ClubResponse club = clubService.getClubById(booking.getClubId());
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found " +
                                 "for clubAdminId: {} for getClubBookingById",
@@ -613,11 +611,11 @@ public class BookingServiceImpl implements BookingService {
             }
 
             Player player = playerService.getPlayerById(booking.getPlayerId());
-            Map<Long, Station> stationMap =
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubId(booking.getClubId())
                             .stream()
                             .collect(Collectors.toMap(
-                                    Station::getId,
+                                    StationResponse::getStationId,
                                     Function.identity()));
             BookingIntent bookingIntent = booking.getBookingIntent();
 
@@ -645,13 +643,13 @@ public class BookingServiceImpl implements BookingService {
                 throw new BookingServiceException(
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
-            Club club = clubService.getClubById(booking.getClubId());
+            ClubResponse club = clubService.getClubById(booking.getClubId());
             Player player = playerService.getPlayerById(booking.getPlayerId());
-            Map<Long, Station> stationMap =
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubId(booking.getClubId())
                             .stream()
                             .collect(Collectors.toMap(
-                                    Station::getId,
+                                    StationResponse::getStationId,
                                     Function.identity()));
             BookingIntent bookingIntent = booking.getBookingIntent();
 
@@ -684,7 +682,7 @@ public class BookingServiceImpl implements BookingService {
                         BookingServiceExceptionType.BOOKING_NOT_FOUND);
             }
 
-            Club club = clubService.getClubById(clubId);
+            ClubResponse club = clubService.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found " +
                                 "for clubAdminId: {} for cancelBooking",
@@ -753,8 +751,8 @@ public class BookingServiceImpl implements BookingService {
                     .distinct()
                     .toList();
 
-            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
-                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+            Map<Long, ClubResponse> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(ClubResponse::getClubId, Function.identity()));
 
             List<BookingIntent> intents = bookings.stream()
                     .map(Booking::getBookingIntent)
@@ -767,8 +765,8 @@ public class BookingServiceImpl implements BookingService {
                     : intents.stream()
                     .collect(Collectors.toMap(BookingIntent::getId, Function.identity()));
 
-            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
-                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+            Map<Long, StationResponse> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(StationResponse::getStationId, Function.identity()));
 
             return bookings.stream()
                     .map(b -> getBookingResponse(
@@ -795,7 +793,7 @@ public class BookingServiceImpl implements BookingService {
             Pageable pageable
     ) throws BookingServiceException {
         try {
-            Club club = clubService.getClubById(clubId);
+            ClubResponse club = clubService.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found " +
                                 "for clubAdminId: {} for listBookingsByClub",
@@ -841,8 +839,8 @@ public class BookingServiceImpl implements BookingService {
             Map<Long, Player> playerMap = playerService.getPlayersByIds(playerIds).stream()
                     .collect(Collectors.toMap(Player::getId, Function.identity()));
 
-            Map<Long, Station> stationMap = clubService.getStationsByClubId(clubId).stream()
-                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+            Map<Long, StationResponse> stationMap = clubService.getStationsByClubId(clubId).stream()
+                    .collect(Collectors.toMap(StationResponse::getStationId, Function.identity()));
 
             List<BookingIntent> intents = bookings.stream()
                     .map(Booking::getBookingIntent)
@@ -884,7 +882,7 @@ public class BookingServiceImpl implements BookingService {
         try {
             Long windowDurationHr = 12L;
 
-            Club club = clubService.getClubById(clubId);
+            ClubResponse club = clubService.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found " +
                                 "for clubAdminId: {} for dashboardStationStatus",
@@ -892,9 +890,9 @@ public class BookingServiceImpl implements BookingService {
                 throw new ClubServiceException(
                         ClubServiceExceptionType.CLUB_NOT_FOUND);
             }
-            List<Station> stations = clubService.getStationsByClubId(clubId);
+            List<StationResponse> stations = clubService.getStationsByClubId(clubId);
             Set<Long> stationIds = stations.stream()
-                    .map(Station::getId).collect(Collectors.toSet());
+                    .map(StationResponse::getStationId).collect(Collectors.toSet());
 
             List<Booking> currentBookings = bookingDAO.getCurrentConfirmedBookingsForClub(clubId);
 
@@ -945,8 +943,8 @@ public class BookingServiceImpl implements BookingService {
 
 
             Map<Long, DashBoardStationStatusResponse> result = new HashMap<>();
-            for (Station station : stations) {
-                Long stationId = station.getId();
+            for (StationResponse station : stations) {
+                Long stationId = station.getStationId();
                 Booking current = currentBookingMap.get(stationId);
                 Booking next = nextBookingMap.get(stationId);
 
@@ -977,7 +975,7 @@ public class BookingServiceImpl implements BookingService {
             List<StationType> stationTypes
     ) throws BookingServiceException {
         try {
-            Club club = clubService.getClubById(clubId);
+            ClubResponse club = clubService.getClubById(clubId);
             if(!club.getClubAdminId().equals(clubAdminId)){
                 log.info("Club with clubId: {} not found " +
                                 "for clubAdminId: {} for getUpcomingBookings",
@@ -1051,12 +1049,12 @@ public class BookingServiceImpl implements BookingService {
             BookingAvailabilityByStationRequest request
     ) throws BookingServiceException {
         try {
-            Map<Long, Station> stationMap =
+            Map<Long, StationResponse> stationMap =
                     clubService.getStationsByClubIdAndType(
                                     request.getClubId(), request.getStationType())
                             .stream()
                             .collect(Collectors.toMap(
-                                    Station::getId,
+                                    StationResponse::getStationId,
                                     Function.identity()
                             ));
 
@@ -1149,7 +1147,7 @@ public class BookingServiceImpl implements BookingService {
 
 
     private void validateStations(
-            Map<Long, Station> allowedStations,
+            Map<Long, StationResponse> allowedStations,
             List<BookingStationRequest> requestStations
     ) throws InvalidRequestException {
 
@@ -1216,11 +1214,11 @@ public class BookingServiceImpl implements BookingService {
             List<Long> clubIds = bookingIntents.stream()
                     .map(BookingIntent::getClubId).distinct().toList();
 
-            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
-                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+            Map<Long, ClubResponse> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(ClubResponse::getClubId, Function.identity()));
 
-            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
-                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+            Map<Long, StationResponse> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(StationResponse::getStationId, Function.identity()));
 
             List<Long> playerIds = bookingIntents.stream()
                     .map(BookingIntent::getPlayerId).distinct().toList();
@@ -1252,11 +1250,11 @@ public class BookingServiceImpl implements BookingService {
             List<Long> clubIds = bookings.stream()
                     .map(Booking::getClubId).distinct().toList();
 
-            Map<Long, Club> clubMap = clubService.getClubsByIds(clubIds).stream()
-                    .collect(Collectors.toMap(Club::getId, Function.identity()));
+            Map<Long, ClubResponse> clubMap = clubService.getClubsByIds(clubIds).stream()
+                    .collect(Collectors.toMap(ClubResponse::getClubId, Function.identity()));
 
-            Map<Long, Station> stationMap = clubService.getStationsByClubIds(clubIds).stream()
-                    .collect(Collectors.toMap(Station::getId, Function.identity()));
+            Map<Long, StationResponse> stationMap = clubService.getStationsByClubIds(clubIds).stream()
+                    .collect(Collectors.toMap(StationResponse::getStationId, Function.identity()));
 
             List<Long> intentIds = bookings.stream()
                     .map(booking -> booking.getBookingIntent().getId()).distinct().toList();
@@ -1293,15 +1291,15 @@ public class BookingServiceImpl implements BookingService {
     private BookingIntentDetailsResponse getBookingIntentResponse(
             BookingIntent bookingIntent,
             Player player,
-            Club club,
-            Map<Long, Station> stationMap
+            ClubResponse club,
+            Map<Long, StationResponse> stationMap
     ) {
         return
                 BookingIntentDetailsResponse.builder()
                     .intentId(bookingIntent.getId())
                     .club(
                         BookingIntentClubDetails.builder()
-                            .clubId(club.getId())
+                            .clubId(club.getClubId())
                             .clubName(club.getClubName())
                             .build()
                     )
@@ -1387,15 +1385,15 @@ public class BookingServiceImpl implements BookingService {
             Booking booking,
             BookingIntent bookingIntent,
             Player player,
-            Club club,
-            Map<Long, Station> stationMap
+            ClubResponse club,
+            Map<Long, StationResponse> stationMap
     ) {
         return
             BookingDetailsResponse.builder()
                 .bookingId(booking.getId())
                 .club(
                     BookingClubDetails.builder()
-                        .clubId(club.getId())
+                        .clubId(club.getClubId())
                         .clubName(club.getClubName())
                         .build()
                 )

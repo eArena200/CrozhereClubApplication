@@ -16,6 +16,9 @@ public class ClubAddress {
     @Column(name = "addr_street", nullable = false)
     private String street;
 
+    @Column(name = "addr_area", nullable = false)
+    private String area;
+
     @Column(name = "addr_city", nullable = false)
     private String city;
 

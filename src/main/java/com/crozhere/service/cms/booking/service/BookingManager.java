@@ -13,6 +13,7 @@ import com.crozhere.service.cms.booking.repository.entity.BookingStation;
 import com.crozhere.service.cms.booking.service.exception.BookingManagerException;
 import com.crozhere.service.cms.booking.util.TimeSlot;
 import com.crozhere.service.cms.booking.util.TimeSlotUtil;
+import com.crozhere.service.cms.club.controller.model.response.StationResponse;
 import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.ClubService;
@@ -42,7 +43,7 @@ public class BookingManager {
             Instant endTime
     ) throws BookingManagerException {
         try {
-            List<Station> stations = clubService.getStationsByClubIdAndType(clubId, stationType);
+            List<StationResponse> stations = clubService.getStationsByClubIdAndType(clubId, stationType);
             log.info("FOUND STATIONS: {}", stations);
 
             List<Booking> bookings =
@@ -69,8 +70,8 @@ public class BookingManager {
 
             return stations.stream()
                     .map(station -> StationAvailability.builder()
-                            .stationId(station.getId())
-                            .isAvailable(!allUnavailable.contains(station.getId()))
+                            .stationId(station.getStationId())
+                            .isAvailable(!allUnavailable.contains(station.getStationId()))
                             .build())
                     .toList();
 
@@ -97,9 +98,9 @@ public class BookingManager {
             SearchWindow searchWindow
     ) throws BookingManagerException {
         try {
-            List<Station> stations = clubService.getStationsByClubIdAndType(clubId, stationType)
+            List<StationResponse> stations = clubService.getStationsByClubIdAndType(clubId, stationType)
                     .stream()
-                    .filter(s -> stationIds.contains(s.getId()))
+                    .filter(s -> stationIds.contains(s.getStationId()))
                     .toList();
             log.info("FILTERED STATIONS: {}", stations);
 
@@ -116,10 +117,10 @@ public class BookingManager {
 
             Map<Long, List<TimeSlot>> busySlots = new HashMap<>();
 
-            for (Station station : stations) {
+            for (StationResponse station : stations) {
                 List<TimeSlot> bookingBusySlots = bookings.stream()
                         .filter(b -> b.getStations().stream()
-                                .anyMatch(bs -> bs.getStationId().equals(station.getId())))
+                                .anyMatch(bs -> bs.getStationId().equals(station.getStationId())))
                         .map(b -> TimeSlot.builder()
                                 .startTime(b.getStartTime())
                                 .endTime(b.getEndTime())
@@ -129,7 +130,7 @@ public class BookingManager {
 
                 List<TimeSlot> intentBusySlots = intents.stream()
                         .filter(i -> i.getStations().stream()
-                                .anyMatch(is -> is.getStationId().equals(station.getId())))
+                                .anyMatch(is -> is.getStationId().equals(station.getStationId())))
                         .map(i -> TimeSlot.builder()
                                 .startTime(i.getStartTime())
                                 .endTime(i.getEndTime())
@@ -140,7 +141,7 @@ public class BookingManager {
                 totalBusy.addAll(bookingBusySlots);
                 totalBusy.addAll(intentBusySlots);
 
-                busySlots.put(station.getId(), totalBusy);
+                busySlots.put(station.getStationId(), totalBusy);
             }
 
             log.info("BUSY SLOTS PER STATION: {}", busySlots);

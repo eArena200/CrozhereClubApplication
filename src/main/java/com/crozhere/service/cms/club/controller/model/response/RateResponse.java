@@ -14,6 +14,7 @@ import java.util.List;
 public class RateResponse {
     private Long rateId;
     private Long rateCardId;
-    private String name;
-    private List<ChargeResponse> charges;
+    private String rateName;
+    private String rateDescription;
+    private List<RateChargeResponse> rateCharges;
 }

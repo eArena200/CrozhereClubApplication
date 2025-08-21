@@ -1,12 +1,7 @@
 package com.crozhere.service.cms.club.controller;
 
-import com.crozhere.service.cms.club.controller.model.ClubAddressDetails;
-import com.crozhere.service.cms.club.controller.model.GeoLocation;
-import com.crozhere.service.cms.club.controller.model.OperatingHours;
 import com.crozhere.service.cms.club.controller.model.response.*;
-import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.service.ClubService;
-import com.crozhere.service.cms.club.service.RateService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -23,8 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertLocalTimeToString;
-
 @Slf4j
 @RestController
 @RequestMapping(
@@ -35,15 +28,12 @@ import static com.crozhere.service.cms.club.controller.model.OperatingHours.conv
 public class ClubDetailsController {
 
     private final ClubService clubService;
-    private final RateService rateService;
 
     @Autowired
     public ClubDetailsController(
-            ClubService clubService,
-            RateService rateService
+            ClubService clubService
     ){
         this.clubService = clubService;
-        this.rateService = rateService;
     }
 
     // CLUB APIs
@@ -74,8 +64,8 @@ public class ClubDetailsController {
             )
             @PathVariable(value = "clubId") Long clubId
     ) {
-        Club club = clubService.getClubById(clubId);
-        return ResponseEntity.ok(getClubDetailsResponse(club));
+        ClubDetailsResponse response = clubService.getDetailedClubById(clubId);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -109,10 +99,7 @@ public class ClubDetailsController {
             @PathVariable(value = "clubId") Long clubId
     ){
         List<StationResponse> stationsResponse =
-                clubService.getStationsByClubId(clubId)
-                        .stream()
-                        .map(this::getStationResponse)
-                        .toList();
+                clubService.getStationsByClubId(clubId);
 
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -150,10 +137,10 @@ public class ClubDetailsController {
             )
             @PathVariable(value = "stationId") Long stationId
     ){
-        Station station = clubService.getStationById(stationId);
+        StationResponse response = clubService.getStationById(stationId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getStationResponse(station));
+                .body(response);
     }
 
 
@@ -180,7 +167,7 @@ public class ClubDetailsController {
             )
     })
     @GetMapping("/getRateCardsForClub/{clubId}")
-    public ResponseEntity<List<RateCardDetailsResponse>> getAllRateCards(
+    public ResponseEntity<List<RateCardResponse>> getAllRateCards(
             @Parameter(
                     name = "clubId",
                     description = "Id of the club for which rate-cards needs to be retrieved",
@@ -188,12 +175,10 @@ public class ClubDetailsController {
             )
             @PathVariable(value = "clubId") Long clubId
     ) {
-        List<RateCard> rateCards = rateService.getRateCardsForClubId(clubId);
+        List<RateCardResponse> response = clubService.getRateCardsForClubId(clubId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(rateCards.stream()
-                        .map(this::getRateCardDetailsResponse)
-                        .toList());
+                .body(response);
     }
 
 
@@ -227,10 +212,10 @@ public class ClubDetailsController {
             )
             @PathVariable(value = "rateCardId") Long rateCardId
     ) {
-        RateCard rateCard = rateService.getRateCard(rateCardId);
+        RateCardDetailsResponse response = clubService.getRateCardDetailsById(rateCardId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getRateCardDetailsResponse(rateCard));
+                .body(response);
     }
 
 
@@ -265,12 +250,10 @@ public class ClubDetailsController {
             )
             @PathVariable(value = "rateCardId") Long rateCardId
     ) {
-        List<Rate> rates = rateService.getRatesForRateCard(rateCardId);
+        List<RateResponse> response = clubService.getRatesForRateCard(rateCardId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(rates.stream()
-                        .map(this::getRateResponse)
-                        .toList());
+                .body(response);
     }
 
     @Operation(
@@ -303,89 +286,9 @@ public class ClubDetailsController {
             )
             @PathVariable(value = "rateId") Long rateId
     ) {
-        Rate rate = rateService.getRate(rateId);
+        RateResponse response = clubService.getRateById(rateId);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(getRateResponse(rate));
+                .body(response);
     }
-
-    private ClubDetailsResponse getClubDetailsResponse(Club club) {
-        return ClubDetailsResponse.builder()
-                .clubId((club.getId()))
-                .clubName(club.getClubName())
-                .clubAddressDetails(ClubAddressDetails.builder()
-                        .streetAddress(club.getClubAddress().getStreet())
-                        .city(club.getClubAddress().getCity())
-                        .state(club.getClubAddress().getState())
-                        .pinCode(club.getClubAddress().getPincode())
-                        .geoLocation(GeoLocation.builder()
-                                .latitude(club.getClubAddress().getLatitude())
-                                .longitude(club.getClubAddress().getLongitude())
-                                .build())
-                        .build())
-                .operatingHours(OperatingHours.builder()
-                        .openTime(convertLocalTimeToString(club.getClubOperatingHours().getOpenTime()))
-                        .closeTime(convertLocalTimeToString(club.getClubOperatingHours().getCloseTime()))
-                        .build())
-                .primaryContact(club.getClubContact().getPrimaryContact())
-                .secondaryContact(club.getClubContact().getSecondaryContact())
-                .build();
-    }
-
-    private StationResponse getStationResponse(Station station) {
-        return StationResponse.builder()
-                .stationId(station.getId())
-                .clubId(station.getClub().getId())
-                .stationName(station.getStationName())
-                .stationType(station.getStationType())
-                .operatingHours(OperatingHours.builder()
-                        .openTime(convertLocalTimeToString(station.getOpenTime()))
-                        .closeTime(convertLocalTimeToString(station.getCloseTime()))
-                        .build())
-                .rateId(station.getRate().getId())
-                .rateName(station.getRate().getName())
-                .capacity(station.getCapacity())
-                .isActive(station.getIsActive())
-                .isLive(station.getIsLive())
-                .build();
-    }
-
-    private RateCardDetailsResponse getRateCardDetailsResponse(RateCard rateCard) {
-        return RateCardDetailsResponse.builder()
-                .rateCardId(rateCard.getId())
-                .clubId(rateCard.getClub().getId())
-                .name(rateCard.getName())
-                .rateList(rateCard.getRates()
-                        .stream()
-                        .map(this::getRateResponse)
-                        .toList())
-                .build();
-    }
-
-    private RateResponse getRateResponse(Rate rate){
-        return RateResponse.builder()
-                .rateId(rate.getId())
-                .rateCardId(rate.getRateCard().getId())
-                .name(rate.getName())
-                .charges(rate.getRateCharges()
-                        .stream()
-                        .map(this::getChargeResponse)
-                        .toList())
-                .build();
-    }
-
-    private ChargeResponse getChargeResponse(RateCharge rateCharge){
-        return ChargeResponse.builder()
-                .chargeId(rateCharge.getId())
-                .rateId(rateCharge.getRate().getId())
-                .chargeType(rateCharge.getChargeType())
-                .chargeUnit(rateCharge.getUnit())
-                .amount(rateCharge.getAmount())
-                .minPlayers(rateCharge.getMinPlayers())
-                .maxPlayers(rateCharge.getMaxPlayers())
-                .startTime(convertLocalTimeToString(rateCharge.getStartTime()))
-                .endTime(convertLocalTimeToString(rateCharge.getEndTime()))
-                .build();
-    }
-
 }

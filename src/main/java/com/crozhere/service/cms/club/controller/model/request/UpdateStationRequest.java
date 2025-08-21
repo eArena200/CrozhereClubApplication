@@ -13,6 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class UpdateStationRequest {
     private String stationName;
+    private String stationDescription;
     private OperatingHours operatingHours;
     private Long rateId;
     private Integer capacity;

@@ -14,5 +14,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AddRateRequest {
     private String rateName;
+    private String description;
     private List<CreateChargeRequest> createChargeRequests;
 }
