@@ -33,7 +33,13 @@ public enum ClubServiceExceptionType {
     GET_RATE_FAILED("Get Rate Failed"),
     FETCH_RATES_FAILED("Failed to retrieve rates"),
     UPDATE_RATE_FAILED("Failed to update rate"),
-    DELETE_RATE_FAILED("Failed to delete rate");
+    DELETE_RATE_FAILED("Failed to delete rate"),
+
+    ADD_RATE_CHARGE_FAILED("Failed to add rate-charge"),
+    UPDATE_RATE_CHARGE_FAILED("Failed to update rate-charge"),
+    DELETE_RATE_CHARGE_FAILED("Failed to delete rate-charge"),
+    GET_RATE_CHARGE_FAILED("Failed to retrieve rate-charge"),
+    RATE_CHARGE_NOT_FOUND("Rate Charge not found");
 
     private final String message;
 

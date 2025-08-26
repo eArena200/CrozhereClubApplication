@@ -19,10 +19,12 @@ public class RateChargeResponse {
     private Long rateId;
     private ChargeType chargeType;
     private ChargeUnit chargeUnit;
+    private String chargeName;
     private Double amount;
     private String startTime;
     private String endTime;
     private Integer minPlayers;
     private Integer maxPlayers;
     private Set<DayOfWeek> daysOfWeek;
+    private Boolean isDeleted;
 }

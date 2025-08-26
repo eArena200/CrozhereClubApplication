@@ -153,7 +153,7 @@ public class ClubDetailsController {
             @ApiResponse(
                     responseCode = "200",
                     description = "Successfully retrieved all rate cards",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = RateCardDetailsResponse.class)))
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = RateCardResponse.class)))
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -287,6 +287,43 @@ public class ClubDetailsController {
             @PathVariable(value = "rateId") Long rateId
     ) {
         RateResponse response = clubService.getRateById(rateId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+
+    @Operation(
+            summary = "Get Rate Charge Details",
+            description = "Get a specific rate charge by ID"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully fetched rate charge",
+                    content = @Content(schema = @Schema(implementation = RateResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "RateCharge not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @GetMapping("/getRateCharge/{rateChargeId}")
+    public ResponseEntity<RateChargeResponse> getRateCharge(
+            @Parameter(
+                    name = "rateChargeId",
+                    description = "ID of the rate-charge to be retrieved",
+                    required = true
+            )
+            @PathVariable(value = "rateChargeId") Long rateChargeId
+    ) {
+        RateChargeResponse response = clubService.getRateChargeById(rateChargeId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);

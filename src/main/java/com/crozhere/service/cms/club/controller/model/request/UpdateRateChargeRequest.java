@@ -14,9 +14,7 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateChargeRequest {
-    private Long chargeId;
-    private Long rateId;
+public class UpdateRateChargeRequest {
     private ChargeType chargeType;
     private String chargeName;
     private ChargeUnit chargeUnit;
@@ -25,5 +23,5 @@ public class UpdateChargeRequest {
     private String endTime;
     private Integer minPlayers;
     private Integer maxPlayers;
-    private Set<DayOfWeek> dayOfWeeks;
+    private Set<DayOfWeek> daysOfWeek;
 }

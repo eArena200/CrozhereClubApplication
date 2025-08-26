@@ -4,10 +4,7 @@ import com.crozhere.service.cms.club.repository.*;
 import com.crozhere.service.cms.club.repository.dao.ClubDao;
 import com.crozhere.service.cms.club.repository.dao.exception.ClubDAOException;
 import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
-import com.crozhere.service.cms.club.repository.entity.Club;
-import com.crozhere.service.cms.club.repository.entity.Rate;
-import com.crozhere.service.cms.club.repository.entity.RateCard;
-import com.crozhere.service.cms.club.repository.entity.Station;
+import com.crozhere.service.cms.club.repository.entity.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,18 +22,21 @@ public class ClubDaoImpl implements ClubDao {
     private final StationRepository stationRepository;
     private final RateCardRepository rateCardRepository;
     private final RateRepository rateRepository;
+    private final ChargeRepository chargeRepository;
 
     @Autowired
     public ClubDaoImpl(
             ClubRepository clubRepository,
             StationRepository stationRepository,
             RateCardRepository rateCardRepository,
-            RateRepository rateRepository
+            RateRepository rateRepository,
+            ChargeRepository chargeRepository
     ){
         this.clubRepository = clubRepository;
         this.stationRepository = stationRepository;
         this.rateCardRepository = rateCardRepository;
         this.rateRepository = rateRepository;
+        this.chargeRepository = chargeRepository;
     }
 
 
@@ -588,6 +588,74 @@ public class ClubDaoImpl implements ClubDao {
         } catch (Exception e){
             log.error("Exception while getting rates for rateCardIds: {}", rateCardIds, e);
             throw new ClubDAOException("GetRatesByRateCardIdsException");
+        }
+    }
+
+    // RATE CHARGE LEVEL METHODS
+    @Override
+    public void saveRateCharge(RateCharge rateCharge) throws ClubDAOException {
+        try {
+            chargeRepository.save(rateCharge);
+        } catch (Exception e){
+            log.error("Exception while saving rate-charge", e);
+            throw new ClubDAOException("SaveRateChargeException");
+        }
+    }
+
+    @Override
+    public void updateRateCharge(Long rateChargeId, RateCharge rateCharge)
+            throws DataNotFoundException,  ClubDAOException {
+        try {
+            if (!chargeRepository.existsById(rateChargeId)) {
+                throw new DataNotFoundException("RateCharge not found with ID: " + rateChargeId);
+            }
+            rateCharge.setId(rateChargeId);
+            chargeRepository.save(rateCharge);
+        } catch (DataNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to update rate-charge: {}", rateChargeId, e);
+            throw new ClubDAOException("UpdateRateChargeException");
+        }
+    }
+
+    @Override
+    public void softDeleteRateCharge(Long rateChargeId)
+            throws DataNotFoundException, ClubDAOException {
+        try {
+            RateCharge rateCharge = chargeRepository.findById(rateChargeId)
+                    .orElseThrow(() -> new DataNotFoundException("RateCharge not found with rateChargeId: {}" + rateChargeId));
+            rateCharge.setIsDeleted(true);
+            chargeRepository.save(rateCharge);
+        } catch (DataNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Exception while soft-deleting rateCharge with id: {}", rateChargeId, e);
+            throw new ClubDAOException("SoftDeleteRateChargeException");
+        }
+    }
+
+    @Override
+    public void deleteRateCharge(Long rateChargeId) throws ClubDAOException {
+        try {
+            chargeRepository.deleteById(rateChargeId);
+        } catch (Exception e){
+            log.error("Exception while deleting rateCharge with id: {}", rateChargeId, e);
+            throw new ClubDAOException("DeleteRateChargeException");
+        }
+    }
+
+    @Override
+    public RateCharge getRateChargeById(Long rateChargeId)
+            throws DataNotFoundException, ClubDAOException {
+        try {
+            return chargeRepository.findById(rateChargeId)
+                    .orElseThrow(() -> new DataNotFoundException("RateCharge not found with Id: "+ rateChargeId));
+        } catch (DataNotFoundException e){
+            throw e;
+        } catch (Exception e){
+            log.error("Failed to retrieve rate-charge: {}", rateChargeId, e);
+            throw new ClubDAOException("GetRateChargeByIdException");
         }
     }
 }

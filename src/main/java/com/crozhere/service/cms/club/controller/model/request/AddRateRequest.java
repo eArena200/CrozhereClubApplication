@@ -1,8 +1,5 @@
 package com.crozhere.service.cms.club.controller.model.request;
 
-import java.util.List;
-
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,6 +11,5 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AddRateRequest {
     private String rateName;
-    private String description;
-    private List<CreateChargeRequest> createChargeRequests;
+    private String rateDescription;
 }

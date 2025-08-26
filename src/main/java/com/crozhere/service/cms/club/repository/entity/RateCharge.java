@@ -30,16 +30,20 @@ public class RateCharge {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "charge_unit", nullable = false)
-    private ChargeUnit unit;
+    private ChargeUnit chargeUnit;
 
     @Column(name = "charge_name", nullable = false)
-    private String name;
+    private String chargeName;
 
     @Column(name = "charge_amount", nullable = false)
     private Double amount;
 
     @Embedded
     private RateChargeConstraint rateChargeConstraint;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

@@ -8,15 +8,13 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.DayOfWeek;
-import java.util.List;
 import java.util.Set;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateChargeRequest {
-    private Long rateId;
+public class AddRateChargeRequest {
     private ChargeType chargeType;
     private String chargeName;
     private ChargeUnit chargeUnit;
@@ -25,5 +23,5 @@ public class CreateChargeRequest {
     private String endTime;
     private Integer minPlayers;
     private Integer maxPlayers;
-    private Set<DayOfWeek> dayOfWeeks;
+    private Set<DayOfWeek> daysOfWeek;
 }

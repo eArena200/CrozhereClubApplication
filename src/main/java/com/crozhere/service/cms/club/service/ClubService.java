@@ -2,6 +2,7 @@ package com.crozhere.service.cms.club.service;
 
 import com.crozhere.service.cms.club.controller.model.request.*;
 import com.crozhere.service.cms.club.controller.model.response.*;
+import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
 import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 
@@ -11,7 +12,7 @@ public interface ClubService {
     // CLUB LEVEL METHODS
     ClubResponse createClub(Long clubAdminId, CreateClubRequest createClubRequest)
             throws ClubServiceException;
-    ClubResponse updateClubDetails(Long clubAdminId, Long clubId, UpdateClubRequest updateClubRequest)
+    ClubResponse updateClubDetails(Long clubAdminId, Long clubId, UpdateClubDetailsRequest updateClubDetailsRequest)
             throws ClubServiceException;
     void softDeleteClub(Long clubAdminId, Long clubId) throws ClubServiceException;
     void deleteClub(Long clubAdminId, Long clubId) throws ClubServiceException;
@@ -41,8 +42,10 @@ public interface ClubService {
             throws ClubServiceException;
 
     // RATE-CARD LEVEL METHODS
-    RateCardResponse createRateCard(Long clubAdminId, Long clubId, CreateRateCardRequest request) throws ClubServiceException;
-    RateCardResponse updateRateCardDetails(Long clubAdminId, Long rateCardId, UpdateRateCardRequest request) throws ClubServiceException;
+    RateCardResponse createRateCard(Long clubAdminId, Long clubId, CreateRateCardRequest request)
+            throws ClubServiceException;
+    RateCardResponse updateRateCardDetails(Long clubAdminId, Long rateCardId, UpdateRateCardDetailsRequest request)
+            throws ClubServiceException;
     void softDeleteRateCard(Long clubAdminId, Long rateCardId) throws ClubServiceException;
     void deleteRateCard(Long clubAdminId, Long rateCardId) throws ClubServiceException;
 
@@ -51,12 +54,24 @@ public interface ClubService {
 
     // RATE LEVEL METHODS
     RateResponse addRate(Long clubAdminId, Long rateCardId, AddRateRequest request) throws ClubServiceException;
-    RateResponse updateRate(Long clubAdminId, Long rateId, UpdateRateRequest request) throws ClubServiceException;
+    RateResponse updateRate(Long clubAdminId, Long rateId, UpdateRateDetailsRequest request)
+            throws DataNotFoundException, ClubServiceException;
     void softDeleteRate(Long clubAdminId, Long rateId) throws ClubServiceException;
     void deleteRate(Long clubAdminId, Long rateId) throws ClubServiceException;
 
     RateResponse getRateById(Long rateId) throws ClubServiceException;
     List<RateResponse> getRatesByRateIds(List<Long> rateIds) throws ClubServiceException;
     List<RateResponse> getRatesForRateCard(Long rateCardId) throws ClubServiceException;
+
+    // RATE CHARGE LEVEL METHODS
+    RateChargeResponse addRateCharge(Long clubAdminId, Long rateId, AddRateChargeRequest request)
+            throws ClubServiceException;
+    RateChargeResponse updateRateCharge(Long clubAdminId, Long rateChargeId, UpdateRateChargeRequest request)
+            throws DataNotFoundException, ClubServiceException;
+    void softDeleteRateCharge(Long clubAdminId, Long rateChargeId) throws ClubServiceException;
+    void deleteRateCharge(Long clubAdminId, Long rateChargeId) throws ClubServiceException;
+
+    RateChargeResponse getRateChargeById(Long rateChargeId) throws ClubServiceException;
+    List<RateChargeResponse> getRateChargesByRateId(Long rateId) throws ClubServiceException;
 
 }

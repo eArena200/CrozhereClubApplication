@@ -1,11 +1,8 @@
 package com.crozhere.service.cms.club.repository.dao;
 
 import com.crozhere.service.cms.club.repository.dao.exception.DataNotFoundException;
-import com.crozhere.service.cms.club.repository.entity.Club;
+import com.crozhere.service.cms.club.repository.entity.*;
 import com.crozhere.service.cms.club.repository.dao.exception.ClubDAOException;
-import com.crozhere.service.cms.club.repository.entity.Rate;
-import com.crozhere.service.cms.club.repository.entity.RateCard;
-import com.crozhere.service.cms.club.repository.entity.Station;
 
 import java.util.List;
 
@@ -63,4 +60,12 @@ public interface ClubDao {
     List<Rate> getRatesByRateIds(List<Long> rateIds) throws ClubDAOException;
     List<Rate> getRatesByRateCardId(Long rateCardId) throws ClubDAOException;
     List<Rate> getRatesByRateCardIds(List<Long> rateCardIds) throws ClubDAOException;
+
+    // RATE CHARGE LEVEL METHODS
+    void saveRateCharge(RateCharge rateCharge) throws ClubDAOException;
+    void updateRateCharge(Long rateChargeId, RateCharge rateCharge) throws ClubDAOException;
+    void softDeleteRateCharge(Long rateChargeId) throws DataNotFoundException, ClubDAOException;
+    void deleteRateCharge(Long rateChargeId) throws ClubDAOException;
+
+    RateCharge getRateChargeById(Long rateChargeId) throws DataNotFoundException, ClubDAOException;
 }

@@ -109,7 +109,7 @@ public class ClubManagementController {
             @PathVariable(value = "clubId") Long clubId,
 
             @Parameter(description = "UpdateClubRequest", required = true)
-            @RequestBody UpdateClubRequest request
+            @RequestBody UpdateClubDetailsRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
         ClubResponse response =
@@ -418,7 +418,7 @@ public class ClubManagementController {
             @PathVariable(value = "rateCardId") Long rateCardId,
 
             @Parameter(description = "UpdateRateCardRequest", required = true)
-            @RequestBody UpdateRateCardRequest request
+            @RequestBody UpdateRateCardDetailsRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
         RateCardResponse response =
@@ -554,7 +554,7 @@ public class ClubManagementController {
             @PathVariable(value = "rateId") Long rateId,
 
             @Parameter(description = "UpdateRateRequest", required = true)
-            @RequestBody UpdateRateRequest request
+            @RequestBody UpdateRateDetailsRequest request
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
         RateResponse response = clubService.updateRate(clubAdminId, rateId, request);
@@ -596,6 +596,145 @@ public class ClubManagementController {
     ) {
         Long clubAdminId = AuthUtil.getRoleBasedId();
         clubService.softDeleteRate(clubAdminId, rateId);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .build();
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Add Rate Charge",
+            description = "Add a rate-charge to a rate"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Successfully added rate-charge",
+                    content = @Content(schema = @Schema(implementation = RateChargeResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Rate not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @PostMapping(
+            value = "/addRateCharge/{rateId}",
+            consumes = "application/json"
+    )
+    public ResponseEntity<RateChargeResponse> addRateCharge(
+            @Parameter(
+                    name = "rateId",
+                    description = "Id of rate to which the rate-charge will be added",
+                    required = true
+            )
+            @PathVariable(value = "rateId") Long rateId,
+
+            @Parameter(description = "AddRateChargeRequest", required = true)
+            @RequestBody AddRateChargeRequest request
+    ) {
+        Long clubAdminId = AuthUtil.getRoleBasedId();
+        RateChargeResponse response = clubService.addRateCharge(clubAdminId, rateId, request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Update Rate Charge",
+            description = "Updates a rate-charge"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully updated rate-charge",
+                    content = @Content(schema = @Schema(implementation = RateChargeResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "RateCharge not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @PutMapping(
+            value = "/updateRateCharge/{rateChargeId}",
+            consumes = "application/json"
+    )
+    public ResponseEntity<RateChargeResponse> updateRateCharge(
+            @Parameter(
+                    name = "rateChargeId",
+                    description = "Id of rate-charge to be updated",
+                    required = true
+            )
+            @PathVariable(value = "rateChargeId") Long rateChargeId,
+
+            @Parameter(description = "UpdateRateChargeRequest", required = true)
+            @RequestBody UpdateRateChargeRequest request
+    ) {
+        Long clubAdminId = AuthUtil.getRoleBasedId();
+        RateChargeResponse response = clubService.updateRateCharge(clubAdminId, rateChargeId, request);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Delete Rate Charge",
+            description = "Delete a specific rate-charge"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Successfully deleted rate-charge"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Rate-charge not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @DeleteMapping("/removeRateCharge/{rateChargeId}")
+    public ResponseEntity<Void> deleteRateCharge(
+            @Parameter(
+                    name = "rateChargeId",
+                    description = "Id of rate-charge to be deleted",
+                    required = true)
+            @PathVariable(value = "rateChargeId") Long rateChargeId
+    ) {
+        Long clubAdminId = AuthUtil.getRoleBasedId();
+        clubService.softDeleteRateCharge(clubAdminId, rateChargeId);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();

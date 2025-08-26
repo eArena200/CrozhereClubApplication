@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateClubRequest {
+public class UpdateClubDetailsRequest {
     private String clubName;
     private String clubDescription;
     private Long clubAdminId;

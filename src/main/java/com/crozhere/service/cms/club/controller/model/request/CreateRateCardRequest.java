@@ -10,6 +10,6 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateRateCardRequest {
-    private String name;
-    private String description;
+    private String rateCardName;
+    private String rateCardDescription;
 }

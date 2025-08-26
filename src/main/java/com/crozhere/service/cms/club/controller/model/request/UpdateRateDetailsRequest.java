@@ -1,6 +1,5 @@
 package com.crozhere.service.cms.club.controller.model.request;
 
-
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +9,7 @@ import lombok.AllArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateRateCardRequest {
-    private String name;
-    private String description;
+public class UpdateRateDetailsRequest {
+    private String rateName;
+    private String rateDescription;
 }
