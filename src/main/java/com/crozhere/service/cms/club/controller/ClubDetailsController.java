@@ -146,43 +146,6 @@ public class ClubDetailsController {
 
     // RATE-CARD APIs
     @Operation(
-            summary = "Get All Rate Cards",
-            description = "Fetch all rate cards for a club"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Successfully retrieved all rate cards",
-                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = RateCardResponse.class)))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Club not found",
-                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
-                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
-            )
-    })
-    @GetMapping("/getRateCardsForClub/{clubId}")
-    public ResponseEntity<List<RateCardResponse>> getAllRateCards(
-            @Parameter(
-                    name = "clubId",
-                    description = "Id of the club for which rate-cards needs to be retrieved",
-                    required = true
-            )
-            @PathVariable(value = "clubId") Long clubId
-    ) {
-        List<RateCardResponse> response = clubService.getRateCardsForClubId(clubId);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(response);
-    }
-
-
-    @Operation(
             summary = "Get Rate Card Details",
             description = "Fetch a rate card by ID"
     )

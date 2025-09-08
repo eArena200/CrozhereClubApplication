@@ -50,7 +50,7 @@ public interface ClubService {
     void deleteRateCard(Long clubAdminId, Long rateCardId) throws ClubServiceException;
 
     RateCardDetailsResponse getRateCardDetailsById(Long rateCardId) throws ClubServiceException;
-    List<RateCardResponse> getRateCardsForClubId(Long clubId) throws ClubServiceException;
+    List<RateCardDetailsResponse> getRateCardsForClubId(Long clubId) throws ClubServiceException;
 
     // RATE LEVEL METHODS
     RateResponse addRate(Long clubAdminId, Long rateCardId, AddRateRequest request) throws ClubServiceException;

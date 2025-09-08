@@ -144,7 +144,80 @@ public class ClubManagementController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "GetClubDetailsByClubId", description = "Fetches club details by ID")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Club fetched",
+                    content = @Content(schema = @Schema(implementation = ClubResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Club not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @GetMapping("/getClubDetails/{clubId}")
+    public ResponseEntity<ClubResponse> getClubDetailsById(
+            @Parameter(
+                    name = "clubId",
+                    description = "ID of the club to retrieve",
+                    required = true
+            )
+            @PathVariable(value = "clubId") Long clubId
+    ) {
+        ClubResponse response = clubService.getClubById(clubId);
+        return ResponseEntity.ok(response);
+    }
+
     // STATION APIs
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
+            summary = "Get stations for a club",
+            description = "Retrieves all stations belonging to a specific club"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved stations",
+                    content = @Content(schema = @Schema(implementation = StationResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Club not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @GetMapping("/getStationsByClubId/{clubId}")
+    public ResponseEntity<List<StationResponse>> getStationsByClubId(
+            @Parameter(
+                    name = "clubId",
+                    description = "ClubId for which stations needs to be retrieved",
+                    required = true
+            )
+            @PathVariable(value = "clubId") Long clubId
+    ){
+        List<StationResponse> stationsResponse =
+                clubService.getStationsByClubId(clubId);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(stationsResponse);
+    }
+
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
             summary = "Add New Station",
@@ -332,6 +405,44 @@ public class ClubManagementController {
     //RATE-CARD APIs
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
+            summary = "Get All Rate Cards By ClubId",
+            description = "Fetch all rate cards for a club"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Successfully retrieved all rate cards",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = RateCardDetailsResponse.class)))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Club not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @GetMapping("/getRateCardsByClubId/{clubId}")
+    public ResponseEntity<List<RateCardDetailsResponse>> getRateCardsByClubId(
+            @Parameter(
+                    name = "clubId",
+                    description = "Id of the club for which rate-cards needs to be retrieved",
+                    required = true
+            )
+            @PathVariable(value = "clubId") Long clubId
+    ) {
+        List<RateCardDetailsResponse> response = clubService.getRateCardsForClubId(clubId);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
             summary = "Create Rate Card",
             description = "Creates a new rate card for the specified club"
     )
@@ -428,6 +539,7 @@ public class ClubManagementController {
                 .body(response);
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(
             summary = "Delete Rate Card",
             description = "Delete a rate card by Id"

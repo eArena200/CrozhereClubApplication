@@ -111,30 +111,30 @@ public class ClubServiceImpl implements ClubService {
                 club.setClubDescription(updateClubDetailsRequest.getClubDescription());
             }
 
-            ClubAddressDetails address = updateClubDetailsRequest.getClubAddressDetails();
-            if (address != null) {
-                if (StringUtils.hasText(address.getStreetAddress())) {
-                    club.getClubAddress().setStreet(address.getStreetAddress());
+            ClubAddressDetails addressRequest = updateClubDetailsRequest.getClubAddressDetails();
+            if (addressRequest != null) {
+                if (StringUtils.hasText(addressRequest.getStreetAddress())) {
+                    club.getClubAddress().setStreet(addressRequest.getStreetAddress());
                 }
-                if (StringUtils.hasText(address.getArea())) {
-                    club.getClubAddress().setArea(address.getArea());
+                if (StringUtils.hasText(addressRequest.getArea())) {
+                    club.getClubAddress().setArea(addressRequest.getArea());
                 }
-                if (StringUtils.hasText(address.getCity())) {
-                    club.getClubAddress().setCity(address.getCity());
+                if (StringUtils.hasText(addressRequest.getCity())) {
+                    club.getClubAddress().setCity(addressRequest.getCity());
                 }
-                if (StringUtils.hasText(address.getState())) {
-                    club.getClubAddress().setState(address.getState());
+                if (StringUtils.hasText(addressRequest.getState())) {
+                    club.getClubAddress().setState(addressRequest.getState());
                 }
-                if (StringUtils.hasText(address.getPinCode())) {
-                    club.getClubAddress().setPincode(address.getPinCode());
+                if (StringUtils.hasText(addressRequest.getPinCode())) {
+                    club.getClubAddress().setPincode(addressRequest.getPinCode());
                 }
 
-                if (address.getGeoLocation() != null) {
-                    if (address.getGeoLocation().getLatitude() != null) {
-                        club.getClubAddress().setLatitude(address.getGeoLocation().getLatitude());
+                if (addressRequest.getGeoLocation() != null) {
+                    if (addressRequest.getGeoLocation().getLatitude() != null) {
+                        club.getClubAddress().setLatitude(addressRequest.getGeoLocation().getLatitude());
                     }
-                    if (address.getGeoLocation().getLongitude() != null) {
-                        club.getClubAddress().setLongitude(address.getGeoLocation().getLongitude());
+                    if (addressRequest.getGeoLocation().getLongitude() != null) {
+                        club.getClubAddress().setLongitude(addressRequest.getGeoLocation().getLongitude());
                     }
                 }
             }
@@ -635,11 +635,11 @@ public class ClubServiceImpl implements ClubService {
     }
 
     @Override
-    public List<RateCardResponse> getRateCardsForClubId(Long clubId)
+    public List<RateCardDetailsResponse> getRateCardsForClubId(Long clubId)
             throws ClubServiceException {
         try {
-            return clubDAO.getRateCardsByClubId(clubId).stream()
-                    .map(this::buildRateCardResponse)
+            return clubDAO.getDetailedRateCardsByClubId(clubId).stream()
+                    .map(this::buildRateCardDetailedResponse)
                     .toList();
         } catch (Exception e) {
             log.error("Exception while getting rate-cards for clubId: {}", clubId);
@@ -1009,6 +1009,7 @@ public class ClubServiceImpl implements ClubService {
                                 .stationId(station.getId())
                                 .clubId(station.getClub().getId())
                                 .stationName(station.getStationName())
+                                .stationDescription(station.getStationDescription())
                                 .stationType(station.getStationType())
                                 .operatingHours(
                                         OperatingHours.builder()
