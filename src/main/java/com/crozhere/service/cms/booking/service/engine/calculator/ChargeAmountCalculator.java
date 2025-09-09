@@ -5,8 +5,6 @@ import com.crozhere.service.cms.booking.service.engine.BookingContext;
 import com.crozhere.service.cms.club.controller.model.response.RateChargeResponse;
 import com.crozhere.service.cms.club.controller.model.response.RateResponse;
 import com.crozhere.service.cms.club.repository.entity.ChargeType;
-import com.crozhere.service.cms.club.repository.entity.Rate;
-import com.crozhere.service.cms.club.repository.entity.RateCharge;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -15,7 +13,6 @@ import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
-import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertLocalTimeToString;
 import static com.crozhere.service.cms.club.controller.model.OperatingHours.convertStringToLocalTime;
 
 @Slf4j
@@ -34,9 +31,7 @@ public class ChargeAmountCalculator implements AmountCalculator {
 
         BookingIntent intent = context.getBookingIntent();
         Map<Long, Long> stationToRateMap = context.getStationToRateMap();
-        log.info("STATION_TO_RATE_MAP: {}", stationToRateMap.toString());
         Map<Long, RateResponse> rateMap = context.getRateMap();
-        log.info("RATE_MAP: {}", rateMap.toString());
 
         Instant curr = intent.getStartTime();
         Instant end = intent.getEndTime();
@@ -57,9 +52,9 @@ public class ChargeAmountCalculator implements AmountCalculator {
                                         Duration.between(curr, next).toMinutes(),
                                         station.getPlayerCount()
                                 );
-                        String subCat = charge.getChargeType().name();
+                        String subCatKey = charge.getChargeType().name() + " - " + charge.getChargeName();
                         subCatToAmtMap
-                                .computeIfAbsent(subCat, k -> new ArrayList<>())
+                                .computeIfAbsent(subCatKey, k -> new ArrayList<>())
                                 .add(temp);
                     }
                 }
@@ -68,7 +63,8 @@ public class ChargeAmountCalculator implements AmountCalculator {
             curr = next;
         }
 
-        log.info("SUBCAT_TO_AMT_MAP: {}", subCatToAmtMap.toString());
+        log.info("SUB_CAT TO AMOUNT MAP");
+        subCatToAmtMap.forEach((key, value) -> value.forEach(System.out::println));
 
         // TODO: Update the description generation logic
         return subCatToAmtMap.entrySet().stream()

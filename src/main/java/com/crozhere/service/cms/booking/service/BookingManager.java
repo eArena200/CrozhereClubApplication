@@ -14,7 +14,6 @@ import com.crozhere.service.cms.booking.service.exception.BookingManagerExceptio
 import com.crozhere.service.cms.booking.util.TimeSlot;
 import com.crozhere.service.cms.booking.util.TimeSlotUtil;
 import com.crozhere.service.cms.club.controller.model.response.StationResponse;
-import com.crozhere.service.cms.club.repository.entity.Station;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.ClubService;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
@@ -44,15 +43,12 @@ public class BookingManager {
     ) throws BookingManagerException {
         try {
             List<StationResponse> stations = clubService.getStationsByClubIdAndType(clubId, stationType);
-            log.info("FOUND STATIONS: {}", stations);
 
             List<Booking> bookings =
                     bookingDao.getBookingsForStationsAndForSearchWindow(stations, startTime, endTime);
-            log.info("FOUND OVERLAPPING BOOKINGS: {}", bookings);
 
             List<BookingIntent> activeIntents =
                     bookingIntentDao.getActiveIntentsForStationsAndForSearchWindow(stations, startTime, endTime);
-            log.info("FOUND ACTIVE INTENTS: {}", activeIntents);
 
             Set<Long> bookedStationIds = bookings.stream()
                     .flatMap(b -> b.getStations().stream())
@@ -102,7 +98,6 @@ public class BookingManager {
                     .stream()
                     .filter(s -> stationIds.contains(s.getStationId()))
                     .toList();
-            log.info("FILTERED STATIONS: {}", stations);
 
             Instant windowStart = searchWindow.getDateTime();
             Instant windowEnd = windowStart.plus(searchWindow.getWindowHrs() + durationInHrs, ChronoUnit.HOURS);
@@ -111,9 +106,6 @@ public class BookingManager {
                     bookingDao.getBookingsForStationsAndForSearchWindow(stations, windowStart, windowEnd);
             List<BookingIntent> intents =
                     bookingIntentDao.getActiveIntentsForStationsAndForSearchWindow(stations, windowStart, windowEnd);
-
-            log.info("BOOKINGS: {}", bookings);
-            log.info("INTENTS: {}", intents);
 
             Map<Long, List<TimeSlot>> busySlots = new HashMap<>();
 
@@ -144,13 +136,7 @@ public class BookingManager {
                 busySlots.put(station.getStationId(), totalBusy);
             }
 
-            log.info("BUSY SLOTS PER STATION: {}", busySlots);
-
-            List<TimeSlot> freeSlots = findCommonAvailableSlots(busySlots, durationInHrs, searchWindow);
-            log.info("AVAILABLE TIME SLOTS: {}", freeSlots);
-
-            return freeSlots;
-
+            return findCommonAvailableSlots(busySlots, durationInHrs, searchWindow);
         } catch (ClubServiceException e) {
             log.error("Exception in ClubService for getAvailableTimeSlotsForStations", e);
             throw new BookingManagerException("Availability check failed");

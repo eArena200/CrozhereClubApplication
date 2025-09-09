@@ -22,6 +22,7 @@ public class OperatingHours {
 
     public static String convertLocalTimeToString(LocalTime localTime) {
         if(localTime != null){
+            localTime = localTime.plusHours(5).plusMinutes(30);
             return localTime.format(timeFormatter);
         }
 
@@ -30,7 +31,9 @@ public class OperatingHours {
 
     public static LocalTime convertStringToLocalTime(String stringTime){
         if (StringUtils.hasText(stringTime)){
-            return LocalTime.parse(stringTime, timeFormatter);
+            LocalTime localTime = LocalTime.parse(stringTime, timeFormatter);
+            localTime = localTime.minusHours(5).minusMinutes(30);
+            return localTime;
         }
 
         return null;
