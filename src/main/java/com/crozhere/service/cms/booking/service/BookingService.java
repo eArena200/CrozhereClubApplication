@@ -19,6 +19,11 @@ public interface BookingService {
             Long clubAdminId, CreateClubBookingIntentRequest request
     ) throws InvalidRequestException, BookingServiceException;
 
+    BookingIntentDetailsResponse applyClubDiscount(
+            Long clubAdminId, Long bookingIntentId,
+            ClubDiscountRequest discountRequest
+    ) throws InvalidRequestException, BookingServiceException;
+
     BookingIntentDetailsResponse createBookingIntentForPlayer(
             Long playerId, CreatePlayerBookingIntentRequest request
     ) throws InvalidRequestException, BookingServiceException;

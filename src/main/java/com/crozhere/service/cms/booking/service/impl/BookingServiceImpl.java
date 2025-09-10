@@ -9,6 +9,7 @@ import com.crozhere.service.cms.booking.service.engine.BookingContext;
 import com.crozhere.service.cms.club.controller.model.response.ClubResponse;
 import com.crozhere.service.cms.club.controller.model.response.RateResponse;
 import com.crozhere.service.cms.club.controller.model.response.StationResponse;
+import com.crozhere.service.cms.club.repository.entity.Club;
 import com.crozhere.service.cms.club.repository.entity.StationType;
 import com.crozhere.service.cms.club.service.exception.ClubServiceException;
 import com.crozhere.service.cms.club.service.exception.ClubServiceExceptionType;
@@ -171,6 +172,43 @@ public class BookingServiceImpl implements BookingService {
             throw e;
         } catch (Exception e) {
             log.error("Error while creating booking-intent for request: {}", request, e);
+            throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED, e);
+        }
+    }
+
+    @Override
+    public BookingIntentDetailsResponse applyClubDiscount(
+            Long clubAdminId,
+            Long bookingIntentId,
+            ClubDiscountRequest discountRequest
+    ) throws InvalidRequestException, BookingServiceException {
+        try {
+            BookingIntent bookingIntent = getBookingIntentById(bookingIntentId);
+            ClubResponse club = clubService.getClubById(bookingIntent.getClubId());
+            if(!club.getClubAdminId().equals(clubAdminId)){
+                log.info("Booking intent with Id: {} not found for ClubAdminId: {}",
+                        bookingIntentId, clubAdminId);
+                throw new BookingServiceException(BookingServiceExceptionType.BOOKING_INTENT_NOT_FOUND);
+            }
+
+            BookingAmount newAmount =
+                    bookingAmountEngine.applyDiscount(bookingIntent.getBookingAmount(), discountRequest);
+            bookingIntent.setBookingAmount(newAmount);
+            bookingIntentDao.update(bookingIntentId, bookingIntent);
+
+            Player player = playerService.getPlayerById(bookingIntent.getPlayerId());
+            Map<Long, StationResponse> stationMap =
+                    clubService.getStationsByClubIdAndType(
+                                    bookingIntent.getClubId(), bookingIntent.getStationType())
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    StationResponse::getStationId,
+                                    Function.identity()
+                            ));
+
+            return getBookingIntentResponse(bookingIntent, player, club, stationMap);
+        } catch (Exception e) {
+            log.error("Error while applying clubDiscount to bookingIntentId: {}, for request: {}", bookingIntentId, discountRequest, e);
             throw new BookingServiceException(BookingServiceExceptionType.CREATE_BOOKING_INTENT_FAILED, e);
         }
     }

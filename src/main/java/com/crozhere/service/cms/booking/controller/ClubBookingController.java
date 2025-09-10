@@ -98,6 +98,59 @@ public class ClubBookingController {
 
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
+            summary = "ApplyClubDiscount",
+            description = "Applies a manual booking discount from a club to a booking-intent"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Discount applied successfully",
+                    content = @Content(schema = @Schema(implementation = BookingIntentDetailsResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "BookingIntent not found",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request data",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
+                    content = @Content(schema = @Schema(implementation = ServiceErrorResponse.class))
+            )
+    })
+    @PreAuthorize("hasRole('CLUB_ADMIN')")
+    @PutMapping(
+            value = "/applyClubDiscount/{bookingIntentId}",
+            consumes = "application/json"
+    )
+    public ResponseEntity<BookingIntentDetailsResponse> applyClubDiscount(
+            @Parameter(
+                    name = "bookingIntentId",
+                    description = "BookingIntentId to which discount needs to be applied",
+                    required = true
+            )
+            @PathVariable(value = "bookingIntentId") Long bookingIntentId,
+            @Parameter(
+                    description = "DiscountRequestBody request body",
+                    required = true
+            )
+            @Valid
+            @RequestBody
+            ClubDiscountRequest request
+    ) {
+        Long clubAdminId = AuthUtil.getRoleBasedId();
+        BookingIntentDetailsResponse response =
+                bookingService.applyClubDiscount(clubAdminId, bookingIntentId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(
         summary = "List active booking intents for a club",
         description = "Returns all currently active (not expired, not confirmed, not cancelled) booking intents for a club"
     )

@@ -17,6 +17,7 @@ public enum BookingServiceExceptionType {
     CHECK_AVAILABILITY_BY_STATIONS_FAILED("Failed to check availability by stations."),
 
     CREATE_BOOKING_INTENT_FAILED("Failed to Create Booking intent"),
+    APPLY_CLUB_DISCOUNT_FAILED("Failed to apply club-discount"),
     BOOKING_INTENT_VALIDATION_FAILED("Failed to validate stations for booking-intent"),
     BOOKING_INTENT_NOT_FOUND("Booking intent not found"),
     BOOKING_INTENT_EXPIRED("Booking-intent expired"),
